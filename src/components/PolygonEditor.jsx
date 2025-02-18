@@ -1,83 +1,64 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Plus, Minus, Move } from "lucide-react";
 
-const PolygonEditor = ({ initialPoints, onUpdate }) => {
-  const [points, setPoints] = useState(initialPoints);
+const PolygonEditor = ({ setDragging }) => {
   const [activeButton, setActiveButton] = useState(null);
 
-  useEffect(() => {
-    onUpdate(points);
-  }, [points, onUpdate]);
-
-  // Функция для перемещения точки
-  const handleMovePoint = (index, dx, dy) => {
-    setPoints((prevPoints) =>
-      prevPoints.map((point, i) =>
-        i === index ? { x: point.x + dx, y: point.y + dy } : point
-      )
-    );
+  // 🔹 Включение режима перемещения полигона
+  const handleMove = () => {
+    console.log("Кнопка Move нажата, меняем dragging...");
+    setActiveButton((prev) => (prev === "move" ? null : "move"));
+    setDragging((prev) => {
+      console.log("Новое значение dragging:", !prev);
+      return !prev;
+    });
   };
 
-  // Функция для добавления новой точки
-  const handleAddPoint = () => {
-    setActiveButton("move");
-    const newPoint = { x: 50, y: 50 }; // Новая точка по умолчанию
-    setPoints([...points, newPoint]);
-
-    setTimeout(() => setActiveButton(null), 500);
-  };
-
-  // Функция для увеличения масштаба полигона
-  const handleScaleUp = () => {
+  // 🔹 Увеличение зума
+  const handleZoomIn = () => {
+    if (!window.mapInstance) return;
     setActiveButton("scaleUp");
-    setPoints((prevPoints) =>
-      prevPoints.map((point) => ({ x: point.x * 1.1, y: point.y * 1.1 }))
-    );
-
+    window.mapInstance.setZoom(window.mapInstance.getZoom() + 1);
     setTimeout(() => setActiveButton(null), 500);
   };
 
-  // Функция для уменьшения масштаба полигона
-  const handleScaleDown = () => {
+  // 🔹 Уменьшение зума
+  const handleZoomOut = () => {
+    if (!window.mapInstance) return;
     setActiveButton("scaleDown");
-    setPoints((prevPoints) =>
-      prevPoints.map((point) => ({ x: point.x * 0.9, y: point.y * 0.9 }))
-    );
-
+    window.mapInstance.setZoom(window.mapInstance.getZoom() - 1);
     setTimeout(() => setActiveButton(null), 500);
   };
 
   return (
-    <div className="absolute right-0 top-1/2 transform -translate-y-1/2 space-y-3">
-      {/* Добавить точку */}
-      <button
-        className={`p-2 bg-white rounded-lg text-gray-700 transition-all ${
-          activeButton === "move" ? "bg-[#1683FF] text-white" : "hover:bg-gray-100"
-        }`}
-        onClick={handleAddPoint}
-      >
-        <Move size={24} />
-      </button>
+    <div className="absolute top-1/2 right-4 transform -translate-y-1/2 space-y-3 z-50 pointer-events-auto">
+      <div className="grid grid-cols-1 gap-6">
+        {/* 🔹 Включение режима перемещения */}
+        <button
+          className={`p-3 bg-white shadow-lg rounded-xl text-gray-700 transition-all ${
+            activeButton === "move" ? "bg-[#1683FF] text-white" : "hover:bg-gray-200"
+          }`}
+          onClick={handleMove}
+        >
+          <Move size={24} />
+        </button>
 
-      {/* Увеличить масштаб */}
-      <button
-        className={`p-2 bg-white rounded-lg text-gray-700 transition-all ${
-          activeButton === "scaleUp" ? "bg-[#1683FF] text-white" : "hover:bg-gray-100"
-        }`}
-        onClick={handleScaleUp}
-      >
-        <Plus size={24} />
-      </button>
+        {/* 🔹 Увеличение зума */}
+        <button
+          className="p-3 bg-white shadow-lg rounded-xl text-gray-700 hover:bg-gray-200"
+          onClick={handleZoomIn}
+        >
+          <Plus size={24} />
+        </button>
 
-      {/* Уменьшить масштаб */}
-      <button
-        className={`p-2 bg-white rounded-lg text-gray-700 transition-all ${
-          activeButton === "scaleDown" ? "bg-[#1683FF] text-white" : "hover:bg-gray-100"
-        }`}
-        onClick={handleScaleDown}
-      >
-        <Minus size={24} />
-      </button>
+        {/* 🔹 Уменьшение зума */}
+        <button
+          className="p-3 bg-white shadow-lg rounded-xl text-gray-700 hover:bg-gray-200"
+          onClick={handleZoomOut}
+        >
+          <Minus size={24} />
+        </button>
+      </div>
     </div>
   );
 };
