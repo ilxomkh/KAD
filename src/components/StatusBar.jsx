@@ -39,35 +39,32 @@ const StatusBar = ({ currentStep, kadasterId }) => {
           <div key={step.id} className="flex items-center">
             {/* Индикатор шага */}
             <div
-              className={`flex p-2 w-60 rounded-2xl transition-all ${
-                currentStep === step.id
+              className={`flex p-2 w-60 rounded-2xl transition-all ${currentStep === step.id
                   ? "bg-[#E6F6EE]" // Текущий этап (зелёный фон)
                   : currentStep > step.id
-                  ? "bg-[#E8F3FF]" // Пройденный этап (синий фон)
-                  : "bg-[#f7f9fb]" // Будущие этапы (серый фон)
-              }`}
+                    ? "bg-[#E8F3FF]" // Пройденный этап (синий фон)
+                    : "bg-[#f7f9fb]" // Будущие этапы (серый фон)
+                }`}
             >
               <div
-                className={`flex items-center mt-1 justify-center w-10 h-10 rounded-full font-bold text-md border-3 transition-all ${
-                  currentStep === step.id
+                className={`flex items-center mt-1 justify-center w-10 h-10 rounded-full font-bold text-md border-3 transition-all ${currentStep === step.id
                     ? "bg-[#b0e2cc] text-green-800 border-[#00a359]"
                     : currentStep > step.id
-                    ? "bg-[#b7d9ff] text-gray-700 border-[#1683ff]"
-                    : "bg-white text-gray-500 border-[#b7d9ff]"
-                }`}
+                      ? "bg-[#b7d9ff] text-gray-700 border-[#1683ff]"
+                      : "bg-white text-gray-500 border-[#b7d9ff]"
+                  }`}
               >
                 {step.id}
               </div>
 
               {/* Название шага */}
               <div
-                className={`ml-2 font-medium grid grid-cols-1 transition-all ${
-                  currentStep === step.id
+                className={`ml-2 font-medium grid grid-cols-1 transition-all ${currentStep === step.id
                     ? "text-gray-700"
                     : currentStep > step.id
-                    ? "text-gray-700"
-                    : "text-gray-400"
-                }`}
+                      ? "text-gray-700"
+                      : "text-gray-400"
+                  }`}
               >
                 {step.label} <strong>{step.name}</strong>
               </div>
@@ -75,9 +72,8 @@ const StatusBar = ({ currentStep, kadasterId }) => {
             {/* Линия между шагами */}
             {index < steps.length - 1 && (
               <div
-                className={`w-12 h-1 mr-2 transition-all duration-300 ${
-                  currentStep > step.id ? "bg-[#00a359]" : "bg-gray-200"
-                }`}
+                className={`w-12 h-1 mr-2 transition-all duration-300 ${currentStep > step.id ? "bg-[#00a359]" : "bg-gray-200"
+                  }`}
               ></div>
             )}
           </div>
@@ -101,7 +97,7 @@ const StatusBar = ({ currentStep, kadasterId }) => {
               className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
               onClick={() => setShowModal(false)}
             >
-              <XCircle className="stroke-2 w-7 h-7"/>
+              <XCircle className="stroke-1 w-7 h-7" />
             </button>
             {/* PDF Viewer или заглушка */}
             <div className="overflow-hidden w-full flex justify-center p-2">

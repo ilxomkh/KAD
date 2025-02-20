@@ -12,7 +12,7 @@ const AdminPanel = () => {
     const [currentTable, setCurrentTable] = useState("default");
 
     return (
-        <div className="bg-[#e4ebf3] min-h-screen pt-6">
+        <div className="bg-[#e4ebf3] w-screen min-h-screen pt-6">
             {/* Хедер с переключением таблиц */}
             <HeaderAdmin currentTable={currentTable} setCurrentTable={setCurrentTable} />
 

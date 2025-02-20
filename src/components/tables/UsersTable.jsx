@@ -37,7 +37,7 @@ const UsersTable = () => {
       )
     );
   };
-  
+
 
   return (
     <div className="p-6 bg-[#e4ebf3] min-h-screen w-screen">
@@ -68,20 +68,20 @@ const UsersTable = () => {
                 <td className="py-6 px-4 bg-white">{item.role}</td>
                 <td className="py-6 px-4 bg-white">{item.position}</td>
                 <td className="py-6 px-4 bg-white">
-                  <ToggleSwitch status={item.status} onToggle={() => toggleStatus(item.id)} />
+                  <ToggleSwitch userId={123} initialStatus={true} />
                 </td>
                 <td className="py-6 px-4 bg-white">{item.tasksCompleted}</td>
                 <td className="py-6 px-4 bg-white">{item.joinedDate}</td>
                 <td className="px-4 bg-white rounded-r-3xl relative">
-                <ActionDropdown item={item} />
+                  <ActionDropdown item={item} />
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      <div className="w-full bg-[#f9f9f9] -mt-3 py-3 rounded-b-3xl">
-      <Pagination totalItems={totalData} itemsPerPage={itemsPerPage} currentPage={currentPage} onPageChange={setCurrentPage} />
+      <div className="flex justify-center py-4 bg-[#f9f9f9] rounded-b-3xl">
+        <Pagination totalItems={totalData} itemsPerPage={itemsPerPage} currentPage={currentPage} onPageChange={setCurrentPage} />
       </div>
     </div>
   );

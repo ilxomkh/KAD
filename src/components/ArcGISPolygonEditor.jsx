@@ -54,8 +54,8 @@ const ArcGISPolygonEditor = ({ backendPolygonCoords, onConfirmChanges }) => {
         geometry: polygon,
         symbol: {
           type: "simple-fill",
-          color: [66, 133, 244, 0.5],
-          outline: { color: [21, 101, 192], width: 3 }
+          color: [2, 166, 255, 0.5],
+          outline: { color: [2, 31, 254], width: 2 }
         }
       });
       graphicsLayer.add(graphic);
@@ -64,7 +64,7 @@ const ArcGISPolygonEditor = ({ backendPolygonCoords, onConfirmChanges }) => {
       const sketch = new SketchViewModel({
         view: viewInstance,
         layer: graphicsLayer,
-        updateOnGraphicClick: true
+        updateOnGraphicClick: false
       });
       setSketchVM(sketch);
 
@@ -127,9 +127,8 @@ const ArcGISPolygonEditor = ({ backendPolygonCoords, onConfirmChanges }) => {
       <div className="absolute top-1/2 right-4 transform -translate-y-1/2 space-y-3 z-50 pointer-events-auto">
         <div className="grid grid-cols-1 gap-6">
           <button
-            className={`p-2 w-10 bg-white shadow-lg rounded-xl hover:text-blue-500 text-gray-700 transition-all ${
-              activeButton === "move" ? "bg-blue-500 text-gray-700" : "bg-blue-500"
-            }`}
+            className={`p-2 w-10 bg-white shadow-lg rounded-xl hover:text-blue-500 text-gray-700 transition-all ${activeButton === "move" ? "bg-blue-500 text-gray-700" : "bg-blue-500"
+              }`}
             onClick={handleMove}
           >
             <Move size={24} />
