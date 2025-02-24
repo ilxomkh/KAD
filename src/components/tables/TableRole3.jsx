@@ -56,7 +56,7 @@ const TableRole3 = () => {
             <tr className="border-b border-[#F7F9FB]">
               <th className="py-2 px-2 text-center font-medium w-8 sm:w-10 md:w-12"></th>
               <th className="py-2 px-2 text-center font-medium w-40 md:w-48 xl:w-56">
-                Kadast ID
+                Kadastr ID
               </th>
               <th className="py-2 px-2 text-center font-medium w-24 md:w-28">
                 Modda
@@ -268,8 +268,9 @@ const TableRole3 = () => {
                   )}
                 </td>
                 <td
-                  className={`py-4 px-6 bg-white font-semibold ${item.status === "BOR" ? "text-green-500" : "text-red-500"
-                    }`}
+                  className={`py-4 px-6 bg-white font-semibold ${
+                    item.status === "BOR" ? "text-green-500" : "text-red-500"
+                  }`}
                 >
                   {item.status}
                 </td>

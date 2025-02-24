@@ -58,7 +58,7 @@ const TableRole1 = () => {
             <tr className="border-b border-[#F7F9FB]">
               <th className="py-2 px-2 text-center font-medium w-8 sm:w-10 md:w-12"></th>
               <th className="py-2 px-2 text-center font-medium w-28 md:w-40 xl:w-44 2xl:w-48">
-                Kadast ID
+                Kadastr ID
               </th>
               <th className="py-2 px-2 text-center font-medium w-20 md:w-24">
                 Modda

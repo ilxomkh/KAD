@@ -15,6 +15,10 @@ const AgencyReviewPage = () => {
   const [pdfUrl, setPdfUrl] = useState(null);
   const [numPages, setNumPages] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [sending, setSending] = useState(false);
+  
+
 
   useEffect(() => {
     setLoading(true);
@@ -79,10 +83,44 @@ const AgencyReviewPage = () => {
         </button>
       </div>
       <div className="absolute bottom-6 bg-white p-3 rounded-xl left-8 flex space-x-4">
-        <button className="px-6 py-3 bg-red-500 text-white rounded-xl transition-all hover:bg-red-600">
+        <button 
+        className="px-6 py-3 bg-red-500 text-white rounded-xl transition-all hover:bg-red-600"
+        onClick={() => setShowModal(true)}
+        >
           Xatolik bor
         </button>
       </div>
+
+      {showModal && (
+            <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50 pointer-events-auto">
+              <div className="bg-white px-4 py-2 rounded-2xl shadow-lg max-w-md w-full text-left relative">
+                <h2 className="text-lg font-semibold mb-4">
+                  Xatolik borligini tasdiqlaysizmi?
+                </h2>
+                <div className="flex justify-center w-full space-x-4">
+                  <button
+                    className="px-6 py-2 w-full bg-blue-600 text-white rounded-xl transition-all hover:bg-blue-700"
+                    onClick={() => {
+                      setSending(true);
+                      setTimeout(() => {
+                        setShowModal(false);
+                        setSending(false);
+                      }, 1000);
+                    }}
+                    disabled={sending}
+                  >
+                    {sending ? "Yuborilmoqda..." : "Ha"}
+                  </button>
+                  <button
+                    className="px-6 py-2 w-full bg-gray-200 text-gray-700 rounded-xl transition-all hover:bg-gray-300"
+                    onClick={() => setShowModal(false)}
+                  >
+                    Yo'q
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
     </div>
   );
 };

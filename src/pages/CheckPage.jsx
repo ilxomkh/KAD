@@ -2,17 +2,20 @@ import { useParams, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import StatusBar from "../components/StatusBar";
 import { ChevronRight } from "lucide-react";
+// Импорт статичной картинки-фона
+import backgroundImage from "../assets/kesilgan_raster.png";
 
 const CheckPage = () => {
   const { kadasterId } = useParams();
   const location = useLocation();
   const [mapData, setMapData] = useState(null);
+  // Состояние для фонового изображения. Пока используется статичная картинка.
+  const [bgImage, setBgImage] = useState(backgroundImage);
   const [buildingStatus, setBuildingStatus] = useState(false); // 🔹 Всегда есть блок, дефолт false
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [sending, setSending] = useState(false);
-
 
   useEffect(() => {
     setLoading(true);
@@ -24,13 +27,17 @@ const CheckPage = () => {
     } else {
       fetch(`/api/maps/${kadasterId}`)
         .then((res) => {
-          if (!res.ok) throw new Error(`Ошибка загрузки карты (${res.status})`);
+          if (!res.ok)
+            throw new Error(`Ошибка загрузки карты (${res.status})`);
           return res.blob();
         })
         .then((blob) => {
           const imageUrl = URL.createObjectURL(blob);
           setMapData(imageUrl);
           setLoading(false);
+          // Если бэкенд будет возвращать фоновое изображение (jpg, jpeg, png и т.д.),
+          // раскомментируйте следующую строку:
+          // setBgImage(imageUrl);
         })
         .catch((err) => {
           console.error(err);
@@ -42,7 +49,7 @@ const CheckPage = () => {
     // 🔹 Эмуляция бэкенда (если сервера нет, используем false)
     setTimeout(() => {
       setBuildingStatus(false); // Изменить на true, если нужно "Mavjud" по умолчанию
-    }, 500); // Имитация задержки запроса
+    }, 500);
   }, [kadasterId, location.state]);
 
   return (
@@ -55,7 +62,15 @@ const CheckPage = () => {
       {error && <p className="text-red-500 text-center mt-6">{error}</p>}
 
       {!loading && !error && (
-        <div className="relative w-full h-[100vh] bg-black overflow-hidden">
+        // Фоновая картинка устанавливается через inline-стиль.
+        <div
+          className="relative w-full h-[100vh] overflow-hidden"
+          style={{
+            backgroundImage: `url(${bgImage})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }}
+        >
           <div className="px-8 pt-8">
             <StatusBar currentStep={2} kadasterId={kadasterId} />
           </div>
@@ -70,45 +85,6 @@ const CheckPage = () => {
                 {buildingStatus ? "Mavjud" : "Mavjud emas"}
               </span>
             </h2>
-          </div>
-
-          <div className="absolute right-8 top-1/2 transform -translate-y-1/2 space-y-3">
-            <div className="grid grid-cols-1 space-y-2">
-              <button className="p-2 bg-white rounded-lg shadow-md text-gray-700 hover:bg-gray-100 transition-all">
-                <svg
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M12 22.6667V12M12 12V1.33337M12 12H22.6667M12 12H1.33337"
-                    stroke="#222432"
-                    stroke-width="1.5"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                </svg>
-              </button>
-              <button className="p-2 py-5 bg-white rounded-lg shadow-md text-gray-700 hover:bg-gray-100 transition-all">
-                <svg
-                  width="24"
-                  height="2"
-                  viewBox="0 0 24 2"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M22.6667 1H1.33337"
-                    stroke="#222432"
-                    stroke-width="1.5"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                </svg>
-              </button>
-            </div>
           </div>
 
           <div className="absolute bottom-6 right-8 bg-white p-3 rounded-xl flex space-x-4">
@@ -155,18 +131,9 @@ const CheckPage = () => {
               </div>
             </div>
           )}
-
-          {mapData && (
-            <img
-              src={mapData}
-              alt="Kadastr Map"
-              className="w-full h-full object-cover"
-            />
-          )}
         </div>
       )}
     </div>
   );
 };
-
 export default CheckPage;
