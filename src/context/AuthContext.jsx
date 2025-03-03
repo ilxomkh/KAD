@@ -31,6 +31,8 @@ export const AuthProvider = ({ children }) => {
             navigate("/");
         } else if (role === "3-role") {
             navigate("/");
+        } else if (role === "4-role") {
+            navigate("/");
         }
     };
 

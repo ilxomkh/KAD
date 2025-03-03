@@ -1,15 +1,15 @@
 import HeaderUser from "../components/Header/HeaderUser";
-import TableRole2 from "../components/tables/TableRole2";
+import TableRole4 from "../components/tables/TableRole4";
 
-const Role2TablePage = () => {
+const Role4TablePage = () => {
     return (
         <div className="min-h-screen w-screen pt-6 bg-[#e4ebf3]">
             <HeaderUser />
             <div className="mx-auto">
-                <TableRole2 />
+                <TableRole4 />
             </div>
         </div>
     );
 };
 
-export default Role2TablePage;
+export default Role4TablePage;

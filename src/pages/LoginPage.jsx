@@ -29,6 +29,7 @@ const LoginPage = () => {
                     <option value="1-role">1-я роль (Таблица + Сравнение)</option>
                     <option value="2-role">2-я роль (Таблица + Проверка)</option>
                     <option value="3-role">3-я роль (Агентство)</option>
+                    <option value="4-role">4-я роль </option>
                 </select>
 
                 <button

@@ -29,7 +29,7 @@ const ActionDropdown = ({ item }) => {
   };
 
   return (
-    <td className="py-6 px-4 bg-white rounded-r-3xl relative">
+    <div className="py-6 px-4 bg-white rounded-r-3xl relative">
       <button
         className="text-black"
         onClick={(e) => {
@@ -66,7 +66,7 @@ const ActionDropdown = ({ item }) => {
       {modalType === "view" && <ViewModal item={item} onClose={handleCloseModal} />}
       {modalType === "edit" && <EditModal item={item} onClose={handleCloseModal} />}
       {modalType === "delete" && <DeleteModal item={item} onClose={handleCloseModal} />}
-    </td>
+    </div>
   );
 };
 

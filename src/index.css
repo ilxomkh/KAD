@@ -42,6 +42,20 @@ h1 {
   display: none;
 }
 
+.my-button:hover .hover-blue {
+  stroke: #3B82F6; /* blue-500 из Tailwind */
+}
+
+
+.my-button:hover {
+  color: #3B82F6;
+}
+
+.my-button .hover-blue {
+  transition: stroke 300ms;
+}
+
+
 
 
 

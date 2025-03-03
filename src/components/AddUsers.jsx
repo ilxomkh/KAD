@@ -1,7 +1,10 @@
 import { useState } from "react";
-import { X, Eye, EyeOff, XCircle } from "lucide-react";
+import { XCircle, Eye, EyeOff } from "lucide-react";
 import RoleDropdown from "./RoleDropdown";
 import PositionDropdown from "./PositionDropdown";
+
+const BASE_URL =
+  "https://virtserver.swaggerhub.com/KABRA0413/super-etirof/1.0.0";
 
 const AddUsers = ({ onClose }) => {
   const [formData, setFormData] = useState({
@@ -11,6 +14,7 @@ const AddUsers = ({ onClose }) => {
     role: "",
     login: "",
     password: "",
+    passwordVerify: "",
     position: "",
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -19,21 +23,70 @@ const AddUsers = ({ onClose }) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = () => {
-    alert(`Добавленный пользователь:\n${JSON.stringify(formData, null, 2)}`);
-    onClose(); // Закрываем модалку после добавления
+  const handleSubmit = async () => {
+    // Проверяем, что все поля заполнены (используем trim для текстовых полей)
+    if (
+      !formData.firstName.trim() ||
+      !formData.lastName.trim() ||
+      !formData.middleName.trim() ||
+      !formData.login.trim() ||
+      !formData.password ||
+      !formData.passwordVerify ||
+      !formData.position.trim() ||
+      !formData.role.trim()
+    ) {
+      alert("Пожалуйста, заполните все поля.");
+      return;
+    }
+
+    // Проверяем, что пароли совпадают
+    if (formData.password !== formData.passwordVerify) {
+      alert("Пароли не совпадают!");
+      return;
+    }
+
+    // Формируем payload без поля passwordVerify
+    const payload = {
+      username: formData.login,
+      password: formData.password,
+      firstName: formData.firstName,
+      middleName: formData.middleName,
+      lastName: formData.lastName,
+      position: formData.position,
+      active: true,
+      role: formData.role || "geometry_fix",
+      randomizerIndex: 0,
+    };
+
+    // Выводим данные, которые отправляются на сервер
+    console.log("Отправляемые данные:", payload);
+
+    try {
+      const response = await fetch(`${BASE_URL}/users`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) throw new Error("Ошибка при добавлении пользователя");
+
+      const createdUser = await response.json();
+      console.log("Создан пользователь:", createdUser);
+      onClose();
+    } catch (error) {
+      console.error("Ошибка сети:", error);
+    }
   };
 
   return (
     <div
       className="fixed inset-0 flex items-center justify-center bg-black/50 bg-opacity-50 z-50"
-      onClick={onClose} // Закрытие при клике вне модалки
+      onClick={onClose}
     >
       <div
         className="bg-white p-6 rounded-2xl shadow-lg w-1/2 relative"
-        onClick={(e) => e.stopPropagation()} // Остановка всплытия клика внутри окна
+        onClick={(e) => e.stopPropagation()}
       >
-        {/* Заголовок и кнопка закрытия */}
         <div className="flex justify-between items-center mb-8">
           <h2 className="text-xl font-semibold text-black">
             Foydalanuvchi qo‘shish
@@ -46,7 +99,6 @@ const AddUsers = ({ onClose }) => {
           </button>
         </div>
 
-        {/* Форма */}
         <div className="grid grid-cols-2 text-left gap-10">
           <div>
             <label className="block text-gray-700 font-medium">Ismi</label>
@@ -59,7 +111,6 @@ const AddUsers = ({ onClose }) => {
               className="w-full border border-[#f3f9f6] focus:outline-none rounded-xl p-2 py-3 mt-1 text-gray-700"
             />
           </div>
-
           <div>
             <label className="block text-gray-700 font-medium">
               Familiyasi
@@ -82,16 +133,9 @@ const AddUsers = ({ onClose }) => {
               value={formData.middleName}
               onChange={handleChange}
               placeholder="Sharifini kiriting"
-              className="w-full border border-[#f3f9f6]  focus:outline-none rounded-xl p-2 py-3 mt-1 text-gray-700"
+              className="w-full border border-[#f3f9f6] focus:outline-none rounded-xl p-2 py-3 mt-1 text-gray-700"
             />
           </div>
-
-          <RoleDropdown
-            value={formData.role}
-            onChange={(role) => setFormData({ ...formData, role })}
-            bgColor="bg-white"
-            borderColor="border-[#f3f9f6]"
-          />
 
           <div>
             <label className="block text-gray-700 font-medium">Logini</label>
@@ -104,6 +148,13 @@ const AddUsers = ({ onClose }) => {
               className="w-full border border-[#f3f9f6] focus:outline-none rounded-xl p-2 py-3 mt-1 text-gray-700"
             />
           </div>
+
+          <RoleDropdown
+            value={formData.role}
+            onChange={(role) => setFormData({ ...formData, role })}
+            bgColor="bg-white"
+            borderColor="border-[#f3f9f6]"
+          />
 
           <div className="relative">
             <label className="block text-gray-700 font-medium">Paroli</label>
@@ -132,13 +183,34 @@ const AddUsers = ({ onClose }) => {
           />
 
           <div className="relative">
+            <label className="block text-gray-700 font-medium">
+              Parolni tasdiqlang
+            </label>
+            <input
+              type={showPassword ? "text" : "password"}
+              name="passwordVerify"
+              value={formData.passwordVerify}
+              onChange={handleChange}
+              placeholder="Parolini qaytadan kiriting"
+              className="w-full border border-[#f3f9f6] focus:outline-none rounded-xl p-2 py-3 mt-1 text-gray-700"
+            />
             <button
-              onClick={handleSubmit}
-              className="w-full bg-blue-500 focus:outline-none text-white py-3 rounded-xl mt-6.5 text-lg font-semibold hover:bg-blue-600 transition"
+              type="button"
+              className="absolute right-3 top-10 text-gray-400 focus:outline-none hover:text-gray-700"
+              onClick={() => setShowPassword(!showPassword)}
             >
-              Qo‘shish
+              {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
             </button>
           </div>
+        </div>
+
+        <div className="relative mt-6">
+          <button
+            onClick={handleSubmit}
+            className="w-full bg-blue-500 focus:outline-none text-white py-3 rounded-xl text-lg font-semibold hover:bg-blue-600 transition"
+          >
+            Qo‘shish
+          </button>
         </div>
       </div>
     </div>

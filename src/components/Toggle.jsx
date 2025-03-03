@@ -1,24 +1,29 @@
 import React, { useState } from 'react';
 
+// Важно: BASE_URL берём либо из окружения, либо прописываем напрямую
+const BASE_URL = "https://virtserver.swaggerhub.com/KABRA0413/super-etirof/1.0.0";
+
 const ToggleSwitch = ({ userId, initialStatus }) => {
   const [status, setStatus] = useState(initialStatus);
 
   const handleToggle = async () => {
-    const newStatus = !status; // Переключаем статус
+    const newStatus = !status;
     try {
-      const response = await fetch(`https://your-backend-api.com/users/${userId}/status`, {
-        method: 'POST', // Или PUT, если на бэкенде обновление
+      const response = await fetch(`${BASE_URL}/users/${userId}/toggle-active`, {
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
+        // Если серверу достаточно только "active", то отправляем минимальный JSON
         body: JSON.stringify({ active: newStatus }),
       });
 
-      if (response.ok) {
-        setStatus(newStatus); // Если запрос успешен, обновляем состояние
-      } else {
-        console.error('Ошибка при обновлении статуса пользователя');
+      if (!response.ok) {
+        throw new Error('Ошибка при обновлении статуса пользователя');
       }
+
+      // Если запрос успешен — меняем состояние локально
+      setStatus(newStatus);
     } catch (error) {
       console.error('Ошибка сети:', error);
     }
@@ -27,13 +32,15 @@ const ToggleSwitch = ({ userId, initialStatus }) => {
   return (
     <div className="flex items-center justify-start gap-3">
       <div
-        className={`relative inline-block w-12 h-7 rounded-full cursor-pointer transition-all duration-300 ${status ? 'bg-blue-500' : 'bg-gray-300'
-          }`}
+        className={`relative inline-block w-12 h-7 rounded-full cursor-pointer transition-all duration-300 ${
+          status ? 'bg-blue-500' : 'bg-gray-300'
+        }`}
         onClick={handleToggle}
       >
         <div
-          className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-all duration-300 ${status ? 'left-6' : 'left-1'
-            }`}
+          className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-all duration-300 ${
+            status ? 'left-6' : 'left-1'
+          }`}
         />
       </div>
     </div>

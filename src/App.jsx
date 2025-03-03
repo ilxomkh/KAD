@@ -10,6 +10,8 @@ import CheckPage from "./pages/CheckPage";
 import Role3TablePage from "./pages/Role3TablePage";
 import AgencyReviewPage from "./pages/AgencyReviewPage";
 import AdminPanel from "./pages/AdminPanel";
+import Role4TablePage from "./pages/Role4TablePage";
+import VerdictPage from "./pages/Verdict";
 
 const RoleBasedRoutes = () => {
     const { user } = useAuth();
@@ -51,6 +53,14 @@ const RoleBasedRoutes = () => {
                 <>
                     <Route path="/" element={<Role3TablePage />} />
                     <Route path="/agency-review/:kadasterId" element={<AgencyReviewPage />} />
+                </>
+            )}
+
+            {/* 3-я роль: Таблица + Агентская проверка */}
+            {user.role === "4-role" && (
+                <>
+                    <Route path="/" element={<Role4TablePage />} />
+                    <Route path="/verdict/:kadasterId" element={<VerdictPage />} />
                 </>
             )}
 

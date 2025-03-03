@@ -29,7 +29,7 @@ const Pagination = ({ totalItems, itemsPerPage, currentPage, onPageChange }) => 
         <div className="flex justify-center items-center space-x-2 mt-3 mb-3">
             {/* Кнопка "Назад" */}
             <button
-                className={`w-10 h-10 flex items-center justify-center rounded-full transition ${
+                className={`w-10 h-10 flex items-center cursor-pointer justify-center rounded-full transition ${
                     currentPage === 1
                         ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                         : "bg-gray-100 hover:bg-gray-200 text-gray-600"
@@ -44,7 +44,7 @@ const Pagination = ({ totalItems, itemsPerPage, currentPage, onPageChange }) => 
             {visiblePages.map((page, index) => (
                 <button
                     key={index}
-                    className={`w-10 h-10 flex items-center justify-center rounded-full transition text-lg font-semibold ${
+                    className={`w-10 h-10 flex items-center cursor-pointer justify-center rounded-full transition text-lg font-semibold ${
                         page === currentPage
                             ? "bg-blue-500 text-white"
                             : page === "..."
@@ -60,7 +60,7 @@ const Pagination = ({ totalItems, itemsPerPage, currentPage, onPageChange }) => 
 
             {/* Кнопка "Вперед" */}
             <button
-                className={`w-10 h-10 flex items-center justify-center rounded-full transition ${
+                className={`w-10 h-10 flex items-center cursor-pointer justify-center rounded-full transition ${
                     currentPage === totalPages
                         ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                         : "bg-gray-100 hover:bg-gray-200 text-gray-600"

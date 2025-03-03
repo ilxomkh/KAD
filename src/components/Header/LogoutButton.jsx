@@ -2,7 +2,7 @@ const LogoutButton = ({ onLogout }) => {
     return (
       <div className="group">
         <button
-          className="flex items-center text-gray-600 transition group-hover:text-blue-500"
+          className="flex items-center cursor-pointer text-gray-600 transition group-hover:text-blue-500"
           onClick={onLogout}
         >
           <svg

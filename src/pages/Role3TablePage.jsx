@@ -1,7 +1,7 @@
 import HeaderUser from "../components/Header/HeaderUser";
 import TableRole3 from "../components/tables/TableRole3";
 
-const Role1TablePage = () => {
+const Role3TablePage = () => {
     return (
         <div className="min-h-screen w-screen pt-6 bg-[#e4ebf3]">
             <HeaderUser />
@@ -12,4 +12,4 @@ const Role1TablePage = () => {
     );
 };
 
-export default Role1TablePage;
+export default Role3TablePage;

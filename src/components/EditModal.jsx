@@ -3,6 +3,8 @@ import { XCircle, Eye, EyeOff } from "lucide-react";
 import RoleDropdown from "./RoleDropdown";
 import PositionDropdown from "./PositionDropdown";
 
+const BASE_URL = "https://virtserver.swaggerhub.com/KABRA0413/super-etirof/1.0.0";
+
 const EditModal = ({ item, onClose, onSave }) => {
   const [formData, setFormData] = useState({
     firstName: "",
@@ -11,6 +13,7 @@ const EditModal = ({ item, onClose, onSave }) => {
     role: "",
     login: "",
     password: "",
+    passwordVerify: "",
     position: "",
   });
 
@@ -24,8 +27,10 @@ const EditModal = ({ item, onClose, onSave }) => {
         lastName: item.lastName || "",
         middleName: item.middleName || "",
         role: item.role || "",
-        login: item.login || "",
+        // Для логина используем username из item
+        login: item.username || "",
         password: item.password || "",
+        passwordVerify: item.password || "",
         position: item.position || "",
       });
     }
@@ -35,9 +40,46 @@ const EditModal = ({ item, onClose, onSave }) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = () => {
-    onSave(formData); // Отправляем обновленные данные
-    onClose(); // Закрываем модалку
+  const handleSubmit = async () => {
+    // Если пользователь изменил пароль, проверяем, что он совпадает с подтверждением
+    if (formData.password !== formData.passwordVerify) {
+      alert("Пароли не совпадают!");
+      return;
+    }
+
+    // Формируем payload для обновления пользователя
+    const payload = {
+      username: formData.login,
+      password: formData.password,
+      firstName: formData.firstName,
+      middleName: formData.middleName,
+      lastName: formData.lastName,
+      position: formData.position,
+      active: item.active !== undefined ? item.active : true,
+      role: formData.role || "geometry_fix",
+      randomizerIndex: item.randomizerIndex || 0,
+    };
+
+    console.log("Отправляемые данные для обновления:", payload);
+
+    try {
+      const response = await fetch(`${BASE_URL}/users/${item.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error("Ошибка при обновлении пользователя");
+      }
+
+      const updatedUser = await response.json();
+      console.log("Обновлённый пользователь:", updatedUser);
+      if (onSave) onSave(updatedUser);
+      onClose();
+    } catch (error) {
+      console.error("Ошибка сети:", error);
+    }
   };
 
   return (
@@ -58,7 +100,7 @@ const EditModal = ({ item, onClose, onSave }) => {
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700 transition"
           >
-            <XCircle size={24} className="stroke-1"/>
+            <XCircle size={24} className="stroke-1" />
           </button>
         </div>
 
@@ -139,22 +181,44 @@ const EditModal = ({ item, onClose, onSave }) => {
             </button>
           </div>
 
-          {/* Выпадающее меню Лавозим */}
           <PositionDropdown
             value={formData.position}
-            onChange={(position) => setFormData({ ...formData, position })}
+            onChange={(position) =>
+              setFormData({ ...formData, position })
+            }
             bgColor="bg-[#e8f3ff]/50"
             borderColor="border-[#94c6ff]"
           />
 
           <div className="relative">
+            <label className="block text-gray-700 font-medium">
+              Parolni tasdiqlang
+            </label>
+            <input
+              type={showPassword ? "text" : "password"}
+              name="passwordVerify"
+              value={formData.passwordVerify}
+              onChange={handleChange}
+              placeholder="Parolini qaytadan kiriting"
+              className="w-full border-1 border-[#94c6ff] rounded-xl p-2 py-3 mt-1 text-gray-700 bg-[#e8f3ff]/50"
+            />
             <button
-              onClick={handleSubmit}
-              className="w-full bg-blue-500 text-white py-3 rounded-xl mt-6 text-lg font-semibold hover:bg-blue-600 transition"
+              type="button"
+              className="absolute right-3 top-10 text-gray-400 hover:text-gray-700"
+              onClick={() => setShowPassword(!showPassword)}
             >
-              Tahrirlash
+              {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
             </button>
           </div>
+        </div>
+
+        <div className="relative mt-6">
+          <button
+            onClick={handleSubmit}
+            className="w-full bg-blue-500 text-white py-3 rounded-xl mt-6 text-lg font-semibold hover:bg-blue-600 transition"
+          >
+            Tahrirlash
+          </button>
         </div>
       </div>
     </div>
