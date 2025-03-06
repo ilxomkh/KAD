@@ -9,7 +9,10 @@ import Circle from "@arcgis/core/geometry/Circle";
 
 // Вычисляем центр полигона по его экстенту (bounding box)
 function computeCenter(ring) {
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  let minX = Infinity,
+    minY = Infinity,
+    maxX = -Infinity,
+    maxY = -Infinity;
   ring.forEach(([x, y]) => {
     if (x < minX) minX = x;
     if (y < minY) minY = y;
@@ -31,7 +34,7 @@ function computeAngle(ring, center) {
 const ArcGISPolygonEditor = ({
   backendPolygonCoords,
   onConfirmChanges,
-  editable = false // Режим редактирования (true) или только просмотр (false)
+  editable = false, // Режим редактирования (true) или только просмотр (false)
 }) => {
   const mapRef = useRef(null);
   const initialAngleRef = useRef(0); // Исходный угол полигона относительно центра
@@ -44,20 +47,20 @@ const ArcGISPolygonEditor = ({
   const minZoomLevel = 10;
 
   // Преобразуем координаты из [lat, lng] в [lng, lat]
-  const ring = backendPolygonCoords.map(coord => [coord[1], coord[0]]);
+  const ring = backendPolygonCoords.map((coord) => [coord[1], coord[0]]);
 
   useEffect(() => {
     const graphicsLayer = new GraphicsLayer();
     const map = new Map({
       basemap: "satellite",
-      layers: [graphicsLayer]
+      layers: [graphicsLayer],
     });
     const viewInstance = new MapView({
       container: mapRef.current,
       map: map,
       center: ring[0] || [69.25, 41.32],
       zoom: 18,
-      constraints: { minZoom: minZoomLevel }
+      constraints: { minZoom: minZoomLevel },
     });
     setView(viewInstance);
 
@@ -76,12 +79,16 @@ const ArcGISPolygonEditor = ({
       // Вычисляем исходный угол относительно центра
       const computedInitialAngle = computeAngle(ring, center);
       initialAngleRef.current = computedInitialAngle;
-      console.log("Начальный угол (будем считать 0°):", computedInitialAngle, "°");
+      console.log(
+        "Начальный угол (будем считать 0°):",
+        computedInitialAngle,
+        "°"
+      );
 
       const polygon = {
         type: "polygon",
         rings: [ring],
-        spatialReference: { wkid: 4326 }
+        spatialReference: { wkid: 4326 },
       };
 
       const graphic = new Graphic({
@@ -89,8 +96,8 @@ const ArcGISPolygonEditor = ({
         symbol: {
           type: "simple-fill",
           color: [2, 166, 255, 0.5],
-          outline: { color: [2, 31, 254], width: 2 }
-        }
+          outline: { color: [2, 31, 254], width: 2 },
+        },
       });
       graphicsLayer.add(graphic);
       setPolygonGraphic(graphic);
@@ -103,15 +110,15 @@ const ArcGISPolygonEditor = ({
       const circleGeometry = new Circle({
         center: center,
         radius: maxDistance,
-        spatialReference: { wkid: 4326 }
+        spatialReference: { wkid: 4326 },
       });
       const circleGraphic = new Graphic({
         geometry: circleGeometry,
         symbol: {
           type: "simple-line",
           color: [255, 0, 0],
-          width: 2
-        }
+          width: 2,
+        },
       });
       graphicsLayer.add(circleGraphic);
 
@@ -127,7 +134,7 @@ const ArcGISPolygonEditor = ({
             style: "circle",
             size: 0,
             color: [0, 0, 0, 0],
-            outline: null
+            outline: null,
           },
           // Оставляем только поворот и перемещение
           defaultSymbols: {
@@ -135,13 +142,13 @@ const ArcGISPolygonEditor = ({
               boundary: {
                 type: "simple-line",
                 color: [0, 0, 0, 0],
-                width: 0
+                width: 0,
               },
               scaleHandle: {
                 type: "simple-marker",
                 size: 0,
                 color: [0, 0, 0, 0],
-                outline: null
+                outline: null,
               },
               rotationHandle: {
                 type: "simple-marker",
@@ -150,11 +157,11 @@ const ArcGISPolygonEditor = ({
                 color: [255, 0, 0, 0.8],
                 outline: {
                   color: [255, 255, 255],
-                  width: 1
-                }
-              }
-            }
-          }
+                  width: 1,
+                },
+              },
+            },
+          },
         });
         setSketchVM(sketch);
 
@@ -162,7 +169,9 @@ const ArcGISPolygonEditor = ({
         sketch.on("update", (event) => {
           const blockedActions = ["reshape", "vertex-move", "scale"];
           if (blockedActions.includes(event.toolEventInfo?.type)) {
-            console.log("Блокируем попытку изменить форму или масштабировать полигон.");
+            console.log(
+              "Блокируем попытку изменить форму или масштабировать полигон."
+            );
             sketch.cancel();
           }
           console.log("Update event:", event.state, event.toolEventInfo);
@@ -186,7 +195,7 @@ const ArcGISPolygonEditor = ({
         enableScaling: false,
         enableMove: true,
         toggleToolOnClick: false,
-        updateVertices: false
+        updateVertices: false,
       });
     }
   };
@@ -209,11 +218,15 @@ const ArcGISPolygonEditor = ({
 
   // При подтверждении изменений вычисляем итоговый угол поворота относительно центра экстента
   const handleConfirm = () => {
-    if (polygonGraphic && polygonGraphic.geometry && polygonGraphic.geometry.rings) {
+    if (
+      polygonGraphic &&
+      polygonGraphic.geometry &&
+      polygonGraphic.geometry.rings
+    ) {
       const finalGeometry = {
         type: "polygon",
         rings: polygonGraphic.geometry.rings,
-        spatialReference: polygonGraphic.geometry.spatialReference
+        spatialReference: polygonGraphic.geometry.spatialReference,
       };
 
       const currentRing = polygonGraphic.geometry.rings[0];
@@ -232,7 +245,7 @@ const ArcGISPolygonEditor = ({
 
       onConfirmChanges({
         geometry: finalGeometry,
-        rotation: normalizedRotation
+        rotation: normalizedRotation,
       });
 
       setActiveButton(null);
@@ -254,7 +267,9 @@ const ArcGISPolygonEditor = ({
             <div className="grid grid-cols-1 gap-6">
               <button
                 className={`p-2 w-10 bg-white cursor-pointer shadow-lg rounded-xl hover:text-blue-500 text-gray-700 transition-all ${
-                  activeButton === "transform" ? "bg-blue-500 text-gray-700" : "bg-blue-500"
+                  activeButton === "transform"
+                    ? "bg-blue-500 text-gray-700"
+                    : "bg-blue-500"
                 }`}
                 onClick={handleTransform}
               >

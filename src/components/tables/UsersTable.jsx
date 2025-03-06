@@ -1,23 +1,9 @@
 import React, { useState, useEffect } from "react";
-import {
-  ChevronDown,
-  Filter,
-  Plus,
-  LogOut,
-  MoreHorizontal,
-  Eye,
-  Pencil,
-  Trash,
-} from "lucide-react";
 import Pagination from "../Pagination";
 import ToggleSwitch from "../Toggle";
 import ActionDropdown from "../ActionDropdown";
+import { BASE_URL } from "../../utils/api";
 
-// Определяем базовый URL.
-// Для локальной разработки используется "http://localhost:8080/api",
-// для продакшена можно установить переменную окружения REACT_APP_BASE_URL.
-const BASE_URL =
-  "https://virtserver.swaggerhub.com/KABRA0413/super-etirof/1.0.0";
 
 const UsersTable = () => {
   const itemsPerPage = 12;

@@ -5,6 +5,7 @@ import FilterButton from "./FilterButton";
 import LogoutButton from "./LogoutButton";
 import AddUsers from "../AddUsers";
 import FilterModal from "../FilterModal";
+import { BASE_URL } from "../../utils/api";
 
 const HeaderAdmin = ({ currentTable, setCurrentTable }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -36,7 +37,7 @@ const HeaderAdmin = ({ currentTable, setCurrentTable }) => {
   // Функция поиска в зависимости от выбранной таблицы
   const handleSearch = (query) => {
     if (currentTable === "users") {
-      fetch(`/users/${query}`)
+      fetch(`${BASE_URL}/users/${query}`)
         .then((res) => {
           if (!res.ok) {
             return res.text().then((text) => {
@@ -50,7 +51,7 @@ const HeaderAdmin = ({ currentTable, setCurrentTable }) => {
         })
         .catch((error) => console.error("Error searching user:", error));
     } else {
-      fetch(`/cadastres/cad/${query}`)
+      fetch(`${BASE_URL}/cadastre/cad/${query}`)
         .then((res) => {
           if (!res.ok) {
             return res.text().then((text) => {
@@ -69,7 +70,7 @@ const HeaderAdmin = ({ currentTable, setCurrentTable }) => {
   // Функция для обработки выбранных фильтров из модального окна
   const handleFilterApply = (filters) => {
     if (filters.kadastr) {
-      fetch(`/cadastres/cad/${filters.kadastr}`)
+      fetch(`${BASE_URL}/cadastre/cad/${filters.kadastr}`)
         .then((res) => {
           if (!res.ok) {
             return res.text().then((text) => {

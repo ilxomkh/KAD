@@ -1,6 +1,6 @@
 import React from "react";
+import { BASE_URL } from "../utils/api";
 
-const BASE_URL = "https://virtserver.swaggerhub.com/KABRA0413/super-etirof/1.0.0";
 
 const PlanButton = ({ cadastreId }) => {
   if (!cadastreId) return null;
@@ -8,7 +8,7 @@ const PlanButton = ({ cadastreId }) => {
   const downloadPlan = async (e) => {
     e.stopPropagation();
     try {
-      const response = await fetch(`${BASE_URL}/cadastres/${cadastreId}/land_plan`);
+      const response = await fetch(`${BASE_URL}/cadastre/${cadastreId}/land_plan`);
       if (!response.ok) {
         throw new Error("Ошибка при загрузке плана");
       }

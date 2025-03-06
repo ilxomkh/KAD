@@ -5,6 +5,7 @@ import BuildingExistenceSelector from "../components/BuildingExistenceSelector";
 import ArcGISPolygonEditor from "../components/ArcGISPolygonEditor";
 import FileUploadModal from "../components/FileUploadModal";
 import { ChevronRight } from "lucide-react";
+import { BASE_URL } from "../utils/api";
 
 const VerdictPage = () => {
   const { kadasterId } = useParams(); // параметр из URL
@@ -22,7 +23,7 @@ const VerdictPage = () => {
 
   // 1. Запрашиваем geojson из бэкенда
   useEffect(() => {
-    fetch(`/cadastres/${kadasterId}`)
+    fetch(`${BASE_URL}/cadastre/${kadasterId}`)
       .then((res) => {
         if (!res.ok) {
           throw new Error("Ошибка при загрузке данных кадастра");
@@ -99,7 +100,7 @@ const VerdictPage = () => {
     };
 
     try {
-      const response = await fetch(`/cadastres/${kadasterId}/cadastre_error`, {
+      const response = await fetch(`${BASE_URL}/cadastre/${kadasterId}/cadastre_error`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

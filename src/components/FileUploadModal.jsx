@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Dialog } from "@headlessui/react";
 import { CloudUpload, File, Trash, X } from "lucide-react";
+import { BASE_URL } from "../utils/api";
 
 function FileUploadModal({ isOpen, onClose, onUpload, cadasterId }) {
   const navigate = useNavigate();
@@ -41,7 +42,7 @@ function FileUploadModal({ isOpen, onClose, onUpload, cadasterId }) {
       formData.append("screenshot", file);
 
       // Отправляем PATCH-запрос
-      const response = await fetch(`/cadastres/${cadasterId}/screenshot`, {
+      const response = await fetch(`${BASE_URL}/cadastre/${cadasterId}/screenshot`, {
         method: "PATCH",
         body: formData,
       });

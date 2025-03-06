@@ -7,6 +7,7 @@ import "react-pdf/dist/esm/Page/TextLayer.css";
 import { ChevronRight } from "lucide-react";
 import ArcGISTwoPolygonViewer from "../components/ArcGISTwoPolygonViewer";
 import CommentModal from "../components/CommentModal";
+import { BASE_URL } from "../utils/api";
 
 // Указываем путь к worker-файлу для react-pdf
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
@@ -42,7 +43,7 @@ const AgencyReviewPage = () => {
     setError(null);
 
     // Запрашиваем данные кадастра с бэкенда
-    fetch(`/api/cadastres/${kadasterId}`)
+    fetch(`${BASE_URL}/api/cadastre/${kadasterId}`)
       .then((res) => {
         if (!res.ok) {
           throw new Error("Ошибка загрузки данных кадастра");
@@ -102,8 +103,8 @@ const AgencyReviewPage = () => {
         setLoading(false);
       });
 
-    // Запрашиваем PDF-отчёт с бэкенда (endpoint: /api/cadastres/{id}/generated_report)
-    fetch(`/api/cadastres/${kadasterId}/generated_report`)
+    // Запрашиваем PDF-отчёт с бэкенда (endpoint: /api/cadastre/{id}/generated_report)
+    fetch(`${BASE_URL}/api/cadastre/${kadasterId}/generated_report`)
       .then((res) => {
         if (!res.ok) {
           throw new Error("Ошибка загрузки PDF отчёта");
@@ -119,13 +120,13 @@ const AgencyReviewPage = () => {
       });
   }, [kadasterId, location.state]);
 
-  // Функция для отправки PATCH запроса к /api/cadastres/{id}/agency_verification
+  // Функция для отправки PATCH запроса к /api/cadastre/{id}/agency_verification
   // Формат: { "verified": boolean, "comment": "string" }
   const sendAgencyVerification = async (verified, commentStr) => {
     const payload = { verified, comment: commentStr };
     console.log("Отправка данных на сервер (agency_verification):", payload);
     try {
-      const response = await fetch(`/api/cadastres/${kadasterId}/agency_verification`, {
+      const response = await fetch(`${BASE_URL}/api/cadastre/${kadasterId}/agency_verification`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

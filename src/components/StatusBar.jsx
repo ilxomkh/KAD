@@ -4,6 +4,7 @@ import { ChevronLeft } from "lucide-react";
 import PdfIcon from "../assets/File Type.svg"; // Иконка PDF
 import { Document, Page, pdfjs } from "react-pdf";
 import MapButton from "./MapButton";
+import { BASE_URL } from "../utils/api";
 
 // Настройка worker для корректного рендеринга PDF
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
@@ -29,7 +30,7 @@ const StatusBar = ({ currentStep, kadasterId, role, onMapButtonClick, mapActive 
     // Обнуляем старый pdfUrl, если он есть
     setPdfUrl(null);
     // Запрашиваем PDF по эндпоинту /cadastres/{id}/land_plan
-    fetch(`/cadastres/${kadasterId}/land_plan`)
+    fetch(`${BASE_URL}/cadastre/${kadasterId}/land_plan`)
       .then((res) => {
         if (!res.ok) {
           return res.text().then((text) => {

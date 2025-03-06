@@ -1,7 +1,6 @@
 import React from "react";
+import { BASE_URL } from "../utils/api";
 
-const BASE_URL =
-  "https://virtserver.swaggerhub.com/KABRA0413/super-etirof/1.0.0";
 
 const DecisionButton = ({ cadastreId }) => {
   if (!cadastreId) return null;
@@ -10,7 +9,7 @@ const DecisionButton = ({ cadastreId }) => {
     e.stopPropagation();
     try {
       const response = await fetch(
-        `${BASE_URL}/cadastres/${cadastreId}/governor_decree`
+        `${BASE_URL}/cadastre/${cadastreId}/governor_decree`
       );
       if (!response.ok) {
         throw new Error("Ошибка при загрузке решения");

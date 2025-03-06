@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
+import { BASE_URL } from "../utils/api";
 
 // Важно: BASE_URL берём либо из окружения, либо прописываем напрямую
-const BASE_URL = "https://virtserver.swaggerhub.com/KABRA0413/super-etirof/1.0.0";
 
 const ToggleSwitch = ({ userId, initialStatus }) => {
   const [status, setStatus] = useState(initialStatus);

@@ -4,8 +4,7 @@ import { ChevronRight } from "lucide-react";
 import Pagination from "../Pagination";
 import PlanButton from "../PlanButton";
 import DecisionButton from "../DecisionButton";
-
-const BASE_URL = "https://virtserver.swaggerhub.com/KABRA0413/super-etirof/1.0.0";
+import { BASE_URL } from "../../utils/api";
 
 const EndedTable = () => {
   const navigate = useNavigate();
@@ -19,7 +18,7 @@ const EndedTable = () => {
   useEffect(() => {
     const fetchCadastres = async () => {
       try {
-        const response = await fetch(`${BASE_URL}/cadastres`);
+        const response = await fetch(`${BASE_URL}/cadastre`);
         if (!response.ok) {
           throw new Error("Ошибка при загрузке кадастров");
         }

@@ -7,7 +7,10 @@ import { Plus, Minus } from "lucide-react"; // Импорт иконок
 
 // Вычисляем центр по экстенту (bounding box)
 function computeCenter(ring) {
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  let minX = Infinity,
+    minY = Infinity,
+    maxX = -Infinity,
+    maxY = -Infinity;
   ring.forEach(([x, y]) => {
     if (x < minX) minX = x;
     if (y < minY) minY = y;
@@ -17,33 +20,43 @@ function computeCenter(ring) {
   return [(minX + maxX) / 2, (minY + maxY) / 2];
 }
 
-const ArcGISTwoPolygonViewer = ({ backendPolygonCoords, modifiedPolygonCoords }) => {
+const ArcGISTwoPolygonViewer = ({
+  backendPolygonCoords,
+  modifiedPolygonCoords,
+}) => {
   const mapRef = useRef(null);
   const [view, setView] = useState(null);
   const minZoomLevel = 10;
 
   // Преобразуем координаты из [lat, lng] в [lng, lat]
-  const originalRing = backendPolygonCoords.map(coord => [coord[1], coord[0]]);
-  const modifiedRing = modifiedPolygonCoords.map(coord => [coord[1], coord[0]]);
+  const originalRing = backendPolygonCoords.map((coord) => [
+    coord[1],
+    coord[0],
+  ]);
+  const modifiedRing = modifiedPolygonCoords.map((coord) => [
+    coord[1],
+    coord[0],
+  ]);
 
   useEffect(() => {
     const graphicsLayer = new GraphicsLayer();
     const map = new Map({
       basemap: "satellite",
-      layers: [graphicsLayer]
+      layers: [graphicsLayer],
     });
 
     // Объединяем массивы координат
     const combinedRing = [...originalRing, ...modifiedRing];
     // Если массив пустой, используем центр по умолчанию
-    const center = combinedRing.length > 0 ? computeCenter(combinedRing) : [69.25, 41.32];
+    const center =
+      combinedRing.length > 0 ? computeCenter(combinedRing) : [69.25, 41.32];
 
     const viewInstance = new MapView({
       container: mapRef.current,
       map: map,
       center: center,
       zoom: 18,
-      constraints: { minZoom: minZoomLevel }
+      constraints: { minZoom: minZoomLevel },
     });
     setView(viewInstance);
 
@@ -56,15 +69,15 @@ const ArcGISTwoPolygonViewer = ({ backendPolygonCoords, modifiedPolygonCoords })
         const originalPolygon = {
           type: "polygon",
           rings: [originalRing],
-          spatialReference: { wkid: 4326 }
+          spatialReference: { wkid: 4326 },
         };
         const originalGraphic = new Graphic({
           geometry: originalPolygon,
           symbol: {
             type: "simple-fill",
             color: [255, 0, 0, 0], // Прозрачная заливка
-            outline: { color: [0, 255, 0], width: 3 }
-          }
+            outline: { color: [0, 255, 0], width: 3 },
+          },
         });
         graphicsLayer.add(originalGraphic);
       }
@@ -74,15 +87,15 @@ const ArcGISTwoPolygonViewer = ({ backendPolygonCoords, modifiedPolygonCoords })
         const modifiedPolygon = {
           type: "polygon",
           rings: [modifiedRing],
-          spatialReference: { wkid: 4326 }
+          spatialReference: { wkid: 4326 },
         };
         const modifiedGraphic = new Graphic({
           geometry: modifiedPolygon,
           symbol: {
             type: "simple-fill",
             color: [0, 0, 255, 0],
-            outline: { color: [255, 0, 0], width: 2 }
-          }
+            outline: { color: [255, 0, 0], width: 2 },
+          },
         });
         graphicsLayer.add(modifiedGraphic);
       }

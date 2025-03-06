@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { ChevronDown } from "lucide-react";
+import { BASE_URL } from "../utils/api";
 
-const BASE_URL = "https://virtserver.swaggerhub.com/KABRA0413/super-etirof/1.0.0";
 
 const RoleDropdown = ({ value, onChange, borderColor = "border-gray-300", bgColor = "bg-white" }) => {
   const [isOpen, setIsOpen] = useState(false);

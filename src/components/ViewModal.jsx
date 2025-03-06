@@ -1,7 +1,7 @@
 import { XCircleIcon } from "lucide-react";
 import { useEffect, useState } from "react";
+import { BASE_URL } from "../utils/api";
 
-const BASE_URL = "https://example.com"; // Замените на реальный базовый URL
 
 const ViewModal = ({ item, onClose }) => {
   const [logs, setLogs] = useState([]);

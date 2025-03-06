@@ -2,9 +2,8 @@ import { useState } from "react";
 import { XCircle, Eye, EyeOff } from "lucide-react";
 import RoleDropdown from "./RoleDropdown";
 import PositionDropdown from "./PositionDropdown";
+import { BASE_URL } from "../utils/api";
 
-const BASE_URL =
-  "https://virtserver.swaggerhub.com/KABRA0413/super-etirof/1.0.0";
 
 const AddUsers = ({ onClose }) => {
   const [formData, setFormData] = useState({

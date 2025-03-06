@@ -4,6 +4,7 @@ import { CheckIcon, ChevronRight } from "lucide-react";
 import StatusBar from "../components/StatusBar";
 import BuildingExistenceSelector from "../components/BuildingExistenceSelector";
 import ArcGISPolygonEditor from "../components/ArcGISPolygonEditor";
+import { BASE_URL } from "../utils/api";
 
 const ComparePage = () => {
   const { kadasterId } = useParams();
@@ -20,7 +21,7 @@ const ComparePage = () => {
 
   // 1. Загрузка координат из API (поле "geojson": "string")
   useEffect(() => {
-    fetch(`/api/cadastres/${kadasterId}`)
+    fetch(`${BASE_URL}/api/cadastre/${kadasterId}`)
       .then((res) => res.json())
       .then((data) => {
         console.log("Полученные данные кадастра:", data);
@@ -73,7 +74,7 @@ const ComparePage = () => {
     console.log("Сохраненные данные полигона:", data);
   };
 
-  // 3. Запрос к /api/cadastres/{id}/geometry_fix (при успешной верификации)
+  // 3. Запрос к /api/cadastre/{id}/geometry_fix (при успешной верификации)
   const sendGeometryFixData = async () => {
     if (!editedPolygonData || buildingExists === null) {
       console.error("Отсутствуют необходимые данные для отправки geometry_fix");
@@ -100,7 +101,7 @@ const ComparePage = () => {
     console.log("Отправка данных на сервер (geometry_fix):", payload);
 
     try {
-      const response = await fetch(`/api/cadastres/${kadasterId}/geometry_fix`, {
+      const response = await fetch(`${BASE_URL}/api/cadastre/${kadasterId}/geometry_fix`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -118,7 +119,7 @@ const ComparePage = () => {
     }
   };
 
-  // 4. Запрос к /api/cadastres/{id}/cadastre_error (при ошибке)
+  // 4. Запрос к /api/cadastre/{id}/cadastre_error (при ошибке)
   const sendCadastreErrorData = async () => {
     const payload = {
       cadastreError: true,
@@ -128,7 +129,7 @@ const ComparePage = () => {
     console.log("Отправка данных на сервер (cadastre_error):", payload);
 
     try {
-      const response = await fetch(`/api/cadastres/${kadasterId}/cadastre_error`, {
+      const response = await fetch(`${BASE_URL}/api/cadastre/${kadasterId}/cadastre_error`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

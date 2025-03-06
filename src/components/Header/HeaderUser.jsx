@@ -15,7 +15,7 @@ const HeaderUser = () => {
 
   // Функция поиска для кадастра
   const handleSearch = (query) => {
-    fetch(`/cadastres/cad/${query}`)
+    fetch(`${BASE_URL}/cadastre/cad/${query}`)
       .then((res) => {
         if (!res.ok) {
           return res.text().then((text) => {
@@ -34,7 +34,7 @@ const HeaderUser = () => {
   // Функция для обработки фильтров, выбранных в модальном окне
   const handleFilterApply = (filters) => {
     if (filters.kadastr) {
-      fetch(`/cadastres/cad/${filters.kadastr}`)
+      fetch(`${BASE_URL}/cadastre/cad/${filters.kadastr}`)
         .then((res) => {
           if (!res.ok) {
             return res.text().then((text) => {

@@ -1,6 +1,5 @@
-import { XCircle } from "lucide-react";
+import { BASE_URL } from "../utils/api";
 
-const BASE_URL = "https://virtserver.swaggerhub.com/KABRA0413/super-etirof/1.0.0";
 
 const DeleteModal = ({ item, onClose, onDelete }) => {
   const handleDelete = async () => {
