@@ -33,4 +33,3 @@ const AdminPanel = () => {
 };
 
 export default AdminPanel;
-//test

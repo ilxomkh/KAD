@@ -1,16 +1,16 @@
-// HeaderAdmin.jsx
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import SearchBar from "./SearchBar";
 import FilterButton from "./FilterButton";
 import LogoutButton from "./LogoutButton";
 import AddUsers from "../AddUsers";
+import FilterModal from "../FilterModal";
 
 const HeaderAdmin = ({ currentTable, setCurrentTable }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  // Опции меню
   const menuOptions = [
     { key: "default", label: "Nomzodlar ro‘yxati" },
     { key: "role1", label: "1-bosqichdagilar" },
@@ -20,11 +20,9 @@ const HeaderAdmin = ({ currentTable, setCurrentTable }) => {
     { key: "errors", label: "Kadastr xatoliklari" },
   ];
 
-  // Получение названия текущего выбранного пункта
   const selectedOption =
     menuOptions.find((option) => option.key === currentTable) || menuOptions[0];
 
-  // Функция выбора пункта и закрытия дропдауна
   const handleSelectTable = (table) => {
     setCurrentTable(table);
     setDropdownOpen(false);
@@ -33,6 +31,62 @@ const HeaderAdmin = ({ currentTable, setCurrentTable }) => {
   const handleLogout = () => {
     localStorage.removeItem("userRole");
     window.location.reload();
+  };
+
+  // Функция поиска в зависимости от выбранной таблицы
+  const handleSearch = (query) => {
+    if (currentTable === "users") {
+      fetch(`/users/${query}`)
+        .then((res) => {
+          if (!res.ok) {
+            return res.text().then((text) => {
+              throw new Error(`HTTP error ${res.status}: ${text}`);
+            });
+          }
+          return res.json();
+        })
+        .then((data) => {
+          console.log("Search results for user:", data);
+        })
+        .catch((error) => console.error("Error searching user:", error));
+    } else {
+      fetch(`/cadastres/cad/${query}`)
+        .then((res) => {
+          if (!res.ok) {
+            return res.text().then((text) => {
+              throw new Error(`HTTP error ${res.status}: ${text}`);
+            });
+          }
+          return res.json();
+        })
+        .then((data) => {
+          console.log("Search results for cadastre:", data);
+        })
+        .catch((error) => console.error("Error searching cadastre:", error));
+    }
+  };
+
+  // Функция для обработки выбранных фильтров из модального окна
+  const handleFilterApply = (filters) => {
+    if (filters.kadastr) {
+      fetch(`/cadastres/cad/${filters.kadastr}`)
+        .then((res) => {
+          if (!res.ok) {
+            return res.text().then((text) => {
+              throw new Error(`HTTP error ${res.status}: ${text}`);
+            });
+          }
+          return res.json();
+        })
+        .then((data) => {
+          console.log("Filtered data:", data);
+        })
+        .catch((error) =>
+          console.error("Error fetching filtered data:", error)
+        );
+    } else {
+      console.log("No filter selected", filters);
+    }
   };
 
   return (
@@ -45,7 +99,6 @@ const HeaderAdmin = ({ currentTable, setCurrentTable }) => {
       )}
 
       <header className="flex justify-between items-center bg-[#F9F9F9] px-6 py-3 mx-6 rounded-3xl relative z-20">
-        {/* Левая часть */}
         <div className="flex items-center space-x-12">
           <img src="/assets/Blue.svg" alt="ZBEKOSMOS" className="h-12 w-auto" />
           <div className="relative">
@@ -91,16 +144,17 @@ const HeaderAdmin = ({ currentTable, setCurrentTable }) => {
           </button>
         </div>
 
-        {/* Правая часть */}
         <div className="flex items-center space-x-8 mr-4">
           <SearchBar
+            onSearch={handleSearch}
             placeholder={
               currentTable === "users"
                 ? "Foydalanuvchini qidirish"
                 : "Kadastr raqamini kiriting"
             }
           />
-          <FilterButton />
+
+          <FilterButton onClick={() => setIsFilterOpen(true)} />
 
           {currentTable === "users" && (
             <button
@@ -123,13 +177,20 @@ const HeaderAdmin = ({ currentTable, setCurrentTable }) => {
                 />
               </svg>
               <span className="text-lg font-semibold ml-2">Qo‘shish</span>
-              {isModalOpen && <AddUsers onClose={() => setIsModalOpen(false)} />}
             </button>
           )}
 
           <LogoutButton onLogout={handleLogout} />
         </div>
       </header>
+
+      <FilterModal
+        isOpen={isFilterOpen}
+        onClose={() => setIsFilterOpen(false)}
+        onApply={handleFilterApply}
+      />
+
+      {isModalOpen && <AddUsers onClose={() => setIsModalOpen(false)} />}
     </>
   );
 };

@@ -1,12 +1,17 @@
-// SearchBar.jsx
 import { useState } from "react";
 import { Search } from "lucide-react"; // Иконка поиска
 
-const SearchBar = ({ placeholder = "Kadastr raqamini kiriting" }) => {
+const SearchBar = ({ placeholder = "Kadastr raqamini kiriting", onSearch }) => {
   const [search, setSearch] = useState("");
 
   const handleSearch = (e) => {
     setSearch(e.target.value);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && onSearch) {
+      onSearch(search);
+    }
   };
 
   return (
@@ -17,6 +22,7 @@ const SearchBar = ({ placeholder = "Kadastr raqamini kiriting" }) => {
         placeholder={placeholder}
         value={search}
         onChange={handleSearch}
+        onKeyDown={handleKeyDown}
         className="pl-10 pr-4 py-3 bg-gray-100 rounded-full outline-none w-80"
       />
     </div>

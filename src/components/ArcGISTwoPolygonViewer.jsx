@@ -33,14 +33,15 @@ const ArcGISTwoPolygonViewer = ({ backendPolygonCoords, modifiedPolygonCoords })
       layers: [graphicsLayer]
     });
 
-    // Для центрирования карты вычисляем комбинированный центр обоих полигонов
-    const combinedRing = originalRing.concat(modifiedRing);
-    const center = computeCenter(combinedRing);
+    // Объединяем массивы координат
+    const combinedRing = [...originalRing, ...modifiedRing];
+    // Если массив пустой, используем центр по умолчанию
+    const center = combinedRing.length > 0 ? computeCenter(combinedRing) : [69.25, 41.32];
 
     const viewInstance = new MapView({
       container: mapRef.current,
       map: map,
-      center: center || [69.25, 41.32],
+      center: center,
       zoom: 18,
       constraints: { minZoom: minZoomLevel }
     });
@@ -61,7 +62,7 @@ const ArcGISTwoPolygonViewer = ({ backendPolygonCoords, modifiedPolygonCoords })
           geometry: originalPolygon,
           symbol: {
             type: "simple-fill",
-            color: [255, 0, 0, 0], // Прозрачная заливка оригинального полигона
+            color: [255, 0, 0, 0], // Прозрачная заливка
             outline: { color: [0, 255, 0], width: 3 }
           }
         });
@@ -79,7 +80,7 @@ const ArcGISTwoPolygonViewer = ({ backendPolygonCoords, modifiedPolygonCoords })
           geometry: modifiedPolygon,
           symbol: {
             type: "simple-fill",
-            color: [0, 0, 255, 0], // Прозрачная заливка изменённого полигона
+            color: [0, 0, 255, 0],
             outline: { color: [255, 0, 0], width: 2 }
           }
         });

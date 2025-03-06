@@ -1,59 +1,81 @@
-import React, { useEffect, useState } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
-import { ChevronRight } from "lucide-react";
+import { useEffect, useState } from "react";
 import StatusBar from "../components/StatusBar";
 import BuildingExistenceSelector from "../components/BuildingExistenceSelector";
 import ArcGISPolygonEditor from "../components/ArcGISPolygonEditor";
 import FileUploadModal from "../components/FileUploadModal";
+import { ChevronRight } from "lucide-react";
 
 const VerdictPage = () => {
-  const { kadasterId } = useParams();
+  const { kadasterId } = useParams(); // параметр из URL
   const location = useLocation();
   const navigate = useNavigate();
 
   const [polygonCoords, setPolygonCoords] = useState([]);
   const [buildingExists, setBuildingExists] = useState(null);
+  const [verdict, setVerdict] = useState(""); // verdict для комментария
   const [showModal, setShowModal] = useState(false);
   const [showFileUpload, setShowFileUpload] = useState(true);
   const [sending, setSending] = useState(false);
   const [editedPolygonData, setEditedPolygonData] = useState(null);
   const [uploadedPhoto, setUploadedPhoto] = useState(null);
 
+  // 1. Запрашиваем geojson из бэкенда
   useEffect(() => {
-    fetch("/data/polygonData.geojson")
-      .then((res) => res.json())
+    fetch(`/cadastres/${kadasterId}`)
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error("Ошибка при загрузке данных кадастра");
+        }
+        return res.json();
+      })
       .then((data) => {
-        if (data?.type === "FeatureCollection" && data.features?.length > 0) {
-          const firstFeature = data.features[0];
-          if (
-            firstFeature?.geometry?.type === "Polygon" &&
-            firstFeature.geometry.coordinates?.length > 0
-          ) {
-            const coords = firstFeature.geometry.coordinates[0].map(
-              ([lon, lat]) => [lat, lon]
-            );
-            setPolygonCoords(coords);
+        if (data?.geojson) {
+          try {
+            const parsedGeoJSON = JSON.parse(data.geojson);
+            if (
+              parsedGeoJSON?.type === "FeatureCollection" &&
+              parsedGeoJSON.features?.length > 0
+            ) {
+              const firstFeature = parsedGeoJSON.features[0];
+              if (
+                firstFeature?.geometry?.type === "Polygon" &&
+                firstFeature.geometry.coordinates?.length > 0
+              ) {
+                // Преобразуем координаты из [долгота, широта] в [широта, долгота]
+                const coords = firstFeature.geometry.coordinates[0].map(
+                  ([lon, lat]) => [lat, lon]
+                );
+                setPolygonCoords(coords);
+              }
+            }
+          } catch (err) {
+            console.error("Ошибка парсинга geojson:", err);
           }
         }
       })
-      .catch((err) =>
-        console.error("Ошибка загрузки локального GeoJSON:", err)
-      );
-  }, []);
+      .catch((err) => {
+        console.error("Ошибка при загрузке кадастра:", err);
+      });
+  }, [kadasterId]);
 
+  // 2. Колбэк, который вызывается после успешной загрузки фото
   const handlePhotoUpload = (photoUrl) => {
     setUploadedPhoto(photoUrl);
     setShowFileUpload(false);
   };
 
+  // 3. Нажатие "Davom etish"
   const handleProceed = async () => {
     if (!editedPolygonData) return;
+
     const payload = {
       proceed: true,
       geometry: editedPolygonData.geometry,
       rotation: editedPolygonData.rotation,
       building_presence: buildingExists,
     };
+
     try {
       const response = await fetch("/api/submit", {
         method: "POST",
@@ -65,6 +87,34 @@ const VerdictPage = () => {
       }
     } catch (error) {
       console.error("Ошибка при отправке данных:", error);
+    }
+  };
+
+  // 4. Обработчик для кнопки "Ha" в модальном окне "Xatolik bor"
+  const handleErrorConfirm = async () => {
+    setSending(true);
+    const payload = {
+      cadastreError: true,
+      comment: verdict, // передаем verdict как комментарий
+    };
+
+    try {
+      const response = await fetch(`/cadastres/${kadasterId}/cadastre_error`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (response.ok) {
+        console.log("Данные cadastre_error успешно отправлены");
+        navigate("/role1tablepage");
+      } else {
+        console.error("Ошибка при отправке данных cadastre_error");
+      }
+    } catch (error) {
+      console.error("Ошибка при отправке данных cadastre_error:", error);
+    } finally {
+      setSending(false);
+      setShowModal(false);
     }
   };
 
@@ -81,9 +131,17 @@ const VerdictPage = () => {
         </div>
       )}
 
-      {/* Правая часть (карта), если есть фото → 50%, иначе 100% */}
+      {/* Правая часть (карта), если фото загружено → 50%, иначе 100% */}
       <div className={`${uploadedPhoto ? "w-1/2" : "w-full"} h-full`}>
-        <ArcGISPolygonEditor backendPolygonCoords={polygonCoords} />
+        <ArcGISPolygonEditor
+          backendPolygonCoords={
+            polygonCoords && polygonCoords.length > 0
+              ? polygonCoords
+              : [[41.32, 69.25]]
+          }
+          editable={false}
+          onChangePolygonData={setEditedPolygonData}
+        />
       </div>
 
       {/* Шапка */}
@@ -91,12 +149,13 @@ const VerdictPage = () => {
         <StatusBar currentStep={1} kadasterId={kadasterId} />
       </div>
 
-      {/* Блок выбора существования здания */}
+      {/* Блок выбора существования здания с verdict */}
       <div className="absolute top-0 left-0 z-50">
         <BuildingExistenceSelector
           buildingExists={buildingExists}
           setBuildingExists={setBuildingExists}
           kadasterId={kadasterId}
+          setVerdict={setVerdict}
         />
       </div>
 
@@ -112,7 +171,6 @@ const VerdictPage = () => {
               Xatolik bor
             </button>
           </div>
-
           {/* Кнопка "Davom etish" */}
           <div className="pointer-events-auto bg-white p-3 rounded-xl">
             <button
@@ -126,7 +184,7 @@ const VerdictPage = () => {
         </div>
       </div>
 
-      {/* Модальное окно ошибки */}
+      {/* Модальное окно подтверждения "Xatolik bor" */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
           <div className="bg-white px-4 py-2 rounded-2xl shadow-lg max-w-md w-full text-left relative">
@@ -136,13 +194,7 @@ const VerdictPage = () => {
             <div className="flex justify-center w-full space-x-4">
               <button
                 className="px-6 py-3 w-full cursor-pointer bg-[#e63946] text-white rounded-xl transition-all hover:bg-red-600"
-                onClick={() => {
-                  setSending(true);
-                  setTimeout(() => {
-                    setShowModal(false);
-                    setSending(false);
-                  }, 1000);
-                }}
+                onClick={handleErrorConfirm}
                 disabled={sending}
               >
                 {sending ? "Yuborilmoqda..." : "Ha"}
@@ -163,7 +215,8 @@ const VerdictPage = () => {
         <FileUploadModal
           isOpen={showFileUpload}
           onClose={() => setShowFileUpload(false)}
-          onUpload={handlePhotoUpload} // Передаем функцию загрузки фото
+          onUpload={handlePhotoUpload}
+          cadasterId={kadasterId}
         />
       )}
     </div>

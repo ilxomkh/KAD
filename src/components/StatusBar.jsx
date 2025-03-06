@@ -1,4 +1,3 @@
-// StatusBar.jsx
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { ChevronLeft } from "lucide-react";
@@ -20,9 +19,42 @@ const StatusBar = ({ currentStep, kadasterId, role, onMapButtonClick, mapActive 
   const [numPages, setNumPages] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
-  useEffect(() => {
+  // Функция запроса PDF из API с toggle-логикой
+  const fetchPdf = () => {
+    // Если модалка уже открыта, закрываем её
+    if (showModal) {
+      setShowModal(false);
+      return;
+    }
+    // Обнуляем старый pdfUrl, если он есть
     setPdfUrl(null);
-  }, []);
+    // Запрашиваем PDF по эндпоинту /cadastres/{id}/land_plan
+    fetch(`/cadastres/${kadasterId}/land_plan`)
+      .then((res) => {
+        if (!res.ok) {
+          return res.text().then((text) => {
+            throw new Error(`HTTP error ${res.status}: ${text}`);
+          });
+        }
+        return res.blob();
+      })
+      .then((blob) => {
+        const url = URL.createObjectURL(blob);
+        setPdfUrl(url);
+        setShowModal(true);
+      })
+      .catch((error) => {
+        console.error("Error fetching PDF:", error);
+      });
+  };
+
+  // При закрытии модального окна освобождаем объектный URL
+  useEffect(() => {
+    if (!showModal && pdfUrl) {
+      URL.revokeObjectURL(pdfUrl);
+      setPdfUrl(null);
+    }
+  }, [showModal, pdfUrl]);
 
   return (
     <div className="flex items-center bg-white py-3 px-6 z-40 rounded-2xl w-full relative">
@@ -89,14 +121,14 @@ const StatusBar = ({ currentStep, kadasterId, role, onMapButtonClick, mapActive 
           />
         )}
 
-        {/* PDF-кнопка с toggle и условными классами */}
+        {/* PDF-кнопка с toggle: если модалка открыта, второй клик закроет её */}
         <button
           className={`w-16 h-16 cursor-pointer justify-center rounded-xl flex items-center transition ${
             showModal
               ? "border border-[#459cff] bg-[#e8f3ff]"
               : "bg-white text-white border border-[#e9e9eb]"
           }`}
-          onClick={() => setShowModal((prev) => !prev)}
+          onClick={fetchPdf}
         >
           <img src={PdfIcon} alt="PDF" className="w-8 h-8" />
         </button>
@@ -105,7 +137,7 @@ const StatusBar = ({ currentStep, kadasterId, role, onMapButtonClick, mapActive 
       {showModal && (
         <div className="absolute top-40 inset-0 flex justify-end items-center z-50">
           <div className="bg-white max-w-3xl w-full relative">
-            {/* Кнопка закрытия удалена — для закрытия используйте PDF-кнопку */}
+            {/* Модальное окно для отображения PDF */}
             <div className="overflow-hidden w-full flex justify-center p-2">
               {pdfUrl ? (
                 <Document

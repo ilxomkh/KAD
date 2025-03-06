@@ -28,19 +28,23 @@ function computeAngle(ring, center) {
   return angleDeg;
 }
 
-const ArcGISPolygonEditor = ({ backendPolygonCoords, onConfirmChanges }) => {
+const ArcGISPolygonEditor = ({
+  backendPolygonCoords,
+  onConfirmChanges,
+  editable = false // Режим редактирования (true) или только просмотр (false)
+}) => {
   const mapRef = useRef(null);
-  const initialAngleRef = useRef(0); // Сохраняем исходный угол полигона относительно его центра
-  const initialCenterRef = useRef(null); // Сохраняем исходный центр полигона
+  const initialAngleRef = useRef(0); // Исходный угол полигона относительно центра
+  const initialCenterRef = useRef(null); // Исходный центр полигона
   const [view, setView] = useState(null);
   const [polygonGraphic, setPolygonGraphic] = useState(null);
   const [sketchVM, setSketchVM] = useState(null);
   const [activeButton, setActiveButton] = useState(null);
   const [showConfirmButton, setShowConfirmButton] = useState(false);
+  const minZoomLevel = 10;
 
   // Преобразуем координаты из [lat, lng] в [lng, lat]
   const ring = backendPolygonCoords.map(coord => [coord[1], coord[0]]);
-  const minZoomLevel = 10;
 
   useEffect(() => {
     const graphicsLayer = new GraphicsLayer();
@@ -111,65 +115,67 @@ const ArcGISPolygonEditor = ({ backendPolygonCoords, onConfirmChanges }) => {
       });
       graphicsLayer.add(circleGraphic);
 
-      // Создаем SketchViewModel с возможностями перемещения и поворота
-      const sketch = new SketchViewModel({
-        view: viewInstance,
-        layer: graphicsLayer,
-        updateOnGraphicClick: false,
-        // Скрываем вершины
-        vertexSymbol: {
-          type: "simple-marker",
-          style: "circle",
-          size: 0,
-          color: [0, 0, 0, 0],
-          outline: null
-        },
-        // Оставляем только поворот и перемещение
-        defaultSymbols: {
-          transform: {
-            boundary: {
-              type: "simple-line",
-              color: [0, 0, 0, 0],
-              width: 0
-            },
-            scaleHandle: {
-              type: "simple-marker",
-              size: 0,
-              color: [0, 0, 0, 0],
-              outline: null
-            },
-            rotationHandle: {
-              type: "simple-marker",
-              style: "circle",
-              size: 10,
-              color: [255, 0, 0, 0.8],
-              outline: {
-                color: [255, 255, 255],
-                width: 1
+      // Если разрешено редактирование, создаем SketchViewModel с возможностями перемещения и поворота
+      if (editable) {
+        const sketch = new SketchViewModel({
+          view: viewInstance,
+          layer: graphicsLayer,
+          updateOnGraphicClick: false,
+          // Скрываем вершины
+          vertexSymbol: {
+            type: "simple-marker",
+            style: "circle",
+            size: 0,
+            color: [0, 0, 0, 0],
+            outline: null
+          },
+          // Оставляем только поворот и перемещение
+          defaultSymbols: {
+            transform: {
+              boundary: {
+                type: "simple-line",
+                color: [0, 0, 0, 0],
+                width: 0
+              },
+              scaleHandle: {
+                type: "simple-marker",
+                size: 0,
+                color: [0, 0, 0, 0],
+                outline: null
+              },
+              rotationHandle: {
+                type: "simple-marker",
+                style: "circle",
+                size: 10,
+                color: [255, 0, 0, 0.8],
+                outline: {
+                  color: [255, 255, 255],
+                  width: 1
+                }
               }
             }
           }
-        }
-      });
-      setSketchVM(sketch);
+        });
+        setSketchVM(sketch);
 
-      // Отслеживаем события обновления. Блокируем попытки изменения формы или масштабирования.
-      sketch.on("update", (event) => {
-        const blockedActions = ["reshape", "vertex-move", "scale"];
-        if (blockedActions.includes(event.toolEventInfo?.type)) {
-          console.log("Блокируем попытку изменить форму или масштабировать полигон.");
-          sketch.cancel();
-        }
-        console.log("Update event:", event.state, event.toolEventInfo);
-      });
+        // Блокируем попытки изменить форму или масштабировать полигон
+        sketch.on("update", (event) => {
+          const blockedActions = ["reshape", "vertex-move", "scale"];
+          if (blockedActions.includes(event.toolEventInfo?.type)) {
+            console.log("Блокируем попытку изменить форму или масштабировать полигон.");
+            sketch.cancel();
+          }
+          console.log("Update event:", event.state, event.toolEventInfo);
+        });
+      }
     });
 
     return () => {
       if (viewInstance) viewInstance.destroy();
     };
-  }, [backendPolygonCoords]);
+  }, [backendPolygonCoords, editable]);
 
-  // Режим трансформации (поворот и перемещение)
+  // Функция для запуска трансформации (если редактирование разрешено)
   const handleTransform = () => {
     if (sketchVM && polygonGraphic) {
       setActiveButton("transform");
@@ -241,43 +247,46 @@ const ArcGISPolygonEditor = ({ backendPolygonCoords, onConfirmChanges }) => {
     <div className="relative cursor-grab active:cursor-grabbing">
       <div ref={mapRef} style={{ width: "100vw", height: "100vh" }}></div>
 
-      {/* Кнопки управления (трансформация и зум) */}
-      <div className="absolute top-1/2 right-4 transform -translate-y-1/2 space-y-3 z-50 pointer-events-auto">
-        <div className="grid grid-cols-1 gap-6">
-          <button
-            className={`p-2 w-10 bg-white cursor-pointer shadow-lg rounded-xl hover:text-blue-500 text-gray-700 transition-all ${
-              activeButton === "transform" ? "bg-blue-500 text-gray-700" : "bg-blue-500"
-            }`}
-            onClick={handleTransform}
-          >
-            <Move size={24} />
-          </button>
-          <button
-            className="p-2 w-10 bg-white shadow-lg cursor-pointer rounded-xl hover:text-blue-500 text-gray-700"
-            onClick={handleZoomIn}
-          >
-            <Plus size={24} />
-          </button>
-          <button
-            className="p-2 w-10 bg-white shadow-lg cursor-pointer rounded-xl hover:text-blue-500 text-gray-700"
-            onClick={handleZoomOut}
-            disabled={view?.zoom <= minZoomLevel}
-          >
-            <Minus size={24} />
-          </button>
-        </div>
-      </div>
+      {/* Если разрешено редактирование, показываем кнопки управления */}
+      {editable && (
+        <>
+          <div className="absolute top-1/2 right-4 transform -translate-y-1/2 space-y-3 z-50 pointer-events-auto">
+            <div className="grid grid-cols-1 gap-6">
+              <button
+                className={`p-2 w-10 bg-white cursor-pointer shadow-lg rounded-xl hover:text-blue-500 text-gray-700 transition-all ${
+                  activeButton === "transform" ? "bg-blue-500 text-gray-700" : "bg-blue-500"
+                }`}
+                onClick={handleTransform}
+              >
+                <Move size={24} />
+              </button>
+              <button
+                className="p-2 w-10 bg-white shadow-lg cursor-pointer rounded-xl hover:text-blue-500 text-gray-700"
+                onClick={handleZoomIn}
+              >
+                <Plus size={24} />
+              </button>
+              <button
+                className="p-2 w-10 bg-white shadow-lg cursor-pointer rounded-xl hover:text-blue-500 text-gray-700"
+                onClick={handleZoomOut}
+                disabled={view?.zoom <= minZoomLevel}
+              >
+                <Minus size={24} />
+              </button>
+            </div>
+          </div>
 
-      {/* Кнопка подтверждения изменений */}
-      {showConfirmButton && (
-        <div className="absolute top-36 right-8 rounded-xl flex space-x-4 z-50 pointer-events-auto">
-          <button
-            className="px-6 py-3 flex cursor-pointer bg-white items-center justify-center text-black rounded-xl transition-all hover:bg-gray-100"
-            onClick={handleConfirm}
-          >
-            Tasdiqlash <CheckIcon size={18} className="ml-2" />
-          </button>
-        </div>
+          {showConfirmButton && (
+            <div className="absolute top-36 right-8 rounded-xl flex space-x-4 z-50 pointer-events-auto">
+              <button
+                className="px-6 py-3 flex cursor-pointer bg-white items-center justify-center text-black rounded-xl transition-all hover:bg-gray-100"
+                onClick={handleConfirm}
+              >
+                Tasdiqlash <CheckIcon size={18} className="ml-2" />
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
