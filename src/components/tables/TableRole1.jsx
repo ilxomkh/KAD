@@ -1,42 +1,45 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 import Pagination from "../Pagination";
 import PlanButton from "../PlanButton";
 import DecisionButton from "../DecisionButton";
+import { BASE_URL } from "../../utils/api"; // путь может меняться в зависимости от структуры проекта
 
 const TableRole1 = () => {
   const navigate = useNavigate();
-
-  const totalData = 3000; // Общее количество записей (получается из API)
-  const itemsPerPage = 30; // Сколько записей на странице
+  const [cadastres, setCadastres] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const itemsPerPage = 30;
   const [currentPage, setCurrentPage] = useState(1);
 
-  const data = Array.from({ length: totalData }, (_, i) => ({
-    id: i + 1,
-    kadasterId: `20:03:41:02:0${i}`,
-    modda: "4-modda", // Симуляция того, что у 7-modda нет PDF
-    region: "Buxoro",
-    district: "Jondor",
-    address: "Oqtepa MFY, Do‘stlik k. 12-uy",
-    spaceImageId: `ID_103001007A92B${i}`,
-    spaceImageDate: "08.04.2018-y",
-    category: "Turar",
-    arrivalDate: "12.02.2025-y",
-    deadline: "10 kun qoldi",
-    planPdf: `/api/pdf/plan/${i}`, // Симуляция ссылок на PDF
-    decisionPdf: `/api/pdf/decision/${i}`, // У 7-modda нет PDF
-    status: i % 2 === 0 ? "TEKSHIRUVDAN" : "AGENTLIKDAN",
-  }));
+  useEffect(() => {
+    fetch(`${BASE_URL}/cadastre`)
+      .then((res) => res.json())
+      .then((data) => {
+        setCadastres(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        setError(err);
+        setLoading(false);
+      });
+  }, []);
 
-  // Фильтруем данные по текущей странице
-  const paginatedData = data.slice(
+  if (loading) return <div>Загрузка...</div>;
+  if (error) return <div>Ошибка загрузки данных: {error.message}</div>;
+
+  // Формируем данные для текущей страницы
+  const totalData = cadastres.length;
+  const paginatedData = cadastres.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
 
+  // Переход к детальному просмотру
   const handleRowClick = (item) => {
-    navigate(`/compare/${item.kadasterId}`, { state: item });
+    navigate(`/compare/${item.cadastreId}`, { state: item });
   };
 
   // Функция скачивания PDF
@@ -52,10 +55,8 @@ const TableRole1 = () => {
 
   return (
     <div className="p-4 md:p-6 bg-[#e4ebf3] rounded-xl">
-      {/* Обёртка для горизонтальной прокрутки на узких экранах */}
       <div className="overflow-x-auto">
         <table className="min-w-full cursor-default bg-[#f9f9f9] px-6 rounded-t-3xl overflow-hidden border-separate border-spacing-y-3">
-          {/* Заголовок таблицы */}
           <thead className="bg-[#f9f9f9] text-gray-600 uppercase text-sm md:text-base leading-normal">
             <tr className="border-b cursor-default border-[#F7F9FB]">
               <th className="py-2 px-2 text-center font-medium w-8 sm:w-10 md:w-12"></th>
@@ -98,13 +99,10 @@ const TableRole1 = () => {
               <th className="py-2 px-2 text-center font-medium w-24 md:w-32">
                 Qaytish
               </th>
-              <th className="py-2 px-2 text-end font-medium w-8 sm:w-10 md:w-12">
-                {/* Иконка для действия */}
-              </th>
+              <th className="py-2 px-2 text-end font-medium w-8 sm:w-10 md:w-12"></th>
             </tr>
           </thead>
 
-          {/* Тело таблицы */}
           <tbody className="text-gray-700 text-xs md:text-sm">
             {paginatedData.map((item, index) => (
               <tr
@@ -116,7 +114,7 @@ const TableRole1 = () => {
                   {(currentPage - 1) * itemsPerPage + index + 1}.
                 </td>
                 <td className="py-4 px-2 bg-white text-center font-semibold transition-colors duration-500 group-hover:text-blue-500">
-                  {item.kadasterId}
+                  {item.cadastreId}
                 </td>
                 <td className="py-4 px-2 bg-white text-center font-bold">
                   {item.modda}
@@ -134,38 +132,38 @@ const TableRole1 = () => {
                   {item.spaceImageId}
                 </td>
                 <td className="py-4 px-2 bg-white text-center">
-                  {item.spaceImageDate}
+                  {new Date(item.spaceImageDate).toLocaleDateString()}
                 </td>
                 <td className="py-4 px-2 bg-white text-center">
-                  {item.category}
+                  {item.type}
                 </td>
                 <td className="py-4 px-2 bg-white text-center">
-                  {item.arrivalDate}
+                  {new Date(item.assignDate).toLocaleDateString()}
                 </td>
                 <td className="py-4 px-2 bg-white text-orange-500 font-semibold text-center">
-                  {item.deadline}
+                  {new Date(item.deadline).toLocaleDateString()}
                 </td>
                 <td className="py-4 px-2 bg-white text-center">
-                  {item.planPdf && (
+                  {item.landPlan && (
                     <PlanButton
-                      planPdf={item.planPdf}
+                      planPdf={item.landPlan}
                       downloadPdf={downloadPdf}
                     />
                   )}
                 </td>
                 <td className="py-4 px-2 bg-white text-center">
-                  {item.decisionPdf ? (
+                  {item.governorDecision ? (
                     <DecisionButton
-                    decisionPdf={item.decisionPdf}
-                    downloadPdf={downloadPdf}
-                  />
+                      decisionPdf={item.governorDecision}
+                      downloadPdf={downloadPdf}
+                    />
                   ) : (
                     ""
                   )}
                 </td>
                 <td
                   className={`py-4 px-2 bg-white font-medium ${
-                    item.status === "TEKSHIRUVDAN"
+                    item.status === "pending"
                       ? "text-blue-500"
                       : "text-red-500"
                   } text-center`}

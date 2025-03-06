@@ -68,30 +68,34 @@ const VerdictPage = () => {
 
   // 3. Нажатие "Davom etish"
   const handleProceed = async () => {
-    if (!editedPolygonData) return;
+    // Проверяем, что обязательные данные заполнены
+    if (buildingExists === null || verdict.trim() === "") return;
 
     const payload = {
-      proceed: true,
-      geometry: editedPolygonData.geometry,
-      rotation: editedPolygonData.rotation,
-      building_presence: buildingExists,
+      buildingPresence: buildingExists,
+      verdict: verdict,
     };
 
     try {
-      const response = await fetch("/api/submit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const response = await fetch(
+        `${BASE_URL}/cadastre/${kadasterId}/verdict`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
       if (response.ok) {
         navigate("/role1tablepage");
+      } else {
+        console.error("Ошибка при отправке данных verdict");
       }
     } catch (error) {
-      console.error("Ошибка при отправке данных:", error);
+      console.error("Ошибка при отправке данных verdict:", error);
     }
   };
 
-  // 4. Обработчик для кнопки "Ha" в модальном окне "Xatolik bor"
+  // 4. Обработчик для кнопки "Xatolik bor" в модальном окне "Xatolik bor"
   const handleErrorConfirm = async () => {
     setSending(true);
     const payload = {
@@ -100,11 +104,14 @@ const VerdictPage = () => {
     };
 
     try {
-      const response = await fetch(`${BASE_URL}/cadastre/${kadasterId}/cadastre_error`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const response = await fetch(
+        `${BASE_URL}/cadastre/${kadasterId}/cadastre_error`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
       if (response.ok) {
         console.log("Данные cadastre_error успешно отправлены");
         navigate("/role1tablepage");
@@ -177,7 +184,7 @@ const VerdictPage = () => {
             <button
               className="px-6 py-3 cursor-pointer bg-blue-600 text-white rounded-xl flex items-center justify-center transition-all hover:bg-blue-700"
               onClick={handleProceed}
-              disabled={editedPolygonData === null || buildingExists === null}
+              disabled={buildingExists === null || verdict.trim() === ""}
             >
               Davom etish <ChevronRight className="ml-2 w-6 h-6 mt-0.5" />
             </button>
