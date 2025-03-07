@@ -1,15 +1,25 @@
 import React from "react";
 import { BASE_URL } from "../utils/api";
 
+const token =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoxLCJ1c2VybmFtZSI6InJvb3QiLCJyb2xlIjo" +
+  "iYWRtaW4ifSwiZXhwIjoxNzQxMjY2OTg4LCJpYXQiOjE3NDEyNjMzODh9.Vz4vUbpxqC37y41e3xArINEhWU9Inx7c92uzX7dnQ0A";
 
-const DecisionButton = ({ cadastreId }) => {
-  if (!cadastreId) return null;
+const DecisionButton = ({ item }) => {
+  if (!item || !item.ID) return null;
 
   const downloadDecision = async (e) => {
     e.stopPropagation();
     try {
+      // Формируем URL с использованием item.ID
       const response = await fetch(
-        `${BASE_URL}/cadastre/${cadastreId}/governor_decree`
+        `${BASE_URL}/api/cadastre/${item.ID}/governor_decree`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       if (!response.ok) {
         throw new Error("Ошибка при загрузке решения");
@@ -18,7 +28,8 @@ const DecisionButton = ({ cadastreId }) => {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = "governor_decree.pdf";
+      // Используем имя файла из данных или стандартное имя
+      link.download = item.governorDecision || "governor_decree.pdf";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -30,7 +41,7 @@ const DecisionButton = ({ cadastreId }) => {
 
   return (
     <button
-      className="flex items-center gap-2 cursor-pointer my-button transition-colors duration-300"
+      className="flex items-center gap-2 my-button cursor-pointer transition-colors duration-300"
       onClick={downloadDecision}
     >
       <svg
@@ -40,7 +51,7 @@ const DecisionButton = ({ cadastreId }) => {
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
       >
-        <g clipPath="url(#clip0_decision)">
+        <g clipPath="url(#clip0_plan)">
           <path
             d="M4.02859 3.2C4.02859 1.76406 5.19265 0.6 6.62859 0.6H15.2031L23.4 7.77226V20.8C23.4 22.2359 22.236 23.4 20.8 23.4H6.62859C5.19265 23.4 4.02859 22.2359 4.02859 20.8V3.2Z"
             fill="white"
@@ -70,7 +81,7 @@ const DecisionButton = ({ cadastreId }) => {
           fill="white"
         />
         <defs>
-          <clipPath id="clip0_decision">
+          <clipPath id="clip0_plan">
             <rect
               width="20.5714"
               height="24"
@@ -79,7 +90,7 @@ const DecisionButton = ({ cadastreId }) => {
             />
           </clipPath>
         </defs>
-      </svg>
+      </svg>{" "}
       Qaror
     </button>
   );

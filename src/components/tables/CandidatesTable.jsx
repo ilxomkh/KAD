@@ -1,54 +1,55 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronRight, X, XCircle } from "lucide-react";
+import { ChevronRight, XCircle } from "lucide-react";
 import Pagination from "../Pagination";
 import PlanButton from "../PlanButton";
 import DecisionButton from "../DecisionButton";
 import { BASE_URL } from "../../utils/api";
 
+const token =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoxLCJ1c2VybmFtZSI6InJvb3QiLCJyb2xlIjoiYWRtaW4ifSwiZXhwIjoxNzQxMzMwNTkxLCJpYXQiOjE3NDEzMjY5OTF9.FHIbYv-tPbnqrbox1HDmcZfuXvGhvMOmjMHzC98_zIQ";
 
-const CandidatesTable = () => {
+/**
+ * Компонент CandidatesTable принимает готовые данные через проп `data`.
+ * В нём нет локальной загрузки списка кадастров, только логика клика по строке.
+ */
+function CandidatesTable({ data }) {
   const navigate = useNavigate();
-  const [data, setData] = useState([]);
-  const [logs, setLogs] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  // Состояние для управления модалкой
+  // Логи по выбранному элементу
+  const [logs, setLogs] = useState([]);
+  // Локальные состояния для модального окна и выбранного элемента
   const [isModalOpen, setIsModalOpen] = useState(false);
-  // Храним текущую выбранную запись (кадастр)
   const [selectedItem, setSelectedItem] = useState(null);
 
-  // Пагинация
+  // Состояние для отображения "Загрузка логов..."
+  const [logsLoading, setLogsLoading] = useState(false);
+  // Состояние для ошибок при загрузке логов
+  const [logsError, setLogsError] = useState(null);
+
+  // Пагинация (только для отображения data, которое приходит через проп)
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 30;
 
-  // Запрашиваем кадастровые данные с API
-  useEffect(() => {
-    const fetchCadastres = async () => {
-      try {
-        const response = await fetch(`${BASE_URL}/cadastre`);
-        if (!response.ok) {
-          throw new Error("Ошибка при загрузке кадастров");
-        }
-        const cadastres = await response.json();
-        setData(cadastres);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const totalData = data.length;
+  const paginatedData = data.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
-    fetchCadastres();
-  }, []);
-
-  // Функция-обработчик клика по строке
+  // При клике на строку загружаем логи конкретного item
   const handleRowClick = async (item) => {
+    setLogsError(null);
+    setLogsLoading(true);
     try {
-      setLoading(true);
-      // Пример: если у вас item.id — это нужный идентификатор
-      const response = await fetch(`${BASE_URL}/item_logs/by_item/${item.id}`);
+      // Предполагаем, что в item есть поле ID (или другое).
+      // Замените на нужное поле, которое принимает бэкенд
+      const response = await fetch(`${BASE_URL}/api/item_logs/by_item/${item.ID}`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
       if (!response.ok) {
         throw new Error("Ошибка при загрузке логов");
       }
@@ -57,19 +58,13 @@ const CandidatesTable = () => {
       setSelectedItem(item);
       setIsModalOpen(true);
     } catch (err) {
-      setError(err.message);
+      setLogsError(err.message);
     } finally {
-      setLoading(false);
+      setLogsLoading(false);
     }
   };
 
-  const totalData = data.length;
-  const paginatedData = data.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
-  // Функция скачивания PDF-файла
+  // Пример функции для скачивания PDF, если нужно
   const downloadPdf = (url) => {
     if (!url) return;
     const link = document.createElement("a");
@@ -80,16 +75,8 @@ const CandidatesTable = () => {
     document.body.removeChild(link);
   };
 
-  if (loading && !isModalOpen) {
-    return <div>Загрузка...</div>;
-  }
-  if (error) {
-    return <div>Ошибка: {error}</div>;
-  }
-
   return (
     <div className="relative">
-      {/* Основной блок с таблицей */}
       <div className="p-6 bg-[#e4ebf3] rounded-xl">
         <div className="overflow-x-auto">
           <table className="min-w-full bg-[#f9f9f9] rounded-t-3xl px-6 overflow-hidden border-separate border-spacing-y-3">
@@ -138,7 +125,7 @@ const CandidatesTable = () => {
             <tbody className="text-gray-700 text-sm md:text-base">
               {paginatedData.map((item, index) => (
                 <tr
-                  key={item.id}
+                  key={item.id || index}
                   className="group rounded-3xl border border-gray-300 transition transform cursor-pointer"
                   onClick={() => handleRowClick(item)}
                 >
@@ -164,7 +151,9 @@ const CandidatesTable = () => {
                     {item.spaceImageId}
                   </td>
                   <td className="py-4 px-2 bg-white text-center w-32">
-                    {new Date(item.spaceImageDate).toLocaleDateString()}
+                    {item.spaceImageDate
+                      ? new Date(item.spaceImageDate).toLocaleDateString()
+                      : ""}
                   </td>
                   <td className="py-4 px-2 bg-white text-center w-24">
                     {item.type}
@@ -179,16 +168,11 @@ const CandidatesTable = () => {
                       ? new Date(item.deadline).toLocaleDateString()
                       : ""}
                   </td>
-                  <td className="py-4 px-6 bg-white text-center">
-                    {item.landPlan && <PlanButton cadastreId={item.id} />}
+                  <td className="py-4 px-2 bg-white text-center">
+                    {item.landPlan && <PlanButton item={item} />}
                   </td>
-                  <td className="py-4 px-6 bg-white text-center">
-                    {item.governorDecision && (
-                      <DecisionButton
-                        decisionPdf={item.governorDecision}
-                        downloadPdf={downloadPdf}
-                      />
-                    )}
+                  <td className="py-4 px-2 bg-white text-center">
+                    {item.governorDecision && <DecisionButton item={item} />}
                   </td>
                   <td className="justify-end flex items-center py-5 bg-white rounded-r-3xl">
                     <ChevronRight className="mr-2" />
@@ -198,6 +182,7 @@ const CandidatesTable = () => {
             </tbody>
           </table>
         </div>
+
         {/* Пагинация */}
         <div className="flex justify-center py-4 bg-[#f9f9f9] rounded-b-3xl">
           <Pagination
@@ -209,18 +194,18 @@ const CandidatesTable = () => {
         </div>
       </div>
 
-      {/* Боковая панель (модалка) для логов */}
+      {/* Модальное окно для логов */}
       {isModalOpen && (
         <>
-          {/* Фон для затемнения остальной части экрана (опционально) */}
+          {/* Overlay */}
           <div
             className="fixed inset-0 bg-black/20 z-40"
             onClick={() => setIsModalOpen(false)}
           ></div>
 
-          {/* Само модальное окно (панель справа) */}
+          {/* Панель модального окна */}
           <div className="fixed top-0 rounded-l-2xl right-0 w-full sm:w-[320px] md:w-[400px] lg:w-[500px] h-full bg-white z-50 shadow-lg flex flex-col">
-            {/* Шапка модалки */}
+            {/* Заголовок модального окна */}
             <div className="flex items-center justify-between p-4">
               <h2 className="text-lg font-bold">Loglar</h2>
               <button
@@ -231,16 +216,17 @@ const CandidatesTable = () => {
               </button>
             </div>
 
-            {/* Содержимое с логами */}
+            {/* Контент модального окна */}
             <div className="p-4 overflow-y-auto flex-1">
-              {loading ? (
+              {logsLoading ? (
                 <div className="text-center">Загрузка логов...</div>
+              ) : logsError ? (
+                <div className="text-center text-red-500">
+                  Ошибка: {logsError}
+                </div>
               ) : logs && logs.length > 0 ? (
-                logs.map((log) => (
-                  <div
-                    key={log.id}
-                    className="mb-4 p-3"
-                  >
+                logs.map((log, index) => (
+                  <div key={log.id || index} className="mb-4 p-3">
                     <div className="text-sm text-gray-600 mb-1">
                       {new Date(log.datetime).toLocaleString()}
                     </div>
@@ -272,6 +258,6 @@ const CandidatesTable = () => {
       )}
     </div>
   );
-};
+}
 
 export default CandidatesTable;

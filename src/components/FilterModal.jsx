@@ -15,8 +15,9 @@ const FilterModal = ({ isOpen, onClose, onApply }) => {
     tekshiruv: "",
   });
 
-  const handleSelect = (group, value) => {
-    setSelectedOptions((prev) => ({ ...prev, [group]: value }));
+  const handleSelect = (groupKey, value) => {
+    console.log(`Выбрано для ${groupKey}:`, value);
+    setSelectedOptions((prev) => ({ ...prev, [groupKey]: value }));
   };
 
   // Определяем массивы опций для каждой группы
@@ -41,17 +42,17 @@ const FilterModal = ({ isOpen, onClose, onApply }) => {
   const statusOptions = ["Ha", "Yo‘q"];
   const tekshiruvOptions = ["Ha", "Yo‘q"];
 
-  // Функция для отрисовки группы опций
-  const renderOptionGroup = (groupName, options) => (
+  // Функция для отрисовки группы опций с передачей ключа для состояния
+  const renderOptionGroup = (groupLabel, options, groupKey) => (
     <div className="mb-4">
-      <p className="font-semibold mb-2">{groupName}</p>
+      <p className="font-semibold mb-2">{groupLabel}</p>
       <div className="flex flex-wrap gap-2">
         {options.map((item) => (
           <div
             key={item}
-            onClick={() => handleSelect(groupName.toLowerCase(), item)}
+            onClick={() => handleSelect(groupKey, item)}
             className={`cursor-pointer border border-[#f3f3f6] rounded-full px-4 py-2 ${
-              selectedOptions[groupName.toLowerCase()] === item
+              selectedOptions[groupKey] === item
                 ? "bg-[#1477e6] text-white border-[#1477e6]"
                 : "bg-white text-gray-700"
             }`}
@@ -66,7 +67,7 @@ const FilterModal = ({ isOpen, onClose, onApply }) => {
   // При нажатии на кнопку "Qo‘llash" вызываем onApply с выбранными параметрами,
   // после чего закрываем модалку
   const handleApply = () => {
-    // Здесь можно добавить предварительную обработку или валидацию при необходимости
+    console.log("Применение фильтров:", selectedOptions);
     onApply(selectedOptions);
     onClose();
   };
@@ -88,13 +89,13 @@ const FilterModal = ({ isOpen, onClose, onApply }) => {
 
         {/* Основное содержимое модалки */}
         <div>
-          {renderOptionGroup("Viloyat", viloyatOptions)}
-          {renderOptionGroup("Modda", moddaOptions)}
-          {renderOptionGroup("Kelgan sanasi", sanasiOptions)}
-          {renderOptionGroup("Toifa", toifaOptions)}
-          {renderOptionGroup("Kadastr kategoriyasi", kadastrOptions)}
-          {renderOptionGroup("Status", statusOptions)}
-          {renderOptionGroup("Tekshiruv kategoriyasi", tekshiruvOptions)}
+          {renderOptionGroup("Viloyat", viloyatOptions, "viloyat")}
+          {renderOptionGroup("Modda", moddaOptions, "modda")}
+          {renderOptionGroup("Kelgan sanasi", sanasiOptions, "sanasi")}
+          {renderOptionGroup("Toifa", toifaOptions, "toifa")}
+          {renderOptionGroup("Kadastr kategoriyasi", kadastrOptions, "kadastr")}
+          {renderOptionGroup("Status", statusOptions, "status")}
+          {renderOptionGroup("Tekshiruv kategoriyasi", tekshiruvOptions, "tekshiruv")}
         </div>
 
         {/* Кнопки управления */}

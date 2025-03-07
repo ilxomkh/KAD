@@ -1,14 +1,26 @@
 import React from "react";
 import { BASE_URL } from "../utils/api";
 
+const token =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoxLCJ1c2VybmFtZSI6InJvb3QiLCJyb2xlIjoiYWRtaW4ifSwiZXhwIjoxNzQxMjY2OTg4LCJpYXQiOjE3NDEyNjMzODh9.Vz4vUbpxqC37y41e3xArINEhWU9Inx7c92uzX7dnQ0A";
 
-const PlanButton = ({ cadastreId }) => {
-  if (!cadastreId) return null;
+const PlanButton = ({ item }) => {
+  // Проверяем наличие объекта и item.ID
+  if (!item || !item.ID) return null;
 
   const downloadPlan = async (e) => {
     e.stopPropagation();
     try {
-      const response = await fetch(`${BASE_URL}/cadastre/${cadastreId}/land_plan`);
+      // Формируем URL с использованием item.ID
+      const response = await fetch(
+        `${BASE_URL}/api/cadastre/${item.ID}/land_plan`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       if (!response.ok) {
         throw new Error("Ошибка при загрузке плана");
       }
@@ -16,7 +28,8 @@ const PlanButton = ({ cadastreId }) => {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = "land_plan.pdf";
+      // Используем имя файла, пришедшее в данных, или стандартное имя
+      link.download = item.landPlan || "land_plan.pdf";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -77,7 +90,7 @@ const PlanButton = ({ cadastreId }) => {
             />
           </clipPath>
         </defs>
-      </svg>
+      </svg>{" "}
       Reja
     </button>
   );

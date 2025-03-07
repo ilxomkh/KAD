@@ -2,56 +2,40 @@ import React, { useState, useEffect } from "react";
 import Pagination from "../Pagination";
 import ToggleSwitch from "../Toggle";
 import ActionDropdown from "../ActionDropdown";
-import { BASE_URL } from "../../utils/api";
 
-
-const UsersTable = () => {
-  const itemsPerPage = 12;
+const UsersTable = ({ data = [] }) => {
+  // Локальное состояние для данных внутри таблицы
+  const [localData, setLocalData] = useState(data);
   const [currentPage, setCurrentPage] = useState(1);
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const itemsPerPage = 12;
 
-  // Получаем данные с API
+  // Когда проп data меняется, синхронизируем локальное состояние
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch(`${BASE_URL}/users`);
-        if (!response.ok) {
-          throw new Error("Ошибка сети");
-        }
-        const users = await response.json();
-        setData(users);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
+    setLocalData(data);
+  }, [data]);
 
-    fetchData();
-  }, []);
-
-  const paginatedData = data.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
-  // Переключение статуса пользователя
+  // Функция переключения статуса пользователя
   const toggleStatus = (id) => {
-    setData((prevData) =>
+    setLocalData((prevData) =>
       prevData.map((item) =>
-        item.id === id ? { ...item, active: !item.active } : item
+        (item.id || item._id || item.userId) === id
+          ? { ...item, active: !item.active }
+          : item
       )
     );
   };
 
-  if (loading) return <div>Загрузка...</div>;
-  if (error) return <div>Ошибка: {error}</div>;
+  // Пагинация
+  const paginatedData = localData.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  if (!localData.length) return <div>Данные не найдены</div>;
 
   return (
     <div className="p-6 bg-[#e4ebf3] min-h-screen w-screen">
-      <div className="mt-4 bg-[#f9f9f9] p-6 rounded-t-3xl ">
+      <div className="mt-4 bg-[#f9f9f9] p-6 rounded-t-3xl">
         <table className="w-full border-separate border-spacing-y-3">
           <thead>
             <tr className="text-gray-600 cursor-default text-left uppercase text-md bg-[#f9f9f9]">
@@ -69,42 +53,45 @@ const UsersTable = () => {
             </tr>
           </thead>
           <tbody className="text-gray-700 text-md">
-            {paginatedData.map((item) => (
-              <tr
-                key={item.id}
-                className="group transition rounded-3xl cursor-pointer relative"
-              >
-                <td className="py-6 px-4 bg-white rounded-l-3xl">{item.id}</td>
-                <td className="py-6 px-4 bg-white">{item.firstName}</td>
-                <td className="py-6 px-4 bg-white">{item.lastName}</td>
-                <td className="py-6 px-4 bg-white">{item.middleName}</td>
-                <td className="py-6 px-4 bg-white">{item.role}</td>
-                <td className="py-6 px-4 bg-white">{item.position}</td>
-                <td className="py-6 px-4 bg-white">
-                  <ToggleSwitch
-                    userId={item.id}
-                    initialStatus={item.active}
-                    onToggle={() => toggleStatus(item.id)}
-                  />
-                </td>
-                <td className="py-6 px-4 bg-white">{item.tasksCompleted}</td>
-                <td className="py-6 px-4 bg-white">{item.tasksFailed}</td>
-                <td className="py-6 px-4 bg-white">
-                  {item.createdAt
-                    ? new Date(item.createdAt).toLocaleDateString()
-                    : ""}
-                </td>
-                <td className="px-4 bg-white rounded-r-3xl relative">
-                  <ActionDropdown item={item} />
-                </td>
-              </tr>
-            ))}
+            {paginatedData.map((item, index) => {
+              const userId = item.id || item._id || item.userId;
+              return (
+                <tr
+                  key={userId || index}
+                  className="group transition rounded-3xl cursor-pointer relative"
+                >
+                  <td className="py-6 px-4 bg-white rounded-l-3xl">{item.ID}</td>
+                  <td className="py-6 px-4 bg-white">{item.firstName}</td>
+                  <td className="py-6 px-4 bg-white">{item.lastName}</td>
+                  <td className="py-6 px-4 bg-white">{item.middleName}</td>
+                  <td className="py-6 px-4 bg-white">{item.role}</td>
+                  <td className="py-6 px-4 bg-white">{item.position}</td>
+                  <td className="py-6 px-4 bg-white">
+                    <ToggleSwitch
+                      userId={item.ID}
+                      initialStatus={item.active}
+                      onToggle={() => toggleStatus(item.ID)}
+                    />
+                  </td>
+                  <td className="py-6 px-4 bg-white">{item.tasksCompleted}</td>
+                  <td className="py-6 px-4 bg-white">{item.tasksFailed}</td>
+                  <td className="py-6 px-4 bg-white">
+                    {item.CreatedAt
+                      ? new Date(item.CreatedAt).toLocaleDateString()
+                      : ""}
+                  </td>
+                  <td className="px-4 bg-white rounded-r-3xl relative">
+                    <ActionDropdown item={item} />
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
       <div className="flex justify-center py-4 bg-[#f9f9f9] rounded-b-3xl">
         <Pagination
-          totalItems={data.length}
+          totalItems={localData.length}
           itemsPerPage={itemsPerPage}
           currentPage={currentPage}
           onPageChange={setCurrentPage}

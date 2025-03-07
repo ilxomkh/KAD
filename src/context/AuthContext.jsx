@@ -25,13 +25,13 @@ export const AuthProvider = ({ children }) => {
         // Делаем редирект после входа
         if (role === "admin") {
             navigate("/"); // Перенаправляем на админскую панель
-        } else if (role === "1-role") {
+        } else if (role === "geometry_fix") {
             navigate("/");
-        } else if (role === "2-role") {
+        } else if (role === "verify") {
             navigate("/");
-        } else if (role === "3-role") {
+        } else if (role === "agency") {
             navigate("/");
-        } else if (role === "4-role") {
+        } else if (role === "verdict_79") {
             navigate("/");
         }
     };

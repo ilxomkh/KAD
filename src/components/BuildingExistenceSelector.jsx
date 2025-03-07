@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Check, X } from "lucide-react";
 
 const BuildingExistenceSelector = ({
-  kadasterId,
+  id,
   buildingExists,
   setBuildingExists,
   // Теперь назовём это setVerdict, чтобы было понятно,

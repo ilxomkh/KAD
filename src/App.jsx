@@ -33,34 +33,34 @@ const RoleBasedRoutes = () => {
             )}
 
             {/* 1-я роль: Таблица + Сравнение */}
-            {user.role === "1-role" && (
+            {user.role === "geometry_fix" && (
                 <>
                     <Route path="/" element={<Role1TablePage />} />
-                    <Route path="/compare/:kadasterId" element={<ComparePage />} />
+                    <Route path="/compare/:id" element={<ComparePage />} />
                 </>
             )}
 
             {/* 2-я роль: Таблица + Проверка */}
-            {user.role === "2-role" && (
+            {user.role === "verify" && (
                 <>
                     <Route path="/" element={<Role2TablePage />} />
-                    <Route path="/check/:kadasterId" element={<CheckPage />} />
+                    <Route path="/check/:id" element={<CheckPage />} />
                 </>
             )}
 
             {/* 3-я роль: Таблица + Агентская проверка */}
-            {user.role === "3-role" && (
+            {user.role === "agency" && (
                 <>
                     <Route path="/" element={<Role3TablePage />} />
-                    <Route path="/agency-review/:kadasterId" element={<AgencyReviewPage />} />
+                    <Route path="/agency-review/:id" element={<AgencyReviewPage />} />
                 </>
             )}
 
-            {/* 3-я роль: Таблица + Агентская проверка */}
-            {user.role === "4-role" && (
+            {/* 4-я роль: Таблица + Вердикт */}
+            {user.role === "verdict_79" && (
                 <>
                     <Route path="/" element={<Role4TablePage />} />
-                    <Route path="/verdict/:kadasterId" element={<VerdictPage />} />
+                    <Route path="/verdict/:id" element={<VerdictPage />} />
                 </>
             )}
 

@@ -1,7 +1,7 @@
 import React from "react";
 import { Map } from "lucide-react";
 
-const MapButton = ({ kadasterId, onClick, active }) => {
+const MapButton = ({ id, onClick, active }) => {
   return (
     <button
       className={`w-16 h-16 cursor-pointer justify-center rounded-xl flex items-center transition ${

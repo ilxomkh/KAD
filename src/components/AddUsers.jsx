@@ -1,9 +1,13 @@
-import { useState } from "react";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { XCircle, Eye, EyeOff } from "lucide-react";
 import RoleDropdown from "./RoleDropdown";
 import PositionDropdown from "./PositionDropdown";
 import { BASE_URL } from "../utils/api";
 
+// Замените на актуальное значение токена
+const token =
+"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoxLCJ1c2VybmFtZSI6InJvb3QiLCJyb2xlIjoiYWRtaW4ifSwiZXhwIjoxNzQxMzQyNjAxLCJpYXQiOjE3NDEzMzkwMDF9.tYra8W6Bl3Gq08GcQiI_CJT7a3URzVUKW_gsI-7fFhI";
 
 const AddUsers = ({ onClose }) => {
   const [formData, setFormData] = useState({
@@ -17,24 +21,23 @@ const AddUsers = ({ onClose }) => {
     position: "",
   });
   const [showPassword, setShowPassword] = useState(false);
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async () => {
-    // Проверяем, что все поля заполнены (используем trim для текстовых полей)
+    // Проверяем, что все поля, кроме role и position, заполнены
     if (
       !formData.firstName.trim() ||
       !formData.lastName.trim() ||
       !formData.middleName.trim() ||
       !formData.login.trim() ||
       !formData.password ||
-      !formData.passwordVerify ||
-      !formData.position.trim() ||
-      !formData.role.trim()
+      !formData.passwordVerify
     ) {
-      alert("Пожалуйста, заполните все поля.");
+      alert("Пожалуйста, заполните все обязательные поля.");
       return;
     }
 
@@ -44,26 +47,28 @@ const AddUsers = ({ onClose }) => {
       return;
     }
 
-    // Формируем payload без поля passwordVerify
+    // Формируем payload согласно ожиданиям бэкенда
     const payload = {
       username: formData.login,
       password: formData.password,
       firstName: formData.firstName,
       middleName: formData.middleName,
       lastName: formData.lastName,
-      position: formData.position,
+      position: formData.position, // не проходит валидация
       active: true,
-      role: formData.role || "geometry_fix",
+      role: formData.role, // не проходит валидация
       randomizerIndex: 0,
     };
 
-    // Выводим данные, которые отправляются на сервер
     console.log("Отправляемые данные:", payload);
 
     try {
-      const response = await fetch(`${BASE_URL}/users`, {
+      const response = await fetch(`${BASE_URL}/api/users`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
         body: JSON.stringify(payload),
       });
 
@@ -72,6 +77,8 @@ const AddUsers = ({ onClose }) => {
       const createdUser = await response.json();
       console.log("Создан пользователь:", createdUser);
       onClose();
+      // При необходимости можно также обновить список пользователей или перейти на другую страницу
+      // navigate("/users");
     } catch (error) {
       console.error("Ошибка сети:", error);
     }
@@ -111,9 +118,7 @@ const AddUsers = ({ onClose }) => {
             />
           </div>
           <div>
-            <label className="block text-gray-700 font-medium">
-              Familiyasi
-            </label>
+            <label className="block text-gray-700 font-medium">Familiyasi</label>
             <input
               type="text"
               name="lastName"
@@ -123,7 +128,6 @@ const AddUsers = ({ onClose }) => {
               className="w-full border border-[#f3f9f6] focus:outline-none rounded-xl p-2 py-3 mt-1 text-gray-700"
             />
           </div>
-
           <div>
             <label className="block text-gray-700 font-medium">Sharifi</label>
             <input
@@ -135,7 +139,6 @@ const AddUsers = ({ onClose }) => {
               className="w-full border border-[#f3f9f6] focus:outline-none rounded-xl p-2 py-3 mt-1 text-gray-700"
             />
           </div>
-
           <div>
             <label className="block text-gray-700 font-medium">Logini</label>
             <input
@@ -150,7 +153,9 @@ const AddUsers = ({ onClose }) => {
 
           <RoleDropdown
             value={formData.role}
-            onChange={(role) => setFormData({ ...formData, role })}
+            onChange={(role) =>
+              setFormData({ ...formData, role })
+            }
             bgColor="bg-white"
             borderColor="border-[#f3f9f6]"
           />
@@ -176,15 +181,15 @@ const AddUsers = ({ onClose }) => {
 
           <PositionDropdown
             value={formData.position}
-            onChange={(position) => setFormData({ ...formData, position })}
+            onChange={(position) =>
+              setFormData({ ...formData, position })
+            }
             bgColor="bg-white"
             borderColor="border-[#f3f9f6]"
           />
 
           <div className="relative">
-            <label className="block text-gray-700 font-medium">
-              Parolni tasdiqlang
-            </label>
+            <label className="block text-gray-700 font-medium">Parolni tasdiqlang</label>
             <input
               type={showPassword ? "text" : "password"}
               name="passwordVerify"

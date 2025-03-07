@@ -9,7 +9,7 @@ import { BASE_URL } from "../utils/api";
 // Настройка worker для корректного рендеринга PDF
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
-const StatusBar = ({ currentStep, kadasterId, role, onMapButtonClick, mapActive }) => {
+const StatusBar = ({ currentStep, id, role, onMapButtonClick, mapActive }) => {
   const navigate = useNavigate();
   const [steps, setSteps] = useState([
     { id: 1, label: "1-bosqich", name: "Solishtirish" },
@@ -30,7 +30,7 @@ const StatusBar = ({ currentStep, kadasterId, role, onMapButtonClick, mapActive 
     // Обнуляем старый pdfUrl, если он есть
     setPdfUrl(null);
     // Запрашиваем PDF по эндпоинту /cadastres/{id}/land_plan
-    fetch(`${BASE_URL}/cadastre/${kadasterId}/land_plan`)
+    fetch(`${BASE_URL}/cadastre/${id}/land_plan`)
       .then((res) => {
         if (!res.ok) {
           return res.text().then((text) => {
@@ -116,7 +116,7 @@ const StatusBar = ({ currentStep, kadasterId, role, onMapButtonClick, mapActive 
       <div className="flex ml-auto space-x-4">
         {currentStep === 3 && (
           <MapButton
-            kadasterId={kadasterId}
+            id={id}
             onClick={onMapButtonClick}
             active={mapActive}
           />

@@ -1,55 +1,23 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 import Pagination from "../Pagination";
 import PlanButton from "../PlanButton";
 import DecisionButton from "../DecisionButton";
-import { BASE_URL } from "../../utils/api"; // путь может меняться в зависимости от структуры проекта
 
-const TableRole2 = () => {
+const TableRole2 = ({ data = [] }) => {
   const navigate = useNavigate();
-  const [cadastres, setCadastres] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const itemsPerPage = 30;
   const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 30;
 
-  useEffect(() => {
-    fetch(`${BASE_URL}/cadastre`)
-      .then((res) => res.json())
-      .then((data) => {
-        setCadastres(data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        setError(err);
-        setLoading(false);
-      });
-  }, []);
-
-  if (loading) return <div>Загрузка...</div>;
-  if (error) return <div>Ошибка загрузки данных: {error.message}</div>;
-
-  const totalData = cadastres.length;
-  const paginatedData = cadastres.slice(
+  const totalData = data.length;
+  const paginatedData = data.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
 
-  // Переход к детальному просмотру
   const handleRowClick = (item) => {
     navigate(`/check/${item.cadastreId}`, { state: item });
-  };
-
-  // Функция скачивания PDF
-  const downloadPdf = (url) => {
-    if (!url) return;
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "document.pdf";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
 
   return (
@@ -96,7 +64,7 @@ const TableRole2 = () => {
                 Hokim qarori
               </th>
               <th className="py-2 px-2 text-center font-medium w-32 md:w-36">
-                Qurilma
+                Qaytish
               </th>
               <th className="py-2 px-2 text-end font-medium w-16 sm:w-20 md:w-24"></th>
             </tr>
@@ -141,36 +109,18 @@ const TableRole2 = () => {
                 <td className="py-4 px-2 bg-white text-orange-500 font-semibold text-center w-24 md:w-28">
                   {new Date(item.deadline).toLocaleDateString()}
                 </td>
-                <td className="py-4 px-6 bg-white text-center">
-                  {item.landPlan && (
-                    <PlanButton
-                      planPdf={item.landPlan}
-                      downloadPdf={downloadPdf}
-                    />
-                  )}
+                <td className="py-4 px-2 bg-white text-center">
+                  {item.landPlan && <PlanButton item={item} />}
                 </td>
-                <td className="py-4 px-6 bg-white text-center">
-                  {item.governorDecision ? (
-                    <DecisionButton
-                      decisionPdf={item.governorDecision}
-                      downloadPdf={downloadPdf}
-                    />
-                  ) : (
-                    ""
-                  )}
+                <td className="py-4 px-2 bg-white text-center">
+                  {item.governorDecision && <DecisionButton item={item} />}
                 </td>
-                <td className="py-4 px-6 bg-white text-center">
-                  <span
-                    className={`font-semibold ${
-                      item.buildingPresence
-                        ? "text-green-500"
-                        : "text-red-500"
-                    }`}
-                  >
-                    {item.buildingPresence ? "BOR" : "YO‘Q"}
+                <td className="py-4 px-2 bg-white text-center">
+                  <span className={`font-semibold ${item.status === "pending" ? "text-blue-500" : "text-red-500"}`}>
+                    {item.status}
                   </span>
                 </td>
-                <td className="bg-white rounded-r-3xl">
+                <td className="py-4 px-2 bg-white rounded-r-3xl text-center">
                   <ChevronRight />
                 </td>
               </tr>
@@ -178,7 +128,7 @@ const TableRole2 = () => {
           </tbody>
         </table>
       </div>
-      <div className="flex justify-center py-4 bg-[#f9f9f9] rounded-b-3xl">
+      <div className="bg-[#f9f9f9] py-4 rounded-b-3xl">
         <Pagination
           totalItems={totalData}
           itemsPerPage={itemsPerPage}

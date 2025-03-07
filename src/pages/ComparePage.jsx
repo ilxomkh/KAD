@@ -1,32 +1,52 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { CheckIcon, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import StatusBar from "../components/StatusBar";
 import BuildingExistenceSelector from "../components/BuildingExistenceSelector";
 import ArcGISPolygonEditor from "../components/ArcGISPolygonEditor";
 import { BASE_URL } from "../utils/api";
 
+// Переданный токен авторизации
+const token =
+"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoxLCJ1c2VybmFtZSI6InJvb3QiLCJyb2xlIjoiYWRtaW4ifSwiZXhwIjoxNzQxMzQyNjAxLCJpYXQiOjE3NDEzMzkwMDF9.tYra8W6Bl3Gq08GcQiI_CJT7a3URzVUKW_gsI-7fFhI";
+
 const ComparePage = () => {
-  const { kadasterId } = useParams();
+  // Извлекаем параметр "id" из URL (например, "01:01:0101010:120")
+  const { id } = useParams();
+  if (!id) {
+    console.error("Параметр id отсутствует");
+  }
+  // Кодируем cadastreId для первого запроса
+  const encodedId = encodeURIComponent(id);
+
   const navigate = useNavigate();
 
-  // Состояния
+  // Основные состояния
   const [polygonCoords, setPolygonCoords] = useState([]);
   const [buildingExists, setBuildingExists] = useState(null);
-  const [verdict, setVerdict] = useState(""); // "option1" или "option2" при выборе Yo'q
+  const [verdict, setVerdict] = useState(""); // verdict для комментария
   const [showModal, setShowModal] = useState(false);
   const [sending, setSending] = useState(false);
-  // Данные от ArcGISPolygonEditor
   const [editedPolygonData, setEditedPolygonData] = useState(null);
+  // Состояние для числового идентификатора (data.ID) из ответа API
+  const [recordId, setRecordId] = useState(null);
 
-  // 1. Загрузка координат из API (поле "geojson": "string")
+  // 1. Запрашиваем данные кадастра по эндпоинту /api/cadastre/cad/{cadastreId}
   useEffect(() => {
-    fetch(`${BASE_URL}/api/cadastre/${kadasterId}`)
+    fetch(`${BASE_URL}/api/cadastre/cad/${encodedId}`, {
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    })
       .then((res) => res.json())
       .then((data) => {
         console.log("Полученные данные кадастра:", data);
+        // Сохраняем числовой идентификатор (data.ID)
+        setRecordId(data.ID);
+
         // Предпочтительно использовать fixedGeojson, если он есть, иначе geojson
-        const geojsonStr = data.fixedGeojson || data.geojson;
+        const geojsonStr = data.geojson;
         if (!geojsonStr) {
           console.error("В ответе отсутствует поле geojson");
           return;
@@ -66,32 +86,40 @@ const ComparePage = () => {
       .catch((err) => {
         console.error("Ошибка загрузки данных кадастра:", err);
       });
-  }, [kadasterId]);
+  }, [encodedId]);
 
-  // 2. Функция, вызываемая ArcGISPolygonEditor при "Tasdiqlash"
+  // 2. Функция, вызываемая ArcGISPolygonEditor при подтверждении изменений
   const handleConfirmChanges = (data) => {
     setEditedPolygonData(data);
     console.log("Сохраненные данные полигона:", data);
   };
 
-  // 3. Запрос к /api/cadastre/{id}/geometry_fix (при успешной верификации)
+  // 3. Отправка данных на [PATCH]/cadastre/{recordId}/geometry_fix (при успешной верификации)
   const sendGeometryFixData = async () => {
     if (!editedPolygonData || buildingExists === null) {
       console.error("Отсутствуют необходимые данные для отправки geometry_fix");
       return false;
     }
 
-    // Если здание отсутствует (false), verdict = "option1"/"option2", иначе – пустая строка
+    // Если здание отсутствует (false), verdict = "option1" или "option2", иначе – пустая строка
     const finalVerdict = buildingExists === false ? verdict : "";
 
-    // Собираем минимальный GeoJSON-объект
-    const geoJsonObject = {
-      type: "Polygon",
-      coordinates: editedPolygonData.geometry,
+    // Собираем минимальный GeoJSON-объект в виде FeatureCollection с полем fixedGeojson
+    const fixedGeojson = {
+      type: "FeatureCollection",
+      features: [
+        {
+          type: "Feature",
+          geometry: {
+            type: "Polygon",
+            coordinates: editedPolygonData.geometry,
+          },
+        },
+      ],
     };
 
     const payload = {
-      geometry: JSON.stringify(geoJsonObject),
+      fixedGeojson: JSON.stringify(fixedGeojson),
       buildingPresence: buildingExists,
       verdict: finalVerdict,
       geometryRotation: editedPolygonData.rotation,
@@ -101,9 +129,13 @@ const ComparePage = () => {
     console.log("Отправка данных на сервер (geometry_fix):", payload);
 
     try {
-      const response = await fetch(`${BASE_URL}/api/cadastre/${kadasterId}/geometry_fix`, {
+      const idToUse = recordId !== null ? recordId : encodedId;
+      const response = await fetch(`${BASE_URL}/api/cadastre/${idToUse}/geometry_fix`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
         body: JSON.stringify(payload),
       });
       if (response.ok) {
@@ -119,19 +151,23 @@ const ComparePage = () => {
     }
   };
 
-  // 4. Запрос к /api/cadastre/{id}/cadastre_error (при ошибке)
+  // 4. Отправка данных на [PATCH]/cadastre/{recordId}/cadastre_error (при наличии ошибки)
   const sendCadastreErrorData = async () => {
     const payload = {
       cadastreError: true,
-      comment: verdict, // Передаём содержимое verdict
+      comment: verdict,
     };
 
     console.log("Отправка данных на сервер (cadastre_error):", payload);
 
     try {
-      const response = await fetch(`${BASE_URL}/api/cadastre/${kadasterId}/cadastre_error`, {
+      const idToUse = recordId !== null ? recordId : encodedId;
+      const response = await fetch(`${BASE_URL}/api/cadastre/${idToUse}/cadastre_error`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
         body: JSON.stringify(payload),
       });
       if (response.ok) {
@@ -147,7 +183,7 @@ const ComparePage = () => {
     }
   };
 
-  // 5. Обработчик для кнопки "Davom etish" – отправляем geometry_fix
+  // 5. Обработчик для кнопки "Davom etish" – отправка geometry_fix
   const handleProceed = async () => {
     console.log("Нажата кнопка Davom etish. Данные для отправки:", {
       editedPolygonData,
@@ -162,7 +198,7 @@ const ComparePage = () => {
     }
   };
 
-  // 6. Обработчик для модального окна "Xatolik bor" – отправляем cadastre_error
+  // 6. Обработчик для модального окна "Xatolik bor" – отправка cadastre_error
   const handleErrorConfirm = async () => {
     console.log("Нажата кнопка Ha (Xatolik bor). Данные для отправки:", {
       editedPolygonData,
@@ -180,28 +216,28 @@ const ComparePage = () => {
 
   return (
     <div className="relative min-h-screen w-screen">
-      <ArcGISPolygonEditor 
+      <ArcGISPolygonEditor
         backendPolygonCoords={polygonCoords}
-        editable={true} 
+        editable={true}
         onConfirmChanges={handleConfirmChanges}
       />
 
       <div className="absolute top-0 left-0 p-6 w-full z-50 pointer-events-auto">
-        <StatusBar currentStep={1} kadasterId={kadasterId} />
+        <StatusBar currentStep={1} kadasterId={recordId || id} />
       </div>
 
       <div className="absolute top-0 left-0 z-50 pointer-events-auto">
         <BuildingExistenceSelector
           buildingExists={buildingExists}
           setBuildingExists={setBuildingExists}
-          kadasterId={kadasterId}
+          kadasterId={recordId || id}
           setVerdict={setVerdict}
         />
       </div>
 
-      {/* Кнопка Davom etish */}
+      {/* Кнопка "Davom etish" */}
       <div className="absolute bottom-6 right-8 bg-white p-3 rounded-xl flex space-x-4 z-50 pointer-events-auto">
-        <button 
+        <button
           className="px-6 py-3 cursor-pointer bg-blue-600 text-white rounded-xl flex items-center justify-center transition-all hover:bg-blue-700"
           onClick={handleProceed}
           disabled={!editedPolygonData || buildingExists === null}
@@ -211,7 +247,7 @@ const ComparePage = () => {
         </button>
       </div>
 
-      {/* Кнопка Xatolik bor */}
+      {/* Кнопка "Xatolik bor" */}
       <div className="absolute bottom-6 left-8 bg-white p-3 rounded-xl flex space-x-4 z-50 pointer-events-auto">
         <button
           className="px-6 py-3 cursor-pointer bg-red-500 text-white rounded-xl transition-all hover:bg-red-600"
@@ -221,7 +257,7 @@ const ComparePage = () => {
         </button>
       </div>
 
-      {/* Модальное окно подтверждения "Xatolik bor" */}
+      {/* Модальное окно "Xatolik bor" */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50 pointer-events-auto">
           <div className="bg-white px-4 py-2 rounded-2xl shadow-lg max-w-md w-full text-left relative">

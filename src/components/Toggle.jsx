@@ -1,20 +1,26 @@
 import React, { useState } from 'react';
 import { BASE_URL } from "../utils/api";
 
-// Важно: BASE_URL берём либо из окружения, либо прописываем напрямую
+const token = 
+"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoxLCJ1c2VybmFtZSI6InJvb3QiLCJyb2xlIjoiYWRtaW4ifSwiZXhwIjoxNzQxMzQyNjAxLCJpYXQiOjE3NDEzMzkwMDF9.tYra8W6Bl3Gq08GcQiI_CJT7a3URzVUKW_gsI-7fFhI";
 
-const ToggleSwitch = ({ userId, initialStatus }) => {
+const ToggleSwitch = ({ userId, initialStatus, onToggle }) => {
   const [status, setStatus] = useState(initialStatus);
 
   const handleToggle = async () => {
+    if (!userId) {
+      console.error("Ошибка: userId не определён!");
+      return;
+    }
+
     const newStatus = !status;
     try {
-      const response = await fetch(`${BASE_URL}/users/${userId}/toggle-active`, {
+      const response = await fetch(`${BASE_URL}/api/users/${userId}/toggle-active`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
+          "Authorization": `Bearer ${token}`,
         },
-        // Если серверу достаточно только "active", то отправляем минимальный JSON
         body: JSON.stringify({ active: newStatus }),
       });
 
@@ -22,8 +28,8 @@ const ToggleSwitch = ({ userId, initialStatus }) => {
         throw new Error('Ошибка при обновлении статуса пользователя');
       }
 
-      // Если запрос успешен — меняем состояние локально
       setStatus(newStatus);
+      if (onToggle) onToggle(newStatus);
     } catch (error) {
       console.error('Ошибка сети:', error);
     }

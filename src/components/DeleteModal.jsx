@@ -1,18 +1,28 @@
 import { BASE_URL } from "../utils/api";
 
+const token = 
+"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoyLCJ1c2VybmFtZSI6InJvb3QiLCJyb2xlIjoiYWRtaW4ifSwiZXhwIjoxNzQxMjYyODE0LCJpYXQiOjE3NDEyNTkyMTR9.HX81nt7mKsk7pPDXBgIAbaGs1G5Xn0rFw8C-t4ioez0";
 
 const DeleteModal = ({ item, onClose, onDelete }) => {
   const handleDelete = async () => {
+    // Используем либо item.id, либо item._id
+    const userId = item?.id || item?._id || item?.ID;
+    if (!userId) {
+      console.error("Нет корректного идентификатора пользователя для удаления");
+      return;
+    }
     try {
-      const response = await fetch(`${BASE_URL}/users/${item.id}`, {
+      const response = await fetch(`${BASE_URL}/api/users/${userId}`, {
         method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
       });
       if (!response.ok) {
         throw new Error("Ошибка при удалении пользователя");
       }
       console.log("Пользователь удален:", item);
-      // Вызываем onDelete, передавая, например, id удаленного пользователя
-      if (onDelete) onDelete(item.id);
+      if (onDelete) onDelete(userId);
       onClose();
     } catch (error) {
       console.error("Ошибка сети:", error);
@@ -24,13 +34,10 @@ const DeleteModal = ({ item, onClose, onDelete }) => {
       className="fixed inset-0 flex items-center justify-center bg-black/50 bg-opacity-50 z-50"
       onClick={onClose}
     >
-      <div className="bg-white p-3 rounded-2xl shadow-lg w-[444px] relative">
-        {/* Заголовок */}
+      <div className="bg-white p-3 rounded-2xl shadow-lg w-[444px] relative" onClick={(e) => e.stopPropagation()}>
         <h2 className="text-xl font-semibold text-left text-black mb-4">
           Bu foydalanuvchini o‘chirmoqchimisiz?
         </h2>
-
-        {/* Кнопки */}
         <div className="flex justify-center space-x-4">
           <button
             onClick={handleDelete}

@@ -1,30 +1,16 @@
 import { useState, useEffect, useRef } from "react";
 import { ChevronDown } from "lucide-react";
-import { BASE_URL } from "../utils/api";
-
 
 const PositionDropdown = ({ value, onChange, borderColor = "border-gray-300", bgColor = "bg-white" }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [positions, setPositions] = useState([]);
+  // Локальные данные для позиций пользователя
+  const positionsData = [
+    { value: "Analitik", label: "Analitik" },
+    { value: "Valanter", label: "Valanter" },
+    { value: "Agentlik", label: "Agentlik" },
+    { value: "Rahbar", label: "Rahbar" }
+  ];
   const dropdownRef = useRef(null);
-
-  useEffect(() => {
-    // Запрашиваем список пользователей и извлекаем уникальные позиции
-    const fetchPositions = async () => {
-      try {
-        const response = await fetch(`${BASE_URL}/users`);
-        if (!response.ok) throw new Error("Ошибка сети");
-        const users = await response.json();
-        const uniquePositions = Array.from(new Set(users.map(user => user.position))).filter(Boolean);
-        const positionsData = uniquePositions.map(pos => ({ value: pos, label: pos }));
-        setPositions(positionsData);
-      } catch (error) {
-        console.error("Ошибка получения позиций:", error);
-      }
-    };
-
-    fetchPositions();
-  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -47,14 +33,14 @@ const PositionDropdown = ({ value, onChange, borderColor = "border-gray-300", bg
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full flex border justify-between items-center ${borderColor} ${bgColor} rounded-xl p-3 h-[50px] text-gray-700 transition`}
+        className={`w-full flex justify-between items-center ${borderColor} ${bgColor} rounded-xl p-3 h-[50px] text-gray-700 transition`}
       >
-        {value ? positions.find((p) => p.value === value)?.label : "Lavozimini tanlang"}
+        {value ? positionsData.find((p) => p.value === value)?.label : "Lavozimini tanlang"}
         <ChevronDown size={20} className="text-gray-500" />
       </button>
       {isOpen && (
         <div className={`absolute mt-2 w-full ${borderColor} bg-white rounded-xl shadow-lg z-10 transition-all duration-300`}>
-          {positions.map((position) => (
+          {positionsData.map((position) => (
             <button
               key={position.value}
               onClick={() => handleSelect(position.value)}

@@ -1,35 +1,49 @@
+import React, { useEffect, useState } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
-import StatusBar from "../components/StatusBar";
 import { ChevronRight } from "lucide-react";
+import StatusBar from "../components/StatusBar";
 import ArcGISTwoPolygonViewer from "../components/ArcGISTwoPolygonViewer";
 import CommentModal from "../components/CommentModal";
 import { BASE_URL } from "../utils/api";
 
+// Обновлённый токен авторизации
+const token =
+"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoxLCJ1c2VybmFtZSI6InJvb3QiLCJyb2xlIjoiYWRtaW4ifSwiZXhwIjoxNzQxMzQyNjAxLCJpYXQiOjE3NDEzMzkwMDF9.tYra8W6Bl3Gq08GcQiI_CJT7a3URzVUKW_gsI-7fFhI";
+
 const CheckPage = () => {
-  const { kadasterId } = useParams();
+  // Получаем параметр из URL (это cadastreId, например "01:01:0101010:120")
+  const { id } = useParams();
+  if (!id) {
+    console.error("Параметр id отсутствует");
+  }
+  // Кодируем cadastreId для запроса деталей
+  const encodedId = encodeURIComponent(id);
+
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Состояния для данных карты
+  // Состояния
   const [mapData, setMapData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  // Статус здания: buildingPresence (true => "Mavjud", false => "Mavjud emas")
   const [buildingStatus, setBuildingStatus] = useState(false);
-
-  // Состояния для модального окна
   const [showModal, setShowModal] = useState(false);
   const [activeTab, setActiveTab] = useState("obyekt");
   const [comment, setComment] = useState("");
+  // Сохранённый числовой id (поле "ID" из ответа API)
+  const [recordId, setRecordId] = useState(null);
 
   useEffect(() => {
     setLoading(true);
     setError(null);
 
-    // Запрашиваем данные кадастра с бэкенда
-    fetch(`${BASE_URL}/api/cadastre/${kadasterId}`)
+    // Получаем данные кадастра по cadastreId
+    fetch(`${BASE_URL}/api/cadastre/cad/${encodedId}`, {
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    })
       .then((res) => {
         if (!res.ok) {
           throw new Error("Ошибка загрузки данных кадастра");
@@ -38,6 +52,7 @@ const CheckPage = () => {
       })
       .then((data) => {
         console.log("Полученные данные кадастра:", data);
+
         // Парсим geojson для оригинальных координат
         let originalCoords = [];
         try {
@@ -57,6 +72,7 @@ const CheckPage = () => {
         } catch (e) {
           console.error("Ошибка парсинга geojson:", e);
         }
+
         // Парсим fixedGeojson для изменённых координат
         let modifiedCoords = [];
         try {
@@ -76,46 +92,60 @@ const CheckPage = () => {
         } catch (e) {
           console.error("Ошибка парсинга fixedGeojson:", e);
         }
-        // Формируем объект карты с данными из API
+
+        // Сохраняем полученные данные и сохраняем числовой id из data.ID
         setMapData({
           originalPolygonCoords: originalCoords,
           modifiedPolygonCoords: modifiedCoords,
           verdict: data.verdict || "",
         });
         setBuildingStatus(data.buildingPresence);
+        setRecordId(data.ID);
         setLoading(false);
+
+        // После получения данных используем числовой id для запроса скриншота
+        fetch(`${BASE_URL}/api/cadastre/${data.ID}/screenshot`, {
+          headers: {
+            "Authorization": `Bearer ${token}`,
+          },
+        })
+          .then((res) => {
+            if (!res.ok) {
+              // Если скриншот не найден (например, 404), возвращаем null
+              return null;
+            }
+            return res.blob();
+          })
+          .then((blob) => {
+            if (blob) {
+              const imageUrl = URL.createObjectURL(blob);
+              setMapData((prev) =>
+                prev ? { ...prev, photo: imageUrl } : { photo: imageUrl }
+              );
+            }
+          })
+          .catch((err) => {
+            console.error("Ошибка загрузки скриншота:", err);
+          });
       })
       .catch((err) => {
         console.error(err);
         setError(err.message);
         setLoading(false);
       });
+  }, [encodedId, location.state]);
 
-    // Запрашиваем скриншот
-    fetch(`${BASE_URL}/api/cadastre/${kadasterId}/screenshot`)
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error("Ошибка загрузки скриншота");
-        }
-        return res.blob();
-      })
-      .then((blob) => {
-        const imageUrl = URL.createObjectURL(blob);
-        setMapData((prev) => prev ? { ...prev, photo: imageUrl } : { photo: imageUrl });
-      })
-      .catch((err) => {
-        console.error("Ошибка загрузки скриншота:", err);
-      });
-  }, [kadasterId, location.state]);
-
-  // Функция для отправки PATCH запроса к /api/cadastre/{id}/verification
+  // Функция для отправки PATCH запроса к /cadastre/{recordId}/verification
   const sendVerification = async (verified, commentStr) => {
     const payload = { verified, comment: commentStr };
     console.log("Отправка данных на сервер (verification):", payload);
     try {
-      const response = await fetch(`${BASE_URL}/api/cadastre/${kadasterId}/verification`, {
+      const response = await fetch(`${BASE_URL}/api/cadastre/${recordId}/verification`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
         body: JSON.stringify(payload),
       });
       if (response.ok) {
@@ -131,7 +161,7 @@ const CheckPage = () => {
     }
   };
 
-  // Обработчик для кнопки "Davom etish" – verified: true, comment: ""
+  // Обработчик для кнопки "Davom etish"
   const handleProceed = async () => {
     console.log("Нажата кнопка Davom etish. Отправка verification: { verified: true, comment: '' }");
     const result = await sendVerification(true, "");
@@ -140,7 +170,7 @@ const CheckPage = () => {
     }
   };
 
-  // Обработчик для модального окна "Xatolik bor" – verified: false, comment формируется из выбранного таба и введённого текста
+  // Обработчик для модального окна "Xatolik bor"
   const handleSend = async () => {
     const errorType = activeTab === "obyekt" ? "Obyekt joyiga mos emas" : "Toifasi mos emas";
     const finalComment = comment ? `${errorType}: ${comment}` : errorType;
@@ -192,7 +222,7 @@ const CheckPage = () => {
           </div>
           {/* Шапка с информацией */}
           <div className="absolute top-0 left-0 p-6 w-full z-50">
-            <StatusBar currentStep={2} kadasterId={kadasterId} />
+            <StatusBar currentStep={2} id={id} />
           </div>
           {/* Блок о статусе здания */}
           <div className="absolute top-40 left-8 bg-white px-4 py-3 rounded-xl shadow-md">
@@ -203,7 +233,7 @@ const CheckPage = () => {
               </span>
             </h2>
           </div>
-          {/* Блок для отображения verdict, если он есть */}
+          {/* Блок для отображения verdict */}
           {mapData.verdict && (
             <div className="absolute top-56 left-8 bg-white px-4 py-2 rounded-xl shadow-md">
               <p className="text-lg font-semibold">

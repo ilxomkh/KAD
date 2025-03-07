@@ -4,6 +4,8 @@ import RoleDropdown from "./RoleDropdown";
 import PositionDropdown from "./PositionDropdown";
 import { BASE_URL } from "../utils/api";
 
+const token =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoyLCJ1c2VybmFtZSI6InJvb3QiLCJyb2xlIjoiYWRtaW4ifSwiZXhwIjoxNzQxMjYyODE0LCJpYXQiOjE3NDEyNTkyMTR9.HX81nt7mKsk7pPDXBgIAbaGs1G5Xn0rFw8C-t4ioez0";
 
 const EditModal = ({ item, onClose, onSave }) => {
   const [formData, setFormData] = useState({
@@ -11,7 +13,7 @@ const EditModal = ({ item, onClose, onSave }) => {
     lastName: "",
     middleName: "",
     role: "",
-    login: "",
+    username: "",
     password: "",
     passwordVerify: "",
     position: "",
@@ -19,7 +21,6 @@ const EditModal = ({ item, onClose, onSave }) => {
 
   const [showPassword, setShowPassword] = useState(false);
 
-  // Загружаем данные пользователя при открытии модалки
   useEffect(() => {
     if (item) {
       setFormData({
@@ -27,8 +28,7 @@ const EditModal = ({ item, onClose, onSave }) => {
         lastName: item.lastName || "",
         middleName: item.middleName || "",
         role: item.role || "",
-        // Для логина используем username из item
-        login: item.username || "",
+        username: item.username || "",
         password: item.password || "",
         passwordVerify: item.password || "",
         position: item.position || "",
@@ -41,15 +41,19 @@ const EditModal = ({ item, onClose, onSave }) => {
   };
 
   const handleSubmit = async () => {
-    // Если пользователь изменил пароль, проверяем, что он совпадает с подтверждением
     if (formData.password !== formData.passwordVerify) {
       alert("Пароли не совпадают!");
       return;
     }
 
-    // Формируем payload для обновления пользователя
+    const userId = item?.id || item?._id || item?.ID;
+    if (!userId) {
+      console.error("Нет корректного идентификатора пользователя для обновления");
+      return;
+    }
+
     const payload = {
-      username: formData.login,
+      username: formData.username,
       password: formData.password,
       firstName: formData.firstName,
       middleName: formData.middleName,
@@ -63,9 +67,12 @@ const EditModal = ({ item, onClose, onSave }) => {
     console.log("Отправляемые данные для обновления:", payload);
 
     try {
-      const response = await fetch(`${BASE_URL}/users/${item.id}`, {
+      const response = await fetch(`${BASE_URL}/api/users/${userId}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
         body: JSON.stringify(payload),
       });
 
@@ -85,13 +92,12 @@ const EditModal = ({ item, onClose, onSave }) => {
   return (
     <div
       className="fixed inset-0 flex items-center justify-center bg-black/50 bg-opacity-50 z-50"
-      onClick={onClose} // Закрытие при клике вне модалки
+      onClick={onClose}
     >
       <div
         className="bg-white p-6 rounded-2xl shadow-lg w-1/2 relative"
-        onClick={(e) => e.stopPropagation()} // Остановка всплытия клика внутри окна
+        onClick={(e) => e.stopPropagation()}
       >
-        {/* Заголовок и кнопка закрытия */}
         <div className="flex justify-between items-center mb-8">
           <h2 className="text-xl font-semibold text-black">
             Ma‘lumotlarni tahrirlash
@@ -104,7 +110,6 @@ const EditModal = ({ item, onClose, onSave }) => {
           </button>
         </div>
 
-        {/* Форма */}
         <div className="grid grid-cols-2 text-left gap-10">
           <div>
             <label className="block text-gray-700 font-medium">Ismi</label>
@@ -114,7 +119,7 @@ const EditModal = ({ item, onClose, onSave }) => {
               value={formData.firstName}
               onChange={handleChange}
               placeholder="Ismini kiriting"
-              className="w-full border-1 border-[#94c6ff] rounded-xl p-2 py-3 mt-1 text-gray-700 bg-[#e8f3ff]/50"
+              className="w-full border border-[#94c6ff] rounded-xl p-2 py-3 mt-1 text-gray-700 bg-[#e8f3ff]/50"
             />
           </div>
 
@@ -126,7 +131,7 @@ const EditModal = ({ item, onClose, onSave }) => {
               value={formData.lastName}
               onChange={handleChange}
               placeholder="Familiyasini kiriting"
-              className="w-full border-1 border-[#94c6ff] rounded-xl p-2 py-3 mt-1 text-gray-700 bg-[#e8f3ff]/50"
+              className="w-full border border-[#94c6ff] rounded-xl p-2 py-3 mt-1 text-gray-700 bg-[#e8f3ff]/50"
             />
           </div>
 
@@ -138,11 +143,10 @@ const EditModal = ({ item, onClose, onSave }) => {
               value={formData.middleName}
               onChange={handleChange}
               placeholder="Sharifini kiriting"
-              className="w-full border-1 border-[#94c6ff] rounded-xl p-2 py-3 mt-1 text-gray-700 bg-[#e8f3ff]/50"
+              className="w-full border border-[#94c6ff] rounded-xl p-2 py-3 mt-1 text-gray-700 bg-[#e8f3ff]/50"
             />
           </div>
 
-          {/* Выпадающее меню Роли */}
           <RoleDropdown
             value={formData.role}
             onChange={(role) => setFormData({ ...formData, role })}
@@ -151,14 +155,14 @@ const EditModal = ({ item, onClose, onSave }) => {
           />
 
           <div>
-            <label className="block text-gray-700 font-medium">Logini</label>
+            <label className="block text-gray-700 font-medium">Username</label>
             <input
               type="text"
-              name="login"
-              value={formData.login}
+              name="username"
+              value={formData.username}
               onChange={handleChange}
-              placeholder="Loginini kiriting"
-              className="w-full border-1 border-[#94c6ff] rounded-xl p-2 py-3 mt-1 text-gray-700 bg-[#e8f3ff]/50"
+              placeholder="Username kiriting"
+              className="w-full border border-[#94c6ff] rounded-xl p-2 py-3 mt-1 text-gray-700 bg-[#e8f3ff]/50"
             />
           </div>
 
@@ -170,7 +174,7 @@ const EditModal = ({ item, onClose, onSave }) => {
               value={formData.password}
               onChange={handleChange}
               placeholder="Parolini kiriting"
-              className="w-full border-1 border-[#94c6ff] rounded-xl p-2 py-3 mt-1 text-gray-700 bg-[#e8f3ff]/50"
+              className="w-full border border-[#94c6ff] rounded-xl p-2 py-3 mt-1 text-gray-700 bg-[#e8f3ff]/50"
             />
             <button
               type="button"
@@ -183,9 +187,7 @@ const EditModal = ({ item, onClose, onSave }) => {
 
           <PositionDropdown
             value={formData.position}
-            onChange={(position) =>
-              setFormData({ ...formData, position })
-            }
+            onChange={(position) => setFormData({ ...formData, position })}
             bgColor="bg-[#e8f3ff]/50"
             borderColor="border-[#94c6ff]"
           />
@@ -200,7 +202,7 @@ const EditModal = ({ item, onClose, onSave }) => {
               value={formData.passwordVerify}
               onChange={handleChange}
               placeholder="Parolini qaytadan kiriting"
-              className="w-full border-1 border-[#94c6ff] rounded-xl p-2 py-3 mt-1 text-gray-700 bg-[#e8f3ff]/50"
+              className="w-full border border-[#94c6ff] rounded-xl p-2 py-3 mt-1 text-gray-700 bg-[#e8f3ff]/50"
             />
             <button
               type="button"

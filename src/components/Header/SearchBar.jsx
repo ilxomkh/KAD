@@ -1,16 +1,18 @@
 import { useState } from "react";
-import { Search } from "lucide-react"; // Иконка поиска
+import { Search } from "lucide-react";
 
 const SearchBar = ({ placeholder = "Kadastr raqamini kiriting", onSearch }) => {
-  const [search, setSearch] = useState("");
+  const [searchValue, setSearchValue] = useState("");
 
-  const handleSearch = (e) => {
-    setSearch(e.target.value);
+  const handleInputChange = (e) => {
+    setSearchValue(e.target.value);
   };
 
+  // При нажатии Enter вызываем onSearch и очищаем поле
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && onSearch) {
-      onSearch(search);
+      onSearch(searchValue.trim());
+      setSearchValue(""); // Сброс поля, чтобы placeholder появился
     }
   };
 
@@ -20,8 +22,8 @@ const SearchBar = ({ placeholder = "Kadastr raqamini kiriting", onSearch }) => {
       <input
         type="text"
         placeholder={placeholder}
-        value={search}
-        onChange={handleSearch}
+        value={searchValue}
+        onChange={handleInputChange}
         onKeyDown={handleKeyDown}
         className="pl-10 pr-4 py-3 bg-gray-100 rounded-full outline-none w-80"
       />

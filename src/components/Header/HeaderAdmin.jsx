@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
 import SearchBar from "./SearchBar";
 import FilterButton from "./FilterButton";
@@ -7,7 +7,11 @@ import AddUsers from "../AddUsers";
 import FilterModal from "../FilterModal";
 import { BASE_URL } from "../../utils/api";
 
-const HeaderAdmin = ({ currentTable, setCurrentTable }) => {
+// Токен авторизации (его можно хранить в localStorage или получать динамически)
+const token =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoxLCJ1c2VybmFtZSI6InJvb3QiLCJyb2xlIjoiYWRtaW4ifSwiZXhwIjoxNzQxMzQyNjAxLCJpYXQiOjE3NDEzMzkwMDF9.tYra8W6Bl3Gq08GcQiI_CJT7a3URzVUKW_gsI-7fFhI";
+
+const HeaderAdmin = ({ currentTable, setCurrentTable, setTableData }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -15,16 +19,20 @@ const HeaderAdmin = ({ currentTable, setCurrentTable }) => {
   const menuOptions = [
     { key: "default", label: "Nomzodlar ro‘yxati" },
     { key: "role1", label: "1-bosqichdagilar" },
+    { key: "role4", label: "1-bosqichdagilar (7-9)" },
     { key: "role2", label: "2-bosqichdagilar" },
     { key: "role3", label: "3-bosqichdagilar" },
     { key: "ended", label: "Tugallanganlar" },
     { key: "errors", label: "Kadastr xatoliklari" },
+    { key: "users", label: "Foydalanuvchilar" },
   ];
 
   const selectedOption =
-    menuOptions.find((option) => option.key === currentTable) || menuOptions[0];
+    menuOptions.find((option) => option.key === currentTable) ||
+    menuOptions[0];
 
   const handleSelectTable = (table) => {
+    console.log("Выбрана таблица:", table);
     setCurrentTable(table);
     setDropdownOpen(false);
   };
@@ -34,61 +42,152 @@ const HeaderAdmin = ({ currentTable, setCurrentTable }) => {
     window.location.reload();
   };
 
-  // Функция поиска в зависимости от выбранной таблицы
+  // Функция поиска для пользователей и кадастров
   const handleSearch = (query) => {
+    const encodedQuery = encodeURIComponent(query.trim());
+    let url = "";
     if (currentTable === "users") {
-      fetch(`${BASE_URL}/users/${query}`)
-        .then((res) => {
-          if (!res.ok) {
-            return res.text().then((text) => {
-              throw new Error(`HTTP error ${res.status}: ${text}`);
-            });
-          }
-          return res.json();
-        })
-        .then((data) => {
-          console.log("Search results for user:", data);
-        })
-        .catch((error) => console.error("Error searching user:", error));
+      // Для поиска пользователей запрашиваем весь список
+      url = `${BASE_URL}/api/users`;
     } else {
-      fetch(`${BASE_URL}/cadastre/cad/${query}`)
-        .then((res) => {
-          if (!res.ok) {
-            return res.text().then((text) => {
-              throw new Error(`HTTP error ${res.status}: ${text}`);
-            });
-          }
-          return res.json();
-        })
-        .then((data) => {
-          console.log("Search results for cadastre:", data);
-        })
-        .catch((error) => console.error("Error searching cadastre:", error));
+      // Для кадастров – запрос идёт на endpoint, возвращающий все кадастровые данные
+      url = `${BASE_URL}/api/cadastre`;
     }
+    console.log("Запрос по URL:", url);
+
+    fetch(url, {
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    })
+      .then((res) => {
+        if (!res.ok) {
+          setTableData([]);
+          return res.text().then((text) => {
+            throw new Error(`HTTP error ${res.status}: ${text}`);
+          });
+        }
+        return res.json();
+      })
+      .then((data) => {
+        console.log(
+          currentTable === "users"
+            ? "Search results for users:"
+            : "Search results for cadastre:",
+          data
+        );
+        const dataArray =
+          currentTable === "users"
+            ? (Array.isArray(data) ? data : data.users || data.data || [])
+            : (Array.isArray(data) ? data : data.data || []);
+  
+        if (currentTable === "users") {
+          // Клиентская фильтрация по нескольким полям для пользователей
+          const searchLower = query.trim().toLowerCase();
+          const filteredData = dataArray.filter((item) =>
+            (item.username && item.username.toLowerCase().includes(searchLower)) ||
+            (item.firstName && item.firstName.toLowerCase().includes(searchLower)) ||
+            (item.lastName && item.lastName.toLowerCase().includes(searchLower)) ||
+            (item.middleName && item.middleName.toLowerCase().includes(searchLower)) ||
+            (item.ID && item.ID.toString().toLowerCase().includes(searchLower)) ||
+            (item.role && item.role.toLowerCase().includes(searchLower))
+          );
+          setTableData(filteredData);
+        } else {
+          // Для кадастров выполняем фильтрацию по cadastreId
+          const queryLower = query.trim().toLowerCase();
+          const filteredData = dataArray.filter((item) =>
+            item.cadastreId.toLowerCase().includes(queryLower)
+          );
+          setTableData(filteredData);
+        }
+      })
+      .catch((error) => {
+        console.error("Error searching cadastre/users:", error);
+        setTableData([]);
+      });
   };
 
-  // Функция для обработки выбранных фильтров из модального окна
+  // Обработчик фильтров с клиентской фильтрацией (без изменений)
   const handleFilterApply = (filters) => {
-    if (filters.kadastr) {
-      fetch(`${BASE_URL}/cadastre/cad/${filters.kadastr}`)
-        .then((res) => {
-          if (!res.ok) {
-            return res.text().then((text) => {
-              throw new Error(`HTTP error ${res.status}: ${text}`);
-            });
-          }
-          return res.json();
-        })
-        .then((data) => {
-          console.log("Filtered data:", data);
-        })
-        .catch((error) =>
-          console.error("Error fetching filtered data:", error)
-        );
-    } else {
-      console.log("No filter selected", filters);
-    }
+    console.log("Применяем фильтры в HeaderAdmin:", filters);
+    const url = `${BASE_URL}/api/cadastre`;
+    console.log("Запрос на получение всех данных по URL:", url);
+
+    fetch(url, {
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    })
+      .then((res) => {
+        if (!res.ok) {
+          return res.text().then((text) => {
+            throw new Error(`HTTP error ${res.status}: ${text}`);
+          });
+        }
+        return res.json();
+      })
+      .then((allData) => {
+        const dataArray = Array.isArray(allData)
+          ? allData
+          : Array.isArray(allData.data)
+          ? allData.data
+          : [];
+        if (currentTable === "users") {
+          const searchLower = filters.query ? filters.query.trim().toLowerCase() : "";
+          const filteredData = dataArray.filter((item) => {
+            const usernameMatch =
+              !searchLower ||
+              (item.username && item.username.toLowerCase().includes(searchLower));
+            const firstNameMatch =
+              !searchLower ||
+              (item.firstName && item.firstName.toLowerCase().includes(searchLower));
+            return usernameMatch || firstNameMatch;
+          });
+          console.log("Отфильтрованные пользователи:", filteredData);
+          setTableData(filteredData);
+        } else {
+          const filteredData = dataArray.filter((item) => {
+            const matchModda =
+              !filters.modda ||
+              item.modda.toString() === filters.modda.replace("-modda", "");
+            const matchViloyat =
+              !filters.viloyat || item.region === filters.viloyat;
+            const matchSanasi =
+              !filters.sanasi ||
+              new Date(item.assignDate).getDate() === Number(filters.sanasi);
+            const matchToifa =
+              !filters.toifa || item.type === filters.toifa;
+            return matchModda && matchViloyat && matchSanasi && matchToifa;
+          });
+          console.log("Отфильтрованные данные для кадастра:", filteredData);
+          setTableData(filteredData);
+        }
+      })
+      .catch((error) =>
+        console.error("Error fetching or filtering data:", error)
+      );
   };
+
+  // Первоначальная загрузка всех данных (при монтировании)
+  useEffect(() => {
+    const url = `${BASE_URL}/api/cadastre`;
+    console.log("Начальная загрузка данных по URL:", url);
+    fetch(url, {
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        const dataArray = Array.isArray(data) ? data : data.data || [];
+        setTableData(dataArray);
+      })
+      .catch((error) => console.error("Error loading data:", error));
+  }, [setTableData]);
 
   return (
     <>
@@ -98,7 +197,6 @@ const HeaderAdmin = ({ currentTable, setCurrentTable }) => {
           onClick={() => setDropdownOpen(false)}
         />
       )}
-
       <header className="flex justify-between items-center bg-[#F9F9F9] px-6 py-3 mx-6 rounded-3xl relative z-20">
         <div className="flex items-center space-x-12">
           <img src="/assets/Blue.svg" alt="ZBEKOSMOS" className="h-12 w-auto" />
@@ -114,7 +212,6 @@ const HeaderAdmin = ({ currentTable, setCurrentTable }) => {
               {selectedOption.label}
               <ChevronDown className="ml-2 mt-1 w-5 h-5" />
             </button>
-
             {dropdownOpen && (
               <div className="absolute -left-3 mt-4 w-56 bg-white rounded-3xl p-2 z-10">
                 {menuOptions.map((option) => (
@@ -144,7 +241,6 @@ const HeaderAdmin = ({ currentTable, setCurrentTable }) => {
             Foydalanuvchilar
           </button>
         </div>
-
         <div className="flex items-center space-x-8 mr-4">
           <SearchBar
             onSearch={handleSearch}
@@ -154,9 +250,7 @@ const HeaderAdmin = ({ currentTable, setCurrentTable }) => {
                 : "Kadastr raqamini kiriting"
             }
           />
-
           <FilterButton onClick={() => setIsFilterOpen(true)} />
-
           {currentTable === "users" && (
             <button
               className="flex cursor-pointer items-center bg-blue-500 text-white px-4 py-3 rounded-xl hover:bg-blue-600 transition"
@@ -180,17 +274,14 @@ const HeaderAdmin = ({ currentTable, setCurrentTable }) => {
               <span className="text-lg font-semibold ml-2">Qo‘shish</span>
             </button>
           )}
-
           <LogoutButton onLogout={handleLogout} />
         </div>
       </header>
-
       <FilterModal
         isOpen={isFilterOpen}
         onClose={() => setIsFilterOpen(false)}
         onApply={handleFilterApply}
       />
-
       {isModalOpen && <AddUsers onClose={() => setIsModalOpen(false)} />}
     </>
   );

@@ -1,37 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 import Pagination from "../Pagination";
 import PlanButton from "../PlanButton";
 import DecisionButton from "../DecisionButton";
-import { BASE_URL } from "../../utils/api"; // путь может меняться
 
-const TableRole4 = () => {
+const TableRole4 = ({ data = [] }) => {
   const navigate = useNavigate();
-  const [cadastres, setCadastres] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const itemsPerPage = 30;
   const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 30;
 
-  useEffect(() => {
-    fetch(`${BASE_URL}/cadastre`)
-      .then((res) => res.json())
-      .then((data) => {
-        setCadastres(data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        setError(err);
-        setLoading(false);
-      });
-  }, []);
-
-  if (loading) return <div>Загрузка...</div>;
-  if (error) return <div>Ошибка загрузки данных: {error.message}</div>;
-
-  const totalData = cadastres.length;
-  const paginatedData = cadastres.slice(
+  const totalData = data.length;
+  const paginatedData = data.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
@@ -40,22 +20,10 @@ const TableRole4 = () => {
     navigate(`/verdict/${item.cadastreId}`, { state: item });
   };
 
-  const downloadPdf = (url) => {
-    if (!url) return;
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "document.pdf";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
   return (
     <div className="p-4 md:p-6 bg-[#e4ebf3] rounded-xl">
-      {/* Обёртка для горизонтальной прокрутки на узких экранах */}
       <div className="overflow-x-auto">
         <table className="min-w-full bg-[#f9f9f9] px-6 rounded-t-3xl overflow-hidden border-separate border-spacing-y-3">
-          {/* Заголовок таблицы */}
           <thead className="bg-[#f9f9f9] text-gray-600 uppercase text-sm md:text-base leading-normal">
             <tr className="border-b cursor-default border-[#F7F9FB]">
               <th className="py-2 px-2 text-center font-medium w-8 sm:w-10 md:w-12"></th>
@@ -101,76 +69,56 @@ const TableRole4 = () => {
               <th className="py-2 px-2 text-end font-medium w-8 sm:w-10 md:w-12"></th>
             </tr>
           </thead>
-
-          {/* Тело таблицы */}
-          <tbody className="text-gray-700 text-xs md:text-sm">
+          <tbody className="text-gray-700 text-sm md:text-base">
             {paginatedData.map((item, index) => (
               <tr
-                key={index}
+                key={item.id || index}
                 className="group rounded-3xl border border-gray-300 transition transform cursor-pointer"
                 onClick={() => handleRowClick(item)}
               >
-                <td className="py-4 bg-white rounded-l-3xl px-2 text-center font-semibold">
+                <td className="py-4 px-2 bg-white rounded-l-3xl text-center font-semibold w-8 sm:w-10 md:w-12">
                   {(currentPage - 1) * itemsPerPage + index + 1}.
                 </td>
-                <td className="py-4 px-2 bg-white text-center font-semibold transition-colors duration-500 group-hover:text-blue-500">
+                <td className="py-4 px-2 bg-white text-center font-semibold w-28 md:w-40 transition-colors duration-500 group-hover:text-blue-500">
                   {item.cadastreId}
                 </td>
-                <td className="py-4 px-2 bg-white text-center font-bold">
+                <td className="py-4 px-2 bg-white text-center font-bold w-20 md:w-24">
                   {item.modda}
                 </td>
-                <td className="py-4 px-2 bg-white text-center">
+                <td className="py-4 px-2 bg-white text-center w-24 md:w-32">
                   {item.region}
                 </td>
-                <td className="py-4 px-2 bg-white text-center">
+                <td className="py-4 px-2 bg-white text-center w-24 md:w-32">
                   {item.district}
                 </td>
-                <td className="py-4 px-2 bg-white text-center">
+                <td className="py-4 px-2 bg-white text-center w-32 md:w-52">
                   {item.address}
                 </td>
-                <td className="py-4 px-2 bg-white text-center">
+                <td className="py-4 px-2 bg-white text-center w-32 md:w-44">
                   {item.spaceImageId}
                 </td>
-                <td className="py-4 px-2 bg-white text-center">
+                <td className="py-4 px-2 bg-white text-center w-24 md:w-32">
                   {new Date(item.spaceImageDate).toLocaleDateString()}
                 </td>
-                <td className="py-4 px-2 bg-white text-center">
+                <td className="py-4 px-2 bg-white text-center w-20 md:w-24">
                   {item.type}
                 </td>
-                <td className="py-4 px-2 bg-white text-center">
+                <td className="py-4 px-2 bg-white text-center w-24 md:w-32">
                   {new Date(item.assignDate).toLocaleDateString()}
                 </td>
-                <td className="py-4 px-2 bg-white text-orange-500 font-semibold text-center">
+                <td className="py-4 px-2 bg-white text-orange-500 font-semibold text-center w-20 md:w-24">
                   {new Date(item.deadline).toLocaleDateString()}
                 </td>
                 <td className="py-4 px-2 bg-white text-center">
-                  {item.landPlan && (
-                    <PlanButton
-                      planPdf={item.landPlan}
-                      downloadPdf={downloadPdf}
-                    />
-                  )}
+                  {item.landPlan && <PlanButton item={item} />}
                 </td>
                 <td className="py-4 px-2 bg-white text-center">
-                  {item.governorDecision ? (
-                    <DecisionButton
-                      decisionPdf={item.governorDecision}
-                      downloadPdf={downloadPdf}
-                    />
-                  ) : (
-                    ""
-                  )}
+                  {item.governorDecision && <DecisionButton item={item} />}
                 </td>
-                <td
-                  className={`py-4 px-2 bg-white font-medium ${
-                    item.status === "TEKSHIRUVDAN"
-                      ? "text-blue-500"
-                      : "text-red-500"
-                  } text-center`}
-                >
+                <td className="py-4 px-2 bg-white text-center">
                   {item.status}
                 </td>
-                <td className="py-4 px-2 bg-white rounded-r-3xl text-center">
+                <td className="bg-white rounded-r-3xl text-center">
                   <ChevronRight />
                 </td>
               </tr>

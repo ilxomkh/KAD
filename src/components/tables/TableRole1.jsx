@@ -1,56 +1,24 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 import Pagination from "../Pagination";
 import PlanButton from "../PlanButton";
 import DecisionButton from "../DecisionButton";
-import { BASE_URL } from "../../utils/api"; // путь может меняться в зависимости от структуры проекта
 
-const TableRole1 = () => {
+const TableRole1 = ({ data = [] }) => {
   const navigate = useNavigate();
-  const [cadastres, setCadastres] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const itemsPerPage = 30;
   const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 30;
 
-  useEffect(() => {
-    fetch(`${BASE_URL}/cadastre`)
-      .then((res) => res.json())
-      .then((data) => {
-        setCadastres(data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        setError(err);
-        setLoading(false);
-      });
-  }, []);
-
-  if (loading) return <div>Загрузка...</div>;
-  if (error) return <div>Ошибка загрузки данных: {error.message}</div>;
-
-  // Формируем данные для текущей страницы
-  const totalData = cadastres.length;
-  const paginatedData = cadastres.slice(
+  const totalData = data.length;
+  const paginatedData = data.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
 
-  // Переход к детальному просмотру
+  // Переход к детальному просмотру записи
   const handleRowClick = (item) => {
     navigate(`/compare/${item.cadastreId}`, { state: item });
-  };
-
-  // Функция скачивания PDF
-  const downloadPdf = (url) => {
-    if (!url) return;
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "document.pdf";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
 
   return (
@@ -102,7 +70,6 @@ const TableRole1 = () => {
               <th className="py-2 px-2 text-end font-medium w-8 sm:w-10 md:w-12"></th>
             </tr>
           </thead>
-
           <tbody className="text-gray-700 text-xs md:text-sm">
             {paginatedData.map((item, index) => (
               <tr
@@ -144,28 +111,14 @@ const TableRole1 = () => {
                   {new Date(item.deadline).toLocaleDateString()}
                 </td>
                 <td className="py-4 px-2 bg-white text-center">
-                  {item.landPlan && (
-                    <PlanButton
-                      planPdf={item.landPlan}
-                      downloadPdf={downloadPdf}
-                    />
-                  )}
+                  {item.landPlan && <PlanButton item={item} />}
                 </td>
                 <td className="py-4 px-2 bg-white text-center">
-                  {item.governorDecision ? (
-                    <DecisionButton
-                      decisionPdf={item.governorDecision}
-                      downloadPdf={downloadPdf}
-                    />
-                  ) : (
-                    ""
-                  )}
+                  {item.governorDecision && <DecisionButton item={item} />}
                 </td>
                 <td
                   className={`py-4 px-2 bg-white font-medium ${
-                    item.status === "pending"
-                      ? "text-blue-500"
-                      : "text-red-500"
+                    item.status === "pending" ? "text-blue-500" : "text-red-500"
                   } text-center`}
                 >
                   {item.status}

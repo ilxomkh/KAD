@@ -12,8 +12,19 @@ import { BASE_URL } from "../utils/api";
 // Указываем путь к worker-файлу для react-pdf
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
+// Обновлённый токен авторизации
+const token =
+"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoxLCJ1c2VybmFtZSI6InJvb3QiLCJyb2xlIjoiYWRtaW4ifSwiZXhwIjoxNzQxMzQyNjAxLCJpYXQiOjE3NDEzMzkwMDF9.tYra8W6Bl3Gq08GcQiI_CJT7a3URzVUKW_gsI-7fFhI";
+
 const AgencyReviewPage = () => {
-  const { kadasterId } = useParams();
+  // Извлекаем параметр "id" из URL как строку (например, "01:01:0101010:120")
+  const { id } = useParams();
+  if (!id) {
+    console.error("Параметр id отсутствует");
+  }
+  // Используем cadastreId для первого запроса
+  const encodedId = encodeURIComponent(id);
+
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -26,9 +37,6 @@ const AgencyReviewPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Убираем отображение статуса здания и verdict (их не показываем)
-  // const [buildingStatus, setBuildingStatus] = useState(false);
-
   // Состояния для модального окна
   const [showModal, setShowModal] = useState(false);
   const [activeTab, setActiveTab] = useState("obyekt");
@@ -36,14 +44,20 @@ const AgencyReviewPage = () => {
 
   // Состояние для показа карты (MapViewer)
   const [showMapViewer, setShowMapViewer] = useState(false);
+  // Состояние для числового идентификатора, полученного из ответа API (data.ID)
+  const [recordId, setRecordId] = useState(null);
 
-  // При загрузке страницы: запрашиваем данные кадастра (включая geojson) и PDF-отчёт
   useEffect(() => {
     setLoading(true);
     setError(null);
 
-    // Запрашиваем данные кадастра с бэкенда
-    fetch(`${BASE_URL}/api/cadastre/${kadasterId}`)
+    // Получаем данные кадастра по cadastreId
+    fetch(`${BASE_URL}/api/cadastre/cad/${encodedId}`, {
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    })
       .then((res) => {
         if (!res.ok) {
           throw new Error("Ошибка загрузки данных кадастра");
@@ -93,42 +107,55 @@ const AgencyReviewPage = () => {
         setMapData({
           originalPolygonCoords: originalCoords,
           modifiedPolygonCoords: modifiedCoords,
-          // verdict и buildingPresence не отображаем
         });
+        // Сохраняем числовой идентификатор из ответа API (data.ID)
+        setRecordId(data.ID);
         setLoading(false);
+
+        // После получения данных используем recordId для запроса PDF-отчёта
+        if (data.ID !== undefined && data.ID !== null) {
+          fetch(`${BASE_URL}/api/cadastre/${data.ID}/generated_report`, {
+            headers: {
+              "Authorization": `Bearer ${token}`,
+            },
+          })
+            .then((res) => {
+              if (!res.ok) {
+                throw new Error("Ошибка загрузки PDF отчёта");
+              }
+              return res.blob();
+            })
+            .then((blob) => {
+              const url = URL.createObjectURL(blob);
+              setPdfUrl(url);
+            })
+            .catch((err) => {
+              console.error("Ошибка загрузки PDF отчёта:", err);
+            });
+        }
       })
       .catch((err) => {
         console.error(err);
         setError(err.message);
         setLoading(false);
       });
+  }, [encodedId, location.state]);
 
-    // Запрашиваем PDF-отчёт с бэкенда (endpoint: /api/cadastre/{id}/generated_report)
-    fetch(`${BASE_URL}/api/cadastre/${kadasterId}/generated_report`)
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error("Ошибка загрузки PDF отчёта");
-        }
-        return res.blob();
-      })
-      .then((blob) => {
-        const url = URL.createObjectURL(blob);
-        setPdfUrl(url);
-      })
-      .catch((err) => {
-        console.error("Ошибка загрузки PDF отчёта:", err);
-      });
-  }, [kadasterId, location.state]);
-
-  // Функция для отправки PATCH запроса к /api/cadastre/{id}/agency_verification
-  // Формат: { "verified": boolean, "comment": "string" }
+  // Функция для отправки PATCH запроса к /api/cadastre/{recordId}/agency_verification
   const sendAgencyVerification = async (verified, commentStr) => {
+    if (recordId === null) {
+      console.error("recordId отсутствует, невозможно отправить запрос");
+      return false;
+    }
     const payload = { verified, comment: commentStr };
     console.log("Отправка данных на сервер (agency_verification):", payload);
     try {
-      const response = await fetch(`${BASE_URL}/api/cadastre/${kadasterId}/agency_verification`, {
+      const response = await fetch(`${BASE_URL}/api/cadastre/${recordId}/agency_verification`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
         body: JSON.stringify(payload),
       });
       if (response.ok) {
@@ -175,7 +202,7 @@ const AgencyReviewPage = () => {
       <div className="px-8 pt-6">
         <StatusBar
           currentStep={3}
-          kadasterId={kadasterId}
+          id={id}
           onMapButtonClick={() => setShowMapViewer((prev) => !prev)}
           mapActive={showMapViewer}
         />

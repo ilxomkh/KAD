@@ -7,23 +7,44 @@ import FileUploadModal from "../components/FileUploadModal";
 import { ChevronRight } from "lucide-react";
 import { BASE_URL } from "../utils/api";
 
+// Замените на актуальное значение токена
+const token =
+"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoxLCJ1c2VybmFtZSI6InJvb3QiLCJyb2xlIjoiYWRtaW4ifSwiZXhwIjoxNzQxMzQyNjAxLCJpYXQiOjE3NDEzMzkwMDF9.tYra8W6Bl3Gq08GcQiI_CJT7a3URzVUKW_gsI-7fFhI";
+
 const VerdictPage = () => {
-  const { kadasterId } = useParams(); // параметр из URL
+  // Извлекаем параметр "id" из URL как строку (например, "01:01:0101010:120")
+  const { id } = useParams();
+  if (!id) {
+    console.error("Параметр id отсутствует");
+  }
+  // Используем cadastreId для первого запроса
+  const encodedId = encodeURIComponent(id);
+
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Состояния для данных карты, полученных с бэкенда
   const [polygonCoords, setPolygonCoords] = useState([]);
+  // Состояния для выбора наличия здания и verdict
   const [buildingExists, setBuildingExists] = useState(null);
-  const [verdict, setVerdict] = useState(""); // verdict для комментария
+  const [verdict, setVerdict] = useState("");
+  // Состояния для модального окна и загрузки фото
   const [showModal, setShowModal] = useState(false);
   const [showFileUpload, setShowFileUpload] = useState(true);
   const [sending, setSending] = useState(false);
   const [editedPolygonData, setEditedPolygonData] = useState(null);
   const [uploadedPhoto, setUploadedPhoto] = useState(null);
+  // Состояние для сохранения числового идентификатора из API (data.ID)
+  const [recordId, setRecordId] = useState(null);
 
-  // 1. Запрашиваем geojson из бэкенда
+  // 1. Запрашиваем данные кадастра по эндпоинту /api/cadastre/{cadastreId}
   useEffect(() => {
-    fetch(`${BASE_URL}/cadastre/${kadasterId}`)
+    fetch(`${BASE_URL}/api/cadastre/cad/${encodedId}`, {
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    })
       .then((res) => {
         if (!res.ok) {
           throw new Error("Ошибка при загрузке данных кадастра");
@@ -31,6 +52,10 @@ const VerdictPage = () => {
         return res.json();
       })
       .then((data) => {
+        // Сохраняем числовой идентификатор из ответа API (data.ID)
+        setRecordId(data.ID);
+
+        // Если поле geojson присутствует, парсим его
         if (data?.geojson) {
           try {
             const parsedGeoJSON = JSON.parse(data.geojson);
@@ -58,33 +83,34 @@ const VerdictPage = () => {
       .catch((err) => {
         console.error("Ошибка при загрузке кадастра:", err);
       });
-  }, [kadasterId]);
+  }, [encodedId]);
 
-  // 2. Колбэк, который вызывается после успешной загрузки фото
+  // 2. Колбэк для загрузки фото
   const handlePhotoUpload = (photoUrl) => {
     setUploadedPhoto(photoUrl);
     setShowFileUpload(false);
   };
 
-  // 3. Нажатие "Davom etish"
+  // 3. Нажатие "Davom etish" – отправка данных verdict (используем recordId)
   const handleProceed = async () => {
-    // Проверяем, что обязательные данные заполнены
     if (buildingExists === null || verdict.trim() === "") return;
-
     const payload = {
       buildingPresence: buildingExists,
       verdict: verdict,
     };
-
+    if (recordId === null) {
+      console.error("Отсутствует числовой идентификатор записи");
+      return;
+    }
     try {
-      const response = await fetch(
-        `${BASE_URL}/cadastre/${kadasterId}/verdict`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }
-      );
+      const response = await fetch(`${BASE_URL}/api/cadastre/${recordId}/verdict`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
       if (response.ok) {
         navigate("/role1tablepage");
       } else {
@@ -95,20 +121,27 @@ const VerdictPage = () => {
     }
   };
 
-  // 4. Обработчик для кнопки "Xatolik bor" в модальном окне "Xatolik bor"
+  // 4. Обработчик для кнопки "Xatolik bor" в модальном окне (также с использованием recordId)
   const handleErrorConfirm = async () => {
     setSending(true);
     const payload = {
       cadastreError: true,
-      comment: verdict, // передаем verdict как комментарий
+      comment: verdict,
     };
-
+    if (recordId === null) {
+      console.error("Отсутствует числовой идентификатор записи");
+      setSending(false);
+      return;
+    }
     try {
       const response = await fetch(
-        `${BASE_URL}/cadastre/${kadasterId}/cadastre_error`,
+        `${BASE_URL}/api/cadastre/${recordId}/cadastre_error`,
         {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
           body: JSON.stringify(payload),
         }
       );
@@ -154,7 +187,8 @@ const VerdictPage = () => {
 
       {/* Шапка */}
       <div className="absolute top-0 left-0 p-6 w-full z-50">
-        <StatusBar currentStep={1} kadasterId={kadasterId} />
+        {/* Если recordId уже получен, передаём его, иначе используем cadastreId из URL */}
+        <StatusBar currentStep={1} id={recordId || id} />
       </div>
 
       {/* Блок выбора существования здания с verdict */}
@@ -162,7 +196,7 @@ const VerdictPage = () => {
         <BuildingExistenceSelector
           buildingExists={buildingExists}
           setBuildingExists={setBuildingExists}
-          kadasterId={kadasterId}
+          id={recordId || id}
           setVerdict={setVerdict}
         />
       </div>
@@ -224,7 +258,7 @@ const VerdictPage = () => {
           isOpen={showFileUpload}
           onClose={() => setShowFileUpload(false)}
           onUpload={handlePhotoUpload}
-          cadasterId={kadasterId}
+          cadasterId={recordId || id}
         />
       )}
     </div>
