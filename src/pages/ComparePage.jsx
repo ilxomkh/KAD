@@ -5,10 +5,7 @@ import StatusBar from "../components/StatusBar";
 import BuildingExistenceSelector from "../components/BuildingExistenceSelector";
 import ArcGISPolygonEditor from "../components/ArcGISPolygonEditor";
 import { BASE_URL } from "../utils/api";
-
-// Переданный токен авторизации
-const token =
-"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoxLCJ1c2VybmFtZSI6InJvb3QiLCJyb2xlIjoiYWRtaW4ifSwiZXhwIjoxNzQxMzQyNjAxLCJpYXQiOjE3NDEzMzkwMDF9.tYra8W6Bl3Gq08GcQiI_CJT7a3URzVUKW_gsI-7fFhI";
+import { useAuth } from "../context/AuthContext";
 
 const ComparePage = () => {
   // Извлекаем параметр "id" из URL (например, "01:01:0101010:120")
@@ -16,23 +13,28 @@ const ComparePage = () => {
   if (!id) {
     console.error("Параметр id отсутствует");
   }
-  // Кодируем cadastreId для первого запроса
   const encodedId = encodeURIComponent(id);
-
   const navigate = useNavigate();
+
+  // Получаем токен из контекста (токен должен быть сохранён при логине в localStorage)
+  const { token } = useAuth();
 
   // Основные состояния
   const [polygonCoords, setPolygonCoords] = useState([]);
   const [buildingExists, setBuildingExists] = useState(null);
-  const [verdict, setVerdict] = useState(""); // verdict для комментария
+  const [verdict, setVerdict] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [sending, setSending] = useState(false);
   const [editedPolygonData, setEditedPolygonData] = useState(null);
-  // Состояние для числового идентификатора (data.ID) из ответа API
   const [recordId, setRecordId] = useState(null);
 
   // 1. Запрашиваем данные кадастра по эндпоинту /api/cadastre/cad/{cadastreId}
   useEffect(() => {
+    if (!token) {
+      console.error("Отсутствует токен авторизации");
+      return;
+    }
+
     fetch(`${BASE_URL}/api/cadastre/cad/${encodedId}`, {
       headers: {
         "Content-Type": "application/json",
@@ -42,10 +44,7 @@ const ComparePage = () => {
       .then((res) => res.json())
       .then((data) => {
         console.log("Полученные данные кадастра:", data);
-        // Сохраняем числовой идентификатор (data.ID)
         setRecordId(data.ID);
-
-        // Предпочтительно использовать fixedGeojson, если он есть, иначе geojson
         const geojsonStr = data.geojson;
         if (!geojsonStr) {
           console.error("В ответе отсутствует поле geojson");
@@ -86,7 +85,7 @@ const ComparePage = () => {
       .catch((err) => {
         console.error("Ошибка загрузки данных кадастра:", err);
       });
-  }, [encodedId]);
+  }, [encodedId, token]);
 
   // 2. Функция, вызываемая ArcGISPolygonEditor при подтверждении изменений
   const handleConfirmChanges = (data) => {
@@ -101,10 +100,7 @@ const ComparePage = () => {
       return false;
     }
 
-    // Если здание отсутствует (false), verdict = "option1" или "option2", иначе – пустая строка
     const finalVerdict = buildingExists === false ? verdict : "";
-
-    // Собираем минимальный GeoJSON-объект в виде FeatureCollection с полем fixedGeojson
     const fixedGeojson = {
       type: "FeatureCollection",
       features: [

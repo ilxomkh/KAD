@@ -1,12 +1,12 @@
 import React from "react";
 import { BASE_URL } from "../utils/api";
-
-const token =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoxLCJ1c2VybmFtZSI6InJvb3QiLCJyb2xlIjo" +
-  "iYWRtaW4ifSwiZXhwIjoxNzQxMjY2OTg4LCJpYXQiOjE3NDEyNjMzODh9.Vz4vUbpxqC37y41e3xArINEhWU9Inx7c92uzX7dnQ0A";
+import { useAuth } from "../context/AuthContext"; // Импортируем useAuth
 
 const DecisionButton = ({ item }) => {
   if (!item || !item.ID) return null;
+
+  // Получаем актуальный токен из контекста
+  const { token } = useAuth();
 
   const downloadDecision = async (e) => {
     e.stopPropagation();

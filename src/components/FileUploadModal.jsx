@@ -1,18 +1,18 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Dialog } from "@headlessui/react";
 import { CloudUpload, File, Trash } from "lucide-react";
 import { BASE_URL } from "../utils/api";
-
-// Если требуется авторизация, замените или передайте актуальный токен
-const token =
-"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoxLCJ1c2VybmFtZSI6InJvb3QiLCJyb2xlIjoiYWRtaW4ifSwiZXhwIjoxNzQxMzQyNjAxLCJpYXQiOjE3NDEzMzkwMDF9.tYra8W6Bl3Gq08GcQiI_CJT7a3URzVUKW_gsI-7fFhI";
+import { useAuth } from "../context/AuthContext"; // Импорт useAuth
 
 function FileUploadModal({ isOpen, onClose, onUpload, cadasterId }) {
   // Важно: здесь cadasterId должен быть числовым идентификатором (data.ID),
   // а не строковым cadastreId вида "01:01:0101010:120"
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
+
+  // Получаем актуальный токен из контекста
+  const { token } = useAuth();
 
   const handleFileChange = (event) => {
     const selectedFile = event.target.files[0];

@@ -1,11 +1,12 @@
 import { BASE_URL } from "../utils/api";
-
-const token = 
-"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoyLCJ1c2VybmFtZSI6InJvb3QiLCJyb2xlIjoiYWRtaW4ifSwiZXhwIjoxNzQxMjYyODE0LCJpYXQiOjE3NDEyNTkyMTR9.HX81nt7mKsk7pPDXBgIAbaGs1G5Xn0rFw8C-t4ioez0";
+import { useAuth } from "../context/AuthContext"; // Импортируем useAuth
 
 const DeleteModal = ({ item, onClose, onDelete }) => {
+  // Получаем актуальный токен из контекста
+  const { token } = useAuth();
+
   const handleDelete = async () => {
-    // Используем либо item.id, либо item._id
+    // Используем либо item.id, либо item._id, либо item.ID
     const userId = item?.id || item?._id || item?.ID;
     if (!userId) {
       console.error("Нет корректного идентификатора пользователя для удаления");
@@ -34,7 +35,10 @@ const DeleteModal = ({ item, onClose, onDelete }) => {
       className="fixed inset-0 flex items-center justify-center bg-black/50 bg-opacity-50 z-50"
       onClick={onClose}
     >
-      <div className="bg-white p-3 rounded-2xl shadow-lg w-[444px] relative" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="bg-white p-3 rounded-2xl shadow-lg w-[444px] relative"
+        onClick={(e) => e.stopPropagation()}
+      >
         <h2 className="text-xl font-semibold text-left text-black mb-4">
           Bu foydalanuvchini o‘chirmoqchimisiz?
         </h2>

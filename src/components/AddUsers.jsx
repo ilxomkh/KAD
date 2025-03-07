@@ -4,10 +4,7 @@ import { XCircle, Eye, EyeOff } from "lucide-react";
 import RoleDropdown from "./RoleDropdown";
 import PositionDropdown from "./PositionDropdown";
 import { BASE_URL } from "../utils/api";
-
-// Замените на актуальное значение токена
-const token =
-"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoxLCJ1c2VybmFtZSI6InJvb3QiLCJyb2xlIjoiYWRtaW4ifSwiZXhwIjoxNzQxMzQyNjAxLCJpYXQiOjE3NDEzMzkwMDF9.tYra8W6Bl3Gq08GcQiI_CJT7a3URzVUKW_gsI-7fFhI";
+import { useAuth } from "../context/AuthContext"; // Импортируем useAuth
 
 const AddUsers = ({ onClose }) => {
   const [formData, setFormData] = useState({
@@ -22,6 +19,9 @@ const AddUsers = ({ onClose }) => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+
+  // Получаем актуальный токен из контекста
+  const { token } = useAuth();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });

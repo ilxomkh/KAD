@@ -5,14 +5,8 @@ import Pagination from "../Pagination";
 import PlanButton from "../PlanButton";
 import DecisionButton from "../DecisionButton";
 import { BASE_URL } from "../../utils/api";
+import { useAuth } from "../../context/AuthContext"; // Импортируем useAuth
 
-const token =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoxLCJ1c2VybmFtZSI6InJvb3QiLCJyb2xlIjoiYWRtaW4ifSwiZXhwIjoxNzQxMzMwNTkxLCJpYXQiOjE3NDEzMjY5OTF9.FHIbYv-tPbnqrbox1HDmcZfuXvGhvMOmjMHzC98_zIQ";
-
-/**
- * Компонент CandidatesTable принимает готовые данные через проп `data`.
- * В нём нет локальной загрузки списка кадастров, только логика клика по строке.
- */
 function CandidatesTable({ data }) {
   const navigate = useNavigate();
 
@@ -37,19 +31,24 @@ function CandidatesTable({ data }) {
     currentPage * itemsPerPage
   );
 
+  // Получаем актуальный токен из контекста
+  const { token } = useAuth();
+
   // При клике на строку загружаем логи конкретного item
   const handleRowClick = async (item) => {
     setLogsError(null);
     setLogsLoading(true);
     try {
       // Предполагаем, что в item есть поле ID (или другое).
-      // Замените на нужное поле, которое принимает бэкенд
-      const response = await fetch(`${BASE_URL}/api/item_logs/by_item/${item.ID}`, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await fetch(
+        `${BASE_URL}/api/item_logs/by_item/${item.ID}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       if (!response.ok) {
         throw new Error("Ошибка при загрузке логов");
       }

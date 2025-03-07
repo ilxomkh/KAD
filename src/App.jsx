@@ -1,7 +1,8 @@
+// App.jsx
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 
-// Страницы
+// Импортируем страницы
 import LoginPage from "./pages/LoginPage";
 import Role1TablePage from "./pages/Role1TablePage";
 import ComparePage from "./pages/ComparePage";
@@ -13,71 +14,74 @@ import AdminPanel from "./pages/AdminPanel";
 import Role4TablePage from "./pages/Role4TablePage";
 import VerdictPage from "./pages/Verdict";
 
-const RoleBasedRoutes = () => {
-    const { user } = useAuth();
+const PrivateRoutes = () => {
+  const { token, role, isLoading } = useAuth();
 
-    if (!user) {
-        return <Navigate to="/login" />;
-    }
+  // Пока идёт проверка, не делаем редирект
+  if (isLoading) {
+    return <div>Loading...</div>; 
+    // Можно поставить здесь свой лоадер / спиннер
+  }
 
-    return (
-        <Routes>
-            {/* Авторизация */}
-            <Route path="/login" element={<LoginPage />} />
+  // Если токена нет — перенаправляем на логин
+  if (!token) {
+    return <Navigate to="/login" />;
+  }
 
-            {/* Админская панель */}
-            {user.role === "admin" && (
-                <>
-                    <Route path="/" element={<AdminPanel />} />
-                </>
-            )}
+  // Если токен есть, возвращаем нужные роуты
+  return (
+    <Routes>
+      {role === "admin" && (
+        <>
+          <Route path="/" element={<AdminPanel />} />
+        </>
+      )}
 
-            {/* 1-я роль: Таблица + Сравнение */}
-            {user.role === "geometry_fix" && (
-                <>
-                    <Route path="/" element={<Role1TablePage />} />
-                    <Route path="/compare/:id" element={<ComparePage />} />
-                </>
-            )}
+      {role === "geometry_fix" && (
+        <>
+          <Route path="/" element={<Role1TablePage />} />
+          <Route path="/compare/:id" element={<ComparePage />} />
+        </>
+      )}
 
-            {/* 2-я роль: Таблица + Проверка */}
-            {user.role === "verify" && (
-                <>
-                    <Route path="/" element={<Role2TablePage />} />
-                    <Route path="/check/:id" element={<CheckPage />} />
-                </>
-            )}
+      {role === "verify" && (
+        <>
+          <Route path="/" element={<Role2TablePage />} />
+          <Route path="/check/:id" element={<CheckPage />} />
+        </>
+      )}
 
-            {/* 3-я роль: Таблица + Агентская проверка */}
-            {user.role === "agency" && (
-                <>
-                    <Route path="/" element={<Role3TablePage />} />
-                    <Route path="/agency-review/:id" element={<AgencyReviewPage />} />
-                </>
-            )}
+      {role === "agency" && (
+        <>
+          <Route path="/" element={<Role3TablePage />} />
+          <Route path="/agency-review/:id" element={<AgencyReviewPage />} />
+        </>
+      )}
 
-            {/* 4-я роль: Таблица + Вердикт */}
-            {user.role === "verdict_79" && (
-                <>
-                    <Route path="/" element={<Role4TablePage />} />
-                    <Route path="/verdict/:id" element={<VerdictPage />} />
-                </>
-            )}
+      {role === "verdict_79" && (
+        <>
+          <Route path="/" element={<Role4TablePage />} />
+          <Route path="/verdict/:id" element={<VerdictPage />} />
+        </>
+      )}
 
-            {/* Если путь не найден, редиректим на главную страницу */}
-            <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
-    );
+      {/* Если роль неизвестна – просто редирект */}
+      <Route path="*" element={<Navigate to="/" />} />
+    </Routes>
+  );
 };
 
 function App() {
-    return (
-        <Router>
-            <AuthProvider>
-                <RoleBasedRoutes />
-            </AuthProvider>
-        </Router>
-    );
+  return (
+    <Router>
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/*" element={<PrivateRoutes />} />
+        </Routes>
+      </AuthProvider>
+    </Router>
+  );
 }
 
 export default App;

@@ -6,10 +6,7 @@ import ArcGISPolygonEditor from "../components/ArcGISPolygonEditor";
 import FileUploadModal from "../components/FileUploadModal";
 import { ChevronRight } from "lucide-react";
 import { BASE_URL } from "../utils/api";
-
-// Замените на актуальное значение токена
-const token =
-"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoxLCJ1c2VybmFtZSI6InJvb3QiLCJyb2xlIjoiYWRtaW4ifSwiZXhwIjoxNzQxMzQyNjAxLCJpYXQiOjE3NDEzMzkwMDF9.tYra8W6Bl3Gq08GcQiI_CJT7a3URzVUKW_gsI-7fFhI";
+import { useAuth } from "../context/AuthContext"; // Импорт useAuth
 
 const VerdictPage = () => {
   // Извлекаем параметр "id" из URL как строку (например, "01:01:0101010:120")
@@ -22,6 +19,9 @@ const VerdictPage = () => {
 
   const location = useLocation();
   const navigate = useNavigate();
+
+  // Получаем актуальный токен из контекста вместо жестко заданного
+  const { token } = useAuth();
 
   // Состояния для данных карты, полученных с бэкенда
   const [polygonCoords, setPolygonCoords] = useState([]);
@@ -42,7 +42,7 @@ const VerdictPage = () => {
     fetch(`${BASE_URL}/api/cadastre/cad/${encodedId}`, {
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`,
+        "Authorization": `Bearer ${token}`, // Используем токен из контекста
       },
     })
       .then((res) => {
@@ -83,7 +83,7 @@ const VerdictPage = () => {
       .catch((err) => {
         console.error("Ошибка при загрузке кадастра:", err);
       });
-  }, [encodedId]);
+  }, [encodedId, token]);
 
   // 2. Колбэк для загрузки фото
   const handlePhotoUpload = (photoUrl) => {
@@ -107,7 +107,7 @@ const VerdictPage = () => {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
+          "Authorization": `Bearer ${token}`, // Используем токен из контекста
         },
         body: JSON.stringify(payload),
       });
@@ -140,7 +140,7 @@ const VerdictPage = () => {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
+            "Authorization": `Bearer ${token}`, // Используем токен из контекста
           },
           body: JSON.stringify(payload),
         }

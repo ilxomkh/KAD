@@ -3,9 +3,7 @@ import { XCircle, Eye, EyeOff } from "lucide-react";
 import RoleDropdown from "./RoleDropdown";
 import PositionDropdown from "./PositionDropdown";
 import { BASE_URL } from "../utils/api";
-
-const token =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoyLCJ1c2VybmFtZSI6InJvb3QiLCJyb2xlIjoiYWRtaW4ifSwiZXhwIjoxNzQxMjYyODE0LCJpYXQiOjE3NDEyNTkyMTR9.HX81nt7mKsk7pPDXBgIAbaGs1G5Xn0rFw8C-t4ioez0";
+import { useAuth } from "../context/AuthContext"; // Импортируем useAuth
 
 const EditModal = ({ item, onClose, onSave }) => {
   const [formData, setFormData] = useState({
@@ -20,6 +18,9 @@ const EditModal = ({ item, onClose, onSave }) => {
   });
 
   const [showPassword, setShowPassword] = useState(false);
+
+  // Получаем актуальный токен из контекста
+  const { token } = useAuth();
 
   useEffect(() => {
     if (item) {

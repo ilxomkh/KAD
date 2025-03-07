@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
 import SearchBar from "./SearchBar";
 import FilterButton from "./FilterButton";
@@ -6,10 +6,7 @@ import LogoutButton from "./LogoutButton";
 import AddUsers from "../AddUsers";
 import FilterModal from "../FilterModal";
 import { BASE_URL } from "../../utils/api";
-
-// Токен авторизации (его можно хранить в localStorage или получать динамически)
-const token =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoxLCJ1c2VybmFtZSI6InJvb3QiLCJyb2xlIjoiYWRtaW4ifSwiZXhwIjoxNzQxMzQyNjAxLCJpYXQiOjE3NDEzMzkwMDF9.tYra8W6Bl3Gq08GcQiI_CJT7a3URzVUKW_gsI-7fFhI";
+import { useAuth } from "../../context/AuthContext"; // Импорт useAuth
 
 const HeaderAdmin = ({ currentTable, setCurrentTable, setTableData }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -37,10 +34,9 @@ const HeaderAdmin = ({ currentTable, setCurrentTable, setTableData }) => {
     setDropdownOpen(false);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("userRole");
-    window.location.reload();
-  };
+
+  // Получаем актуальный токен из AuthContext
+  const { token } = useAuth();
 
   // Функция поиска для пользователей и кадастров
   const handleSearch = (query) => {
@@ -81,7 +77,7 @@ const HeaderAdmin = ({ currentTable, setCurrentTable, setTableData }) => {
           currentTable === "users"
             ? (Array.isArray(data) ? data : data.users || data.data || [])
             : (Array.isArray(data) ? data : data.data || []);
-  
+
         if (currentTable === "users") {
           // Клиентская фильтрация по нескольким полям для пользователей
           const searchLower = query.trim().toLowerCase();
@@ -109,7 +105,7 @@ const HeaderAdmin = ({ currentTable, setCurrentTable, setTableData }) => {
       });
   };
 
-  // Обработчик фильтров с клиентской фильтрацией (без изменений)
+  // Обработчик фильтров с клиентской фильтрацией
   const handleFilterApply = (filters) => {
     console.log("Применяем фильтры в HeaderAdmin:", filters);
     const url = `${BASE_URL}/api/cadastre`;
@@ -187,7 +183,7 @@ const HeaderAdmin = ({ currentTable, setCurrentTable, setTableData }) => {
         setTableData(dataArray);
       })
       .catch((error) => console.error("Error loading data:", error));
-  }, [setTableData]);
+  }, [setTableData, token]);
 
   return (
     <>
@@ -274,7 +270,7 @@ const HeaderAdmin = ({ currentTable, setCurrentTable, setTableData }) => {
               <span className="text-lg font-semibold ml-2">Qo‘shish</span>
             </button>
           )}
-          <LogoutButton onLogout={handleLogout} />
+          <LogoutButton />
         </div>
       </header>
       <FilterModal

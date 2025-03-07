@@ -1,23 +1,32 @@
 import { XCircleIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { BASE_URL } from "../utils/api";
+import { useAuth } from "../context/AuthContext"; // Импортируем useAuth
+
 
 const ViewModal = ({ item, onClose }) => {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+    const { token } = useAuth();
+  
+
   // Загружаем логи пользователей по userId (или нужному полю)
   useEffect(() => {
-    if (item && item.userId) {
-      console.log(`Запрос логов для userId: ${item.userId}`);
+    console.log('pashol')
+    console.log('item',item)
+    console.log('item',item.userId)
+    if (item && item.ID) {
+      console.log(`Запрос логов для userId: ${item.ID}`);
       setLoading(true);
 
-      fetch(`${BASE_URL}/api/item_logs/by_user/${item.userId}`, {
+      fetch(`${BASE_URL}/api/item_logs/by_user/${item.ID}`, {
+        method: "GET",
         headers: {
           "Content-Type": "application/json",
           // При необходимости добавьте Authorization
-          // "Authorization": `Bearer ${token}`
+          "Authorization": `Bearer ${token}`
         },
       })
         .then((res) => {

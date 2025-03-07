@@ -9,14 +9,14 @@ import UsersTable from "../components/tables/UsersTable";
 import EndedTable from "../components/tables/EndedTable";
 import ErrorTable from "../components/tables/ErrorTable";
 import { BASE_URL } from "../utils/api";
-
-// Замените токен на актуальный
-const token =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoxLCJ1c2VybmFtZSI6InJvb3QiLCJyb2xlIjoiYWRtaW4ifSwiZXhwIjoxNzQxMzQyNjAxLCJpYXQiOjE3NDEzMzkwMDF9.tYra8W6Bl3Gq08GcQiI_CJT7a3URzVUKW_gsI-7fFhI";
+import { useAuth } from "../context/AuthContext"; // Импортируем useAuth
 
 const AdminPanel = () => {
   const [currentTable, setCurrentTable] = useState("default");
   const [tableData, setTableData] = useState([]); // Состояние для данных таблицы
+
+  // Получаем актуальный токен из контекста
+  const { token } = useAuth();
 
   // При каждом изменении currentTable выполняется запрос на API для получения всех данных
   useEffect(() => {
@@ -27,6 +27,12 @@ const AdminPanel = () => {
       url = `${BASE_URL}/api/cadastre`;
     }
     console.log("Запрос при переключении таблиц по URL:", url);
+
+    // Если токен отсутствует, можно не выполнять запрос
+    if (!token) {
+      console.error("Отсутствует токен авторизации");
+      return;
+    }
 
     fetch(url, {
       headers: {
@@ -43,7 +49,7 @@ const AdminPanel = () => {
         setTableData(dataArray);
       })
       .catch((error) => console.error("Ошибка загрузки данных:", error));
-  }, [currentTable]);
+  }, [currentTable, token]);
 
   return (
     <div className="bg-[#e4ebf3] w-screen min-h-screen pt-6">

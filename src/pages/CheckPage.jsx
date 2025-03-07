@@ -5,10 +5,7 @@ import StatusBar from "../components/StatusBar";
 import ArcGISTwoPolygonViewer from "../components/ArcGISTwoPolygonViewer";
 import CommentModal from "../components/CommentModal";
 import { BASE_URL } from "../utils/api";
-
-// Обновлённый токен авторизации
-const token =
-"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoxLCJ1c2VybmFtZSI6InJvb3QiLCJyb2xlIjoiYWRtaW4ifSwiZXhwIjoxNzQxMzQyNjAxLCJpYXQiOjE3NDEzMzkwMDF9.tYra8W6Bl3Gq08GcQiI_CJT7a3URzVUKW_gsI-7fFhI";
+import { useAuth } from "../context/AuthContext";
 
 const CheckPage = () => {
   // Получаем параметр из URL (это cadastreId, например "01:01:0101010:120")
@@ -22,6 +19,9 @@ const CheckPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Получаем токен из контекста (он сохраняется при логине в localStorage)
+  const { token } = useAuth();
+
   // Состояния
   const [mapData, setMapData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -34,6 +34,11 @@ const CheckPage = () => {
   const [recordId, setRecordId] = useState(null);
 
   useEffect(() => {
+    if (!token) {
+      setError("Отсутствует токен авторизации");
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(null);
 
@@ -133,7 +138,7 @@ const CheckPage = () => {
         setError(err.message);
         setLoading(false);
       });
-  }, [encodedId, location.state]);
+  }, [encodedId, location.state, token]);
 
   // Функция для отправки PATCH запроса к /cadastre/{recordId}/verification
   const sendVerification = async (verified, commentStr) => {

@@ -8,13 +8,10 @@ import { ChevronRight } from "lucide-react";
 import ArcGISTwoPolygonViewer from "../components/ArcGISTwoPolygonViewer";
 import CommentModal from "../components/CommentModal";
 import { BASE_URL } from "../utils/api";
+import { useAuth } from "../context/AuthContext"; // Импортируем useAuth
 
 // Указываем путь к worker-файлу для react-pdf
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
-
-// Обновлённый токен авторизации
-const token =
-"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoxLCJ1c2VybmFtZSI6InJvb3QiLCJyb2xlIjoiYWRtaW4ifSwiZXhwIjoxNzQxMzQyNjAxLCJpYXQiOjE3NDEzMzkwMDF9.tYra8W6Bl3Gq08GcQiI_CJT7a3URzVUKW_gsI-7fFhI";
 
 const AgencyReviewPage = () => {
   // Извлекаем параметр "id" из URL как строку (например, "01:01:0101010:120")
@@ -27,6 +24,9 @@ const AgencyReviewPage = () => {
 
   const location = useLocation();
   const navigate = useNavigate();
+
+  // Получаем токен из контекста вместо использования жёсткого значения
+  const { token } = useAuth();
 
   // Состояния для PDF-отчёта
   const [pdfUrl, setPdfUrl] = useState(null);
@@ -50,6 +50,13 @@ const AgencyReviewPage = () => {
   useEffect(() => {
     setLoading(true);
     setError(null);
+
+    // Проверяем наличие токена перед запросом
+    if (!token) {
+      setError("Отсутствует токен авторизации");
+      setLoading(false);
+      return;
+    }
 
     // Получаем данные кадастра по cadastreId
     fetch(`${BASE_URL}/api/cadastre/cad/${encodedId}`, {
@@ -139,7 +146,7 @@ const AgencyReviewPage = () => {
         setError(err.message);
         setLoading(false);
       });
-  }, [encodedId, location.state]);
+  }, [encodedId, location.state, token]);
 
   // Функция для отправки PATCH запроса к /api/cadastre/{recordId}/agency_verification
   const sendAgencyVerification = async (verified, commentStr) => {

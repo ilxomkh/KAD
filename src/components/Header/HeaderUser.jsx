@@ -5,24 +5,18 @@ import FilterButton from "./FilterButton";
 import LogoutButton from "./LogoutButton";
 import FilterModal from "../FilterModal";
 import { BASE_URL } from "../../utils/api";
-
-// Токен авторизации (его можно хранить в localStorage или получать динамически)
-const token =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoxLCJ1c2VybmFtZSI6InJvb3QiLCJyb2xlIjoiYWRtaW4ifSwiZXhwIjoxNzQxMzQyNjAxLCJpYXQiOjE3NDEzMzkwMDF9.tYra8W6Bl3Gq08GcQiI_CJT7a3URzVUKW_gsI-7fFhI";
+import { useAuth } from "../../context/AuthContext"; // Импортируем useAuth
 
 const HeaderUser = ({ setTableData }) => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  const handleLogout = () => {
-    localStorage.removeItem("userRole");
-    window.location.reload();
-  };
+  // Получаем актуальный токен из контекста
+  const { token } = useAuth();
 
   // Функция поиска для кадастра
   const handleSearch = (query) => {
-    // Кодируем запрос, если нужно (вдруг пользователь вводит спецсимволы)
     const encodedQuery = encodeURIComponent(query.trim());
-    const url = `${BASE_URL}/api/cadastre`; // Тот же endpoint, что и у фильтра
+    const url = `${BASE_URL}/api/cadastre`;
     console.log("Запрос по URL:", url);
   
     fetch(url, {
@@ -33,7 +27,6 @@ const HeaderUser = ({ setTableData }) => {
     })
       .then((res) => {
         if (!res.ok) {
-          // Если сервер вернул ошибку (4xx/5xx), очищаем таблицу и бросаем ошибку
           setTableData([]);
           return res.text().then((text) => {
             throw new Error(`HTTP error ${res.status}: ${text}`);
@@ -43,30 +36,18 @@ const HeaderUser = ({ setTableData }) => {
       })
       .then((data) => {
         console.log("Search results for cadastre:", data);
-        // Извлекаем массив из ответа
         const dataArray = Array.isArray(data) ? data : data.data || [];
-  
-        // Выполняем клиентский поиск по полю cadastreId (или любому другому)
-        // Здесь — пример точного совпадения:
-        // const filteredData = dataArray.filter((item) => item.cadastreId === query.trim());
-  
-        // Или частичное совпадение (регистр игнорируется):
         const searchLower = query.trim().toLowerCase();
         const filteredData = dataArray.filter((item) =>
           item.cadastreId.toLowerCase().includes(searchLower)
         );
-  
-        // Обновляем таблицу отфильтрованными данными
         setTableData(filteredData);
       })
       .catch((error) => {
         console.error("Error searching cadastre:", error);
-        // Если возникла ошибка, оставляем таблицу пустой
         setTableData([]);
       });
   };
-  
-  
 
   // Обработчик фильтров с клиентской фильтрацией
   const handleFilterApply = (filters) => {
@@ -130,7 +111,7 @@ const HeaderUser = ({ setTableData }) => {
         setTableData(dataArray);
       })
       .catch((error) => console.error("Error loading data:", error));
-  }, [setTableData]);
+  }, [setTableData, token]);
 
   return (
     <>
@@ -142,7 +123,7 @@ const HeaderUser = ({ setTableData }) => {
             placeholder="Kadastr raqamini kiriting"
           />
           <FilterButton onClick={() => setIsFilterOpen(true)} />
-          <LogoutButton onLogout={handleLogout} />
+          <LogoutButton />
         </div>
       </header>
 
