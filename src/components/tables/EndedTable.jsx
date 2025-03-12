@@ -1,33 +1,19 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 import Pagination from "../Pagination";
 import PlanButton from "../PlanButton";
 import DecisionButton from "../DecisionButton";
 
-/**
- * EndedTable теперь не загружает данные самостоятельно,
- * а принимает их через проп `data`.
- */
-const EndedTable = ({ data = [] }) => {
+const EndedTable = ({ data = [], totalItems, currentPage, onPageChange }) => {
   const navigate = useNavigate();
+  const itemsPerPage = 30; // Это значение нужно для корректного расчёта нумерации
 
-  // Пагинация
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 30;
-
-  const totalData = data.length;
-  const paginatedData = data.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
-  // Пример обработчика клика по строке (при желании можно убрать или изменить)
+  // Функция клика по строке таблицы
   const handleRowClick = (item) => {
     navigate(`/compare/${item.cadastreId}`, { state: item });
   };
 
-  // Пример функции для скачивания PDF, если нужно
+  // Функция для скачивания PDF (если необходимо)
   const downloadPdf = (url) => {
     if (!url) return;
     const link = document.createElement("a");
@@ -88,7 +74,7 @@ const EndedTable = ({ data = [] }) => {
             </tr>
           </thead>
           <tbody className="text-gray-700 text-sm md:text-base">
-            {paginatedData.map((item, index) => (
+            {data.map((item, index) => (
               <tr
                 key={item.id || index}
                 className="group rounded-3xl border border-gray-300 transition transform cursor-pointer"
@@ -152,10 +138,10 @@ const EndedTable = ({ data = [] }) => {
       </div>
       <div className="bg-[#f9f9f9] py-4 rounded-b-3xl">
         <Pagination
-          totalItems={totalData}
+          totalItems={totalItems}
           itemsPerPage={itemsPerPage}
           currentPage={currentPage}
-          onPageChange={setCurrentPage}
+          onPageChange={onPageChange}
         />
       </div>
     </div>

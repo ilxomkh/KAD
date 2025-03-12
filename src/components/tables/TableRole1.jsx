@@ -1,20 +1,12 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 import Pagination from "../Pagination";
 import PlanButton from "../PlanButton";
 import DecisionButton from "../DecisionButton";
 
-const TableRole1 = ({ data = [] }) => {
+const TableRole1 = ({ data = [], totalItems, currentPage, onPageChange }) => {
   const navigate = useNavigate();
-  const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 30;
-
-  const totalData = data.length;
-  const paginatedData = data.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
 
   // Переход к детальному просмотру записи
   const handleRowClick = (item) => {
@@ -71,7 +63,7 @@ const TableRole1 = ({ data = [] }) => {
             </tr>
           </thead>
           <tbody className="text-gray-700 text-xs md:text-sm">
-            {paginatedData.map((item, index) => (
+            {data.map((item, index) => (
               <tr
                 key={index}
                 className="group rounded-3xl border border-gray-300 transition transform cursor-pointer"
@@ -133,10 +125,10 @@ const TableRole1 = ({ data = [] }) => {
       </div>
       <div className="bg-[#f9f9f9] py-4 rounded-b-3xl">
         <Pagination
-          totalItems={totalData}
+          totalItems={totalItems}
           itemsPerPage={itemsPerPage}
           currentPage={currentPage}
-          onPageChange={setCurrentPage}
+          onPageChange={onPageChange}
         />
       </div>
     </div>

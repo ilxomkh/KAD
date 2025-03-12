@@ -1,45 +1,37 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronRight, XCircle } from "lucide-react";
 import Pagination from "../Pagination";
 import PlanButton from "../PlanButton";
 import DecisionButton from "../DecisionButton";
 import { BASE_URL } from "../../utils/api";
-import { useAuth } from "../../context/AuthContext"; // Импортируем useAuth
+import { useAuth } from "../../context/AuthContext";
 
-function CandidatesTable({ data }) {
+function CandidatesTable({
+  data,
+  totalItems,
+  currentPage,
+  onPageChange,
+  itemsPerPage, // <-- получаем количество записей на страницу
+}) {
   const navigate = useNavigate();
-
-  // Логи по выбранному элементу
-  const [logs, setLogs] = useState([]);
-  // Локальные состояния для модального окна и выбранного элемента
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState(null);
-
-  // Состояние для отображения "Загрузка логов..."
-  const [logsLoading, setLogsLoading] = useState(false);
-  // Состояние для ошибок при загрузке логов
-  const [logsError, setLogsError] = useState(null);
-
-  // Пагинация (только для отображения data, которое приходит через проп)
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 30;
-
-  const totalData = data.length;
-  const paginatedData = data.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
-  // Получаем актуальный токен из контекста
   const { token } = useAuth();
 
-  // При клике на строку загружаем логи конкретного item
+  // Состояния для модального окна логов
+  const [logs, setLogs] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [logsLoading, setLogsLoading] = useState(false);
+  const [logsError, setLogsError] = useState(null);
+
+  // Приходит уже нужная страница данных
+  const paginatedData = data;
+
+  // Функция для загрузки логов конкретного элемента
   const handleRowClick = async (item) => {
     setLogsError(null);
     setLogsLoading(true);
     try {
-      // Предполагаем, что в item есть поле ID (или другое).
       const response = await fetch(
         `${BASE_URL}/api/item_logs/by_item/${item.ID}`,
         {
@@ -63,7 +55,7 @@ function CandidatesTable({ data }) {
     }
   };
 
-  // Пример функции для скачивания PDF, если нужно
+  // Функция для скачивания PDF (если нужно)
   const downloadPdf = (url) => {
     if (!url) return;
     const link = document.createElement("a");
@@ -128,9 +120,11 @@ function CandidatesTable({ data }) {
                   className="group rounded-3xl border border-gray-300 transition transform cursor-pointer"
                   onClick={() => handleRowClick(item)}
                 >
+                  {/* Нумерация с учётом страницы и itemsPerPage */}
                   <td className="py-4 px-2 bg-white rounded-l-3xl text-center font-semibold w-8 sm:w-10 md:w-12">
                     {(currentPage - 1) * itemsPerPage + index + 1}.
                   </td>
+
                   <td className="py-4 px-2 bg-white text-center font-semibold w-40 md:w-48 transition-colors duration-500 group-hover:text-blue-500">
                     {item.cadastreId}
                   </td>
@@ -185,10 +179,10 @@ function CandidatesTable({ data }) {
         {/* Пагинация */}
         <div className="flex justify-center py-4 bg-[#f9f9f9] rounded-b-3xl">
           <Pagination
-            totalItems={totalData}
-            itemsPerPage={itemsPerPage}
+            totalItems={totalItems}
+            itemsPerPage={itemsPerPage}  // <-- берём из пропсов
             currentPage={currentPage}
-            onPageChange={setCurrentPage}
+            onPageChange={onPageChange}
           />
         </div>
       </div>
@@ -204,7 +198,6 @@ function CandidatesTable({ data }) {
 
           {/* Панель модального окна */}
           <div className="fixed top-0 rounded-l-2xl right-0 w-full sm:w-[320px] md:w-[400px] lg:w-[500px] h-full bg-white z-50 shadow-lg flex flex-col">
-            {/* Заголовок модального окна */}
             <div className="flex items-center justify-between p-4">
               <h2 className="text-lg font-bold">Loglar</h2>
               <button
@@ -214,8 +207,6 @@ function CandidatesTable({ data }) {
                 <XCircle className="stroke-1" />
               </button>
             </div>
-
-            {/* Контент модального окна */}
             <div className="p-4 overflow-y-auto flex-1">
               {logsLoading ? (
                 <div className="text-center">Загрузка логов...</div>
@@ -224,8 +215,8 @@ function CandidatesTable({ data }) {
                   Ошибка: {logsError}
                 </div>
               ) : logs && logs.length > 0 ? (
-                logs.map((log, index) => (
-                  <div key={log.id || index} className="mb-4 p-3">
+                logs.map((log, idx) => (
+                  <div key={log.id || idx} className="mb-4 p-3">
                     <div className="text-sm text-gray-600 mb-1">
                       {new Date(log.datetime).toLocaleString()}
                     </div>

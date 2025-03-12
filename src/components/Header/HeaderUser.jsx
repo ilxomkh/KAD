@@ -7,20 +7,19 @@ import FilterModal from "../FilterModal";
 import { BASE_URL } from "../../utils/api";
 import { useAuth } from "../../context/AuthContext";
 
-const HeaderUser = ({ setTableData }) => {
+const HeaderUser = ({ setTableData, setTotalItems, currentPage, setCurrentPage }) => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const { token } = useAuth();
 
-  // Функция поиска для кадастра
+  // Функция поиска
   const handleSearch = async (query) => {
+    // Сброс страницы на 1 при новом поиске
+    setCurrentPage(1);
     const encodedQuery = encodeURIComponent(query.trim());
-    const url = `${BASE_URL}/api/cadastre`;
+    const url = `${BASE_URL}/api/cadastre?page=1&search=${encodedQuery}`;
 
     console.log("===== [handleSearch] =====");
-    console.log("BASE_URL:", BASE_URL);
-    console.log("token:", token);
-    console.log("Поисковый запрос:", query);
-    console.log("Полный URL:", url);
+    console.log("URL:", url);
 
     try {
       const res = await fetch(url, {
@@ -29,54 +28,37 @@ const HeaderUser = ({ setTableData }) => {
           "Content-Type": "application/json",
         },
       });
-
-      console.log("[handleSearch] HTTP статус:", res.status);
-      console.log("[handleSearch] Response headers:", [...res.headers.entries()]);
-
       const rawText = await res.text();
-      console.log("[handleSearch] Raw response body:", rawText);
-
-      let data;
+      let responseJson;
       try {
-        data = JSON.parse(rawText);
+        responseJson = JSON.parse(rawText);
       } catch (e) {
         throw new Error("Ошибка парсинга JSON (handleSearch): " + e.message);
       }
 
-      console.log("[handleSearch] Распарсенный data:", data);
-
       if (!res.ok) {
-        // Если статус не ок, выбрасываем ошибку с телом ответа
-        throw new Error(`HTTP error ${res.status}: ${JSON.stringify(data)}`);
+        throw new Error(`HTTP error ${res.status}: ${JSON.stringify(responseJson)}`);
       }
 
-      // Если API вернёт { data: [...] }, извлекаем массив
-      const dataArray = Array.isArray(data) ? data : data.data || [];
-      console.log("[handleSearch] Преобразованный массив данных:", dataArray);
-
-      // Фильтрация по введённому запросу
-      const searchLower = query.trim().toLowerCase();
-      const filteredData = dataArray.filter((item) =>
-        item.cadastreId.toLowerCase().includes(searchLower)
-      );
-      console.log("[handleSearch] Отфильтрованные данные:", filteredData);
-
-      setTableData(filteredData);
+      const dataArray = responseJson.data || [];
+      const meta = responseJson.meta || {};
+      const total = meta.total || dataArray.length;
+      setTableData(dataArray);
+      setTotalItems(total);
     } catch (error) {
-      console.error("[handleSearch] Ошибка поиска кадастра:", error);
+      console.error("[handleSearch] Ошибка:", error);
       setTableData([]);
+      setTotalItems(0);
     }
   };
 
-  // Обработчик фильтров (клиентская фильтрация)
+  // Функция фильтрации
   const handleFilterApply = async (filters) => {
-    const url = `${BASE_URL}/api/cadastre`;
+    setCurrentPage(1);
+    const url = `${BASE_URL}/api/cadastre?page=1`;
 
     console.log("===== [handleFilterApply] =====");
-    console.log("BASE_URL:", BASE_URL);
-    console.log("token:", token);
-    console.log("Применяем фильтры:", filters);
-    console.log("Полный URL:", url);
+    console.log("URL:", url);
 
     try {
       const res = await fetch(url, {
@@ -85,65 +67,48 @@ const HeaderUser = ({ setTableData }) => {
           "Content-Type": "application/json",
         },
       });
-
-      console.log("[handleFilterApply] HTTP статус:", res.status);
-      console.log("[handleFilterApply] Response headers:", [...res.headers.entries()]);
-
       const rawText = await res.text();
-      console.log("[handleFilterApply] Raw response body:", rawText);
-
-      let allData;
+      let responseJson;
       try {
-        allData = JSON.parse(rawText);
+        responseJson = JSON.parse(rawText);
       } catch (e) {
         throw new Error("Ошибка парсинга JSON (handleFilterApply): " + e.message);
       }
 
-      console.log("[handleFilterApply] Распарсенный data:", allData);
-
       if (!res.ok) {
-        throw new Error(`HTTP error ${res.status}: ${JSON.stringify(allData)}`);
+        throw new Error(`HTTP error ${res.status}: ${JSON.stringify(responseJson)}`);
       }
 
-      // Преобразуем ответ к массиву
-      const dataArray = Array.isArray(allData)
-        ? allData
-        : Array.isArray(allData.data)
-        ? allData.data
-        : [];
-      console.log("[handleFilterApply] Преобразованный массив всех данных:", dataArray);
+      const dataArray = responseJson.data || [];
+      const meta = responseJson.meta || {};
+      const total = meta.total || dataArray.length;
 
-      // Фильтрация на клиенте
+      // Если нужна клиентская фильтрация:
       const filteredData = dataArray.filter((item) => {
         const matchModda =
           !filters.modda ||
           item.modda?.toString() === filters.modda.replace("-modda", "");
-        const matchRegion =
-          !filters.region || item.region === filters.region;
+        const matchRegion = !filters.region || item.region === filters.region;
         const matchDeadline =
           !filters.deadline ||
           new Date(item.assignDate).getDate() === Number(filters.deadline);
         const matchType = !filters.type || item.type === filters.type;
-
         return matchModda && matchRegion && matchDeadline && matchType;
       });
 
-      console.log("[handleFilterApply] Отфильтрованные данные:", filteredData);
       setTableData(filteredData);
+      setTotalItems(filteredData.length);
     } catch (error) {
-      console.error("[handleFilterApply] Ошибка получения/фильтрации данных:", error);
+      console.error("[handleFilterApply] Ошибка:", error);
     }
   };
 
-  // Эффект для первоначальной загрузки всех данных
+  // Загрузка данных с учётом пагинации
   useEffect(() => {
     const loadData = async () => {
-      const url = `${BASE_URL}/api/cadastre`;
-
-      console.log("===== [useEffect - начальная загрузка] =====");
-      console.log("BASE_URL:", BASE_URL);
-      console.log("token:", token);
-      console.log("Полный URL:", url);
+      const url = `${BASE_URL}/api/cadastre?page=${currentPage}`;
+      console.log("===== [useEffect - загрузка данных] =====");
+      console.log("URL:", url);
 
       try {
         const res = await fetch(url, {
@@ -152,38 +117,28 @@ const HeaderUser = ({ setTableData }) => {
             "Content-Type": "application/json",
           },
         });
-
-        console.log("[useEffect] HTTP статус:", res.status);
-        console.log("[useEffect] Response headers:", [...res.headers.entries()]);
-
         const rawText = await res.text();
-        console.log("[useEffect] Raw response body:", rawText);
-
-        let data;
+        let responseJson;
         try {
-          data = JSON.parse(rawText);
+          responseJson = JSON.parse(rawText);
         } catch (e) {
           throw new Error("Ошибка парсинга JSON (useEffect): " + e.message);
         }
-
-        console.log("[useEffect] Распарсенный data:", data);
-
         if (!res.ok) {
-          throw new Error(`HTTP error ${res.status}: ${JSON.stringify(data)}`);
+          throw new Error(`HTTP error ${res.status}: ${JSON.stringify(responseJson)}`);
         }
-
-        // Если API возвращает объект с data, используем его
-        const dataArray = data && data.data ? data.data : [];
-        console.log("[useEffect] Преобразованный массив данных:", dataArray);
-
+        const dataArray = responseJson.data || [];
+        const meta = responseJson.meta || {};
+        const total = meta.total || dataArray.length;
         setTableData(dataArray);
+        setTotalItems(total);
       } catch (error) {
         console.error("[useEffect] Ошибка загрузки данных:", error);
       }
     };
 
     loadData();
-  }, [setTableData, token]);
+  }, [setTableData, token, currentPage, setTotalItems]);
 
   return (
     <>
@@ -198,7 +153,6 @@ const HeaderUser = ({ setTableData }) => {
           <LogoutButton />
         </div>
       </header>
-
       <FilterModal
         isOpen={isFilterOpen}
         onClose={() => setIsFilterOpen(false)}

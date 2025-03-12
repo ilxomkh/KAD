@@ -1,21 +1,14 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 import Pagination from "../Pagination";
 import PlanButton from "../PlanButton";
 import DecisionButton from "../DecisionButton";
 
-const ErrorTable = ({ data = [] }) => {
+const ErrorTable = ({ data = [], totalItems, currentPage, onPageChange }) => {
   const navigate = useNavigate();
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 30;
+  const itemsPerPage = 30; // Используется для корректной нумерации записей
 
-  const totalData = data.length;
-  const paginatedData = data.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
+  // Обработчик клика по строке таблицы
   const handleRowClick = (item) => {
     navigate(`/agency-review/${item.cadastreId}`, { state: item });
   };
@@ -70,7 +63,7 @@ const ErrorTable = ({ data = [] }) => {
             </tr>
           </thead>
           <tbody className="text-gray-700 text-sm md:text-base">
-            {paginatedData.map((item, index) => (
+            {data.map((item, index) => (
               <tr
                 key={item.id || index}
                 className="group rounded-3xl border border-gray-300 transition transform cursor-pointer"
@@ -132,10 +125,10 @@ const ErrorTable = ({ data = [] }) => {
       </div>
       <div className="flex justify-center py-4 bg-[#f9f9f9] rounded-b-3xl">
         <Pagination
-          totalItems={totalData}
+          totalItems={totalItems}
           itemsPerPage={itemsPerPage}
           currentPage={currentPage}
-          onPageChange={setCurrentPage}
+          onPageChange={onPageChange}
         />
       </div>
     </div>

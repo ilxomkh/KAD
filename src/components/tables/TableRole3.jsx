@@ -1,20 +1,11 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 import Pagination from "../Pagination";
 import PlanButton from "../PlanButton";
 import DecisionButton from "../DecisionButton";
 
-const TableRole3 = ({ data = [] }) => {
+const TableRole3 = ({ data = [], totalItems, currentPage, onPageChange }) => {
   const navigate = useNavigate();
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 30;
-
-  const totalData = data.length;
-  const paginatedData = data.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
 
   const handleRowClick = (item) => {
     navigate(`/agency-review/${item.cadastreId}`, { state: item });
@@ -70,14 +61,14 @@ const TableRole3 = ({ data = [] }) => {
             </tr>
           </thead>
           <tbody className="text-gray-700 text-sm md:text-base">
-            {paginatedData.map((item, index) => (
+            {data.map((item, index) => (
               <tr
                 key={index}
                 className="group rounded-3xl border border-gray-300 transition transform cursor-pointer"
                 onClick={() => handleRowClick(item)}
               >
                 <td className="py-4 px-2 bg-white rounded-l-3xl text-center font-semibold w-8 sm:w-10 md:w-12">
-                  {(currentPage - 1) * itemsPerPage + index + 1}.
+                  {index + 1}.
                 </td>
                 <td className="py-4 px-2 bg-white text-center font-semibold w-40 md:w-48 transition-colors duration-500 group-hover:text-blue-500">
                   {item.cadastreId}
@@ -132,10 +123,10 @@ const TableRole3 = ({ data = [] }) => {
       </div>
       <div className="bg-[#f9f9f9] py-4 rounded-b-3xl">
         <Pagination
-          totalItems={totalData}
-          itemsPerPage={itemsPerPage}
+          totalItems={totalItems}
+          itemsPerPage={10} // если pageSize из meta равен 10
           currentPage={currentPage}
-          onPageChange={setCurrentPage}
+          onPageChange={onPageChange}
         />
       </div>
     </div>

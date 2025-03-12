@@ -6,9 +6,15 @@ import LogoutButton from "./LogoutButton";
 import AddUsers from "../AddUsers";
 import FilterModal from "../FilterModal";
 import { BASE_URL } from "../../utils/api";
-import { useAuth } from "../../context/AuthContext"; // Импорт useAuth
+import { useAuth } from "../../context/AuthContext";
 
-const HeaderAdmin = ({ currentTable, setCurrentTable, setTableData }) => {
+const HeaderAdmin = ({ 
+  currentTable, 
+  setCurrentTable, 
+  setTableData, 
+  currentPage, 
+  setCurrentPage 
+}) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -21,6 +27,7 @@ const HeaderAdmin = ({ currentTable, setCurrentTable, setTableData }) => {
     { key: "role3", label: "3-bosqichdagilar" },
     { key: "ended", label: "Tugallanganlar" },
     { key: "errors", label: "Kadastr xatoliklari" },
+    { key: "moderation", label: "Moderatsiya" },
   ];
 
   const selectedOption =
@@ -31,10 +38,10 @@ const HeaderAdmin = ({ currentTable, setCurrentTable, setTableData }) => {
     console.log("Выбрана таблица:", table);
     setCurrentTable(table);
     setDropdownOpen(false);
+    // При смене таблицы сбрасываем номер страницы
+    setCurrentPage(1);
   };
 
-
-  // Получаем актуальный токен из AuthContext
   const { token } = useAuth();
 
   // Функция поиска для пользователей и кадастров
@@ -42,17 +49,15 @@ const HeaderAdmin = ({ currentTable, setCurrentTable, setTableData }) => {
     const encodedQuery = encodeURIComponent(query.trim());
     let url = "";
     if (currentTable === "users") {
-      // Для поиска пользователей запрашиваем весь список
-      url = `${BASE_URL}/api/users`;
+      url = `${BASE_URL}/api/users?page=${currentPage}`;
     } else {
-      // Для кадастров – запрос идёт на endpoint, возвращающий все кадастровые данные
-      url = `${BASE_URL}/api/cadastre`;
+      url = `${BASE_URL}/api/cadastre?page=${currentPage}&search=${encodedQuery}`;
     }
     console.log("Запрос по URL:", url);
 
     fetch(url, {
       headers: {
-        "Authorization": `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
     })
@@ -78,19 +83,21 @@ const HeaderAdmin = ({ currentTable, setCurrentTable, setTableData }) => {
             : (Array.isArray(data) ? data : data.data || []);
 
         if (currentTable === "users") {
-          // Клиентская фильтрация по нескольким полям для пользователей
           const searchLower = query.trim().toLowerCase();
           const filteredData = dataArray.filter((item) =>
-            (item.username && item.username.toLowerCase().includes(searchLower)) ||
-            (item.firstName && item.firstName.toLowerCase().includes(searchLower)) ||
-            (item.lastName && item.lastName.toLowerCase().includes(searchLower)) ||
-            (item.middleName && item.middleName.toLowerCase().includes(searchLower)) ||
+            (item.username &&
+              item.username.toLowerCase().includes(searchLower)) ||
+            (item.firstName &&
+              item.firstName.toLowerCase().includes(searchLower)) ||
+            (item.lastName &&
+              item.lastName.toLowerCase().includes(searchLower)) ||
+            (item.middleName &&
+              item.middleName.toLowerCase().includes(searchLower)) ||
             (item.ID && item.ID.toString().toLowerCase().includes(searchLower)) ||
             (item.role && item.role.toLowerCase().includes(searchLower))
           );
           setTableData(filteredData);
         } else {
-          // Для кадастров выполняем фильтрацию по cadastreId
           const queryLower = query.trim().toLowerCase();
           const filteredData = dataArray.filter((item) =>
             item.cadastreId.toLowerCase().includes(queryLower)
@@ -104,15 +111,17 @@ const HeaderAdmin = ({ currentTable, setCurrentTable, setTableData }) => {
       });
   };
 
-  // Обработчик фильтров с клиентской фильтрацией
+  // Обработчик фильтров (клиентская фильтрация)
   const handleFilterApply = (filters) => {
+    // При применении фильтров сбрасываем страницу на 1
+    setCurrentPage(1);
+    const url = `${BASE_URL}/api/cadastre?page=1`;
     console.log("Применяем фильтры в HeaderAdmin:", filters);
-    const url = `${BASE_URL}/api/cadastre`;
     console.log("Запрос на получение всех данных по URL:", url);
 
     fetch(url, {
       headers: {
-        "Authorization": `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
     })
@@ -166,23 +175,30 @@ const HeaderAdmin = ({ currentTable, setCurrentTable, setTableData }) => {
       );
   };
 
-  // Первоначальная загрузка всех данных (при монтировании)
+  // Первоначальная загрузка данных с учетом пагинации
   useEffect(() => {
-    const url = `${BASE_URL}/api/cadastre`;
+    let url = "";
+    if (currentTable === "users") {
+      url = `${BASE_URL}/api/users?page=${currentPage}`;
+    } else {
+      url = `${BASE_URL}/api/cadastre?page=${currentPage}`;
+    }
     console.log("Начальная загрузка данных по URL:", url);
     fetch(url, {
       headers: {
-        "Authorization": `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
     })
       .then((res) => res.json())
       .then((data) => {
-        const dataArray = Array.isArray(data) ? data : data.data || [];
+        const dataArray = Array.isArray(data)
+          ? data
+          : data.data || [];
         setTableData(dataArray);
       })
       .catch((error) => console.error("Error loading data:", error));
-  }, [setTableData, token]);
+  }, [setTableData, token, currentPage, currentTable]);
 
   return (
     <>

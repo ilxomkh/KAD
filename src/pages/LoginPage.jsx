@@ -3,13 +3,14 @@ import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { BASE_URL } from "../utils/api";
-import { User, Lock } from "lucide-react";
+import { User, Lock, Eye, EyeOff } from "lucide-react";
 
 const LoginPage = () => {
   const navigate = useNavigate();
   const { setTokensAndUser } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false); // состояние для видимости пароля
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -78,18 +79,24 @@ const LoginPage = () => {
                 />
               </div>
 
-              {/* Поле пароля */}
+              {/* Поле пароля с кнопкой показа/скрытия */}
               <div className="relative mb-4">
                 <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
                   <Lock className="w-5 h-5" />
                 </span>
                 <input
-                  type="password"
-                  className="w-full pl-10 pr-3 py-3 border border-[#F3F6F9] rounded-xl outline-none focus:border-blue-400 transition-colors"
+                  type={showPassword ? "text" : "password"}
+                  className="w-full pl-10 pr-10 py-3 border border-[#F3F6F9] rounded-xl outline-none focus:border-blue-400 transition-colors"
                   placeholder="Parolni kiriting"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
+                <span
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer text-gray-400"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </span>
               </div>
 
               {/* Кнопка входа */}

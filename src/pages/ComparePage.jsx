@@ -7,6 +7,7 @@ import ArcGISPolygonEditor from "../components/ArcGISPolygonEditor";
 import { BASE_URL } from "../utils/api";
 import { useAuth } from "../context/AuthContext";
 import CadastreInfo from "../components/infoButton";
+import SupportButton from "../components/supportButton";
 
 const ComparePage = () => {
   const { id } = useParams();
@@ -321,6 +322,10 @@ const sendGeometryFixData = async () => {
 
       <div className="absolute top-52 right-8">
         <CadastreInfo cadastreId={recordId || id} />
+      </div>
+
+      <div className="absolute top-52 right-22">
+        <SupportButton cadastreId={recordId || id} />
       </div>
 
       {/* Кнопка "Davom etish" */}

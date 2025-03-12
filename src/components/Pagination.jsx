@@ -23,7 +23,6 @@ const Pagination = ({ totalItems, itemsPerPage, currentPage, onPageChange }) => 
         generatePages();
     }, [currentPage, totalPages]);
 
-    if (totalPages <= 1) return null; // Не показывать пагинацию, если всего 1 страница
 
     return (
         <div className="flex justify-center items-center space-x-2 mt-3 mb-3">

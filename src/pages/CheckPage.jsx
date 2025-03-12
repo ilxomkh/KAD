@@ -246,18 +246,14 @@ const CheckPage = () => {
             <StatusBar currentStep={2} id={id} />
           </div>
           {/* Блок для отображения buildingPresence */}
-          <div className="absolute top-40 left-8 bg-white px-4 py-3 rounded-xl shadow-md">
+          <div className="absolute top-40 left-8 bg-white px-4 py-3 rounded-xl">
             <h2 className="text-lg font-semibold">
               Qurilma:{" "}
               <span className="text-gray-800">{mapData.buildingPresence}</span>
             </h2>
           </div>
           {/* Блок для отображения verdict */}
-          <div className="absolute top-56 left-8 bg-white px-4 py-2 rounded-xl shadow-md">
-            <p className="text-lg font-semibold">
-              Verdit: <span className="text-blue-600">{mapData.verdict}</span>
-            </p>
-          </div>
+
           <div className="absolute top-80 right-3">
             <CadastreInfo cadastreId={recordId || id} />
           </div>

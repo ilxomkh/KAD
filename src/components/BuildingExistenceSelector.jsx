@@ -11,7 +11,7 @@ const BuildingExistenceSelector = ({
   ];
 
   return (
-    <div className="bg-white rounded-2xl shadow-md p-4">
+    <div className="bg-white rounded-2xl p-4">
       <h2 className="text-xl font-semibold mb-3">Qurilma mavjudmi?</h2>
       <div className="flex space-x-6">
         {options.map((option) => (

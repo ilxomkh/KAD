@@ -1,37 +1,22 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import { ChevronRight } from "lucide-react";
 import Pagination from "../Pagination";
 import ToggleSwitch from "../Toggle";
 import ActionDropdown from "../ActionDropdown";
 
-const UsersTable = ({ data = [] }) => {
-  // Локальное состояние для данных внутри таблицы
-  const [localData, setLocalData] = useState(data);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 12;
+const UsersTable = ({ data = [], totalItems, currentPage, onPageChange }) => {
+  const navigate = useNavigate();
+  const itemsPerPage = 12; // Количество элементов на страницу
 
-  // Когда проп data меняется, синхронизируем локальное состояние
-  useEffect(() => {
-    setLocalData(data);
-  }, [data]);
-
-  // Функция переключения статуса пользователя
+  // Пример функции для переключения статуса пользователя
   const toggleStatus = (id) => {
-    setLocalData((prevData) =>
-      prevData.map((item) =>
-        (item.id || item._id || item.userId) === id
-          ? { ...item, active: !item.active }
-          : item
-      )
-    );
+    // Здесь можно сделать запрос к API для обновления статуса,
+    // а затем вызвать onPageChange или другой callback для обновления данных.
+    console.log("Toggle status for user", id);
   };
 
-  // Пагинация
-  const paginatedData = localData.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
-  if (!localData.length) return <div>Данные не найдены</div>;
+  if (!data.length) return <div>Данные не найдены</div>;
 
   return (
     <div className="p-6 bg-[#e4ebf3] w-screen">
@@ -53,14 +38,16 @@ const UsersTable = ({ data = [] }) => {
             </tr>
           </thead>
           <tbody className="text-gray-700 text-md">
-            {paginatedData.map((item, index) => {
+            {data.map((item, index) => {
               const userId = item.id || item._id || item.userId;
               return (
                 <tr
                   key={userId || index}
                   className="group transition rounded-3xl cursor-pointer relative"
                 >
-                  <td className="py-6 px-4 bg-white rounded-l-3xl">{item.ID}</td>
+                  <td className="py-6 px-4 bg-white rounded-l-3xl">
+                    {(currentPage - 1) * itemsPerPage + index + 1}.
+                  </td>
                   <td className="py-6 px-4 bg-white">{item.firstName}</td>
                   <td className="py-6 px-4 bg-white">{item.lastName}</td>
                   <td className="py-6 px-4 bg-white">{item.middleName}</td>
@@ -91,10 +78,10 @@ const UsersTable = ({ data = [] }) => {
       </div>
       <div className="flex justify-center py-4 bg-[#f9f9f9] rounded-b-3xl">
         <Pagination
-          totalItems={localData.length}
+          totalItems={totalItems}
           itemsPerPage={itemsPerPage}
           currentPage={currentPage}
-          onPageChange={setCurrentPage}
+          onPageChange={onPageChange}
         />
       </div>
     </div>
