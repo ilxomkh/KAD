@@ -22,7 +22,7 @@ const LoginPage = () => {
         password,
       });
       const { token, refreshToken } = response.data;
-      const role = response.data.role || "admin";
+      const role = response.data.role;
       setTokensAndUser({ token, refreshToken, role });
       navigate("/");
     } catch (error) {
@@ -98,7 +98,7 @@ const LoginPage = () => {
                 disabled={loading}
                 className="w-full cursor-pointer bg-[#1683FF] text-white py-3 rounded-lg hover:bg-blue-600 transition-colors"
               >
-                {loading ? "Vxod..." : "Kirish"}
+                {loading ? "Kirilmoqda..." : "Kirish"}
               </button>
             </div>
           </div>

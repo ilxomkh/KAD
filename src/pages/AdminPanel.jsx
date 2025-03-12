@@ -18,22 +18,34 @@ const AdminPanel = () => {
   // Получаем актуальный токен из контекста
   const { token } = useAuth();
 
-  // При каждом изменении currentTable выполняется запрос на API для получения всех данных
   useEffect(() => {
     let url = "";
     if (currentTable === "users") {
       url = `${BASE_URL}/api/users`;
     } else {
       url = `${BASE_URL}/api/cadastre`;
+      if (currentTable === "ended") {
+        url += "?status=finished";
+      } else if (currentTable === "errors") {
+        // Фильтрация по атрибуту cadastreError
+        url += "?cadastreError=true";
+      } else if (currentTable === "role1" || currentTable === "role4") {
+        // Оба запроса для pending, но фильтрация по modda произойдёт на клиенте
+        url += "?status=pending";
+      } else if (currentTable === "role2") {
+        url += "?status=geometry_fixed";
+      } else if (currentTable === "role3") {
+        url += "?status=verified";
+      }
     }
-    console.log("Запрос при переключении таблиц по URL:", url);
-
-    // Если токен отсутствует, можно не выполнять запрос
+    console.log("Запрос по URL:", url);
+  
+    // Если токен отсутствует, прерываем выполнение
     if (!token) {
       console.error("Отсутствует токен авторизации");
       return;
     }
-
+  
     fetch(url, {
       headers: {
         "Authorization": `Bearer ${token}`,
@@ -42,14 +54,29 @@ const AdminPanel = () => {
     })
       .then((res) => res.json())
       .then((data) => {
-        const dataArray =
+        let dataArray =
           currentTable === "users"
             ? (Array.isArray(data) ? data : data.users || data.data || [])
             : (Array.isArray(data) ? data : data.data || []);
+  
+        // Дополнительная фильтрация для pending по полю modda
+        if (currentTable === "role4") {
+          // Отображаем только записи, где modda равно "7" или "9"
+          dataArray = dataArray.filter(
+            (item) => item.modda === 7 || item.modda === 9
+          );
+        } else if (currentTable === "role1") {
+          // Отображаем записи, где modda не равен "7" и не равен "9"
+          dataArray = dataArray.filter(
+            (item) => item.modda !== 7 && item.modda !== 9
+          );
+        }
         setTableData(dataArray);
       })
       .catch((error) => console.error("Ошибка загрузки данных:", error));
-  }, [currentTable, token]);
+  }, [currentTable, token, setTableData]);
+  
+  
 
   return (
     <div className="bg-[#e4ebf3] w-screen min-h-screen pt-6">

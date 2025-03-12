@@ -10,8 +10,8 @@ const CommentModal = ({
   onClose,
 }) => {
   return (
-    <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50 pointer-events-auto">
-      <div className="bg-white rounded-2xl shadow-lg w-1/3 p-6 text-left relative">
+    <div className="fixed inset-0 bg-black/20 flex justify-center items-center z-50 pointer-events-auto">
+      <div className="bg-white rounded-2xl w-1/4 p-6 text-left relative">
         {/* Заголовок */}
         <h2 className="text-2xl font-semibold mb-6">Izoh qoldiring</h2>
 

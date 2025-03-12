@@ -34,7 +34,7 @@ const UsersTable = ({ data = [] }) => {
   if (!localData.length) return <div>Данные не найдены</div>;
 
   return (
-    <div className="p-6 bg-[#e4ebf3] min-h-screen w-screen">
+    <div className="p-6 bg-[#e4ebf3] w-screen">
       <div className="mt-4 bg-[#f9f9f9] p-6 rounded-t-3xl">
         <table className="w-full border-separate border-spacing-y-3">
           <thead>

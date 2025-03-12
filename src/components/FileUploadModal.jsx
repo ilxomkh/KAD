@@ -75,9 +75,9 @@ function FileUploadModal({ isOpen, onClose, onUpload, cadasterId }) {
     <Dialog
       open={isOpen}
       onClose={onClose}
-      className="fixed inset-0 flex items-center justify-center bg-black/50 z-50"
+      className="fixed inset-0 flex items-center justify-center bg-black/20 z-50"
     >
-      <div className="bg-white p-6 rounded-2xl shadow-lg w-full sm:w-1/3">
+      <div className="bg-white p-6 rounded-2xl w-1/4">
         <div className="flex justify-between items-center">
           <h2 className="text-xl font-bold cursor-default text-left">
             Faylni yuklang

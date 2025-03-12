@@ -5,112 +5,184 @@ import FilterButton from "./FilterButton";
 import LogoutButton from "./LogoutButton";
 import FilterModal from "../FilterModal";
 import { BASE_URL } from "../../utils/api";
-import { useAuth } from "../../context/AuthContext"; // Импортируем useAuth
+import { useAuth } from "../../context/AuthContext";
 
 const HeaderUser = ({ setTableData }) => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-
-  // Получаем актуальный токен из контекста
   const { token } = useAuth();
 
   // Функция поиска для кадастра
-  const handleSearch = (query) => {
+  const handleSearch = async (query) => {
     const encodedQuery = encodeURIComponent(query.trim());
     const url = `${BASE_URL}/api/cadastre`;
-    console.log("Запрос по URL:", url);
-  
-    fetch(url, {
-      headers: {
-        "Authorization": `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    })
-      .then((res) => {
-        if (!res.ok) {
-          setTableData([]);
-          return res.text().then((text) => {
-            throw new Error(`HTTP error ${res.status}: ${text}`);
-          });
-        }
-        return res.json();
-      })
-      .then((data) => {
-        console.log("Search results for cadastre:", data);
-        const dataArray = Array.isArray(data) ? data : data.data || [];
-        const searchLower = query.trim().toLowerCase();
-        const filteredData = dataArray.filter((item) =>
-          item.cadastreId.toLowerCase().includes(searchLower)
-        );
-        setTableData(filteredData);
-      })
-      .catch((error) => {
-        console.error("Error searching cadastre:", error);
-        setTableData([]);
+
+    console.log("===== [handleSearch] =====");
+    console.log("BASE_URL:", BASE_URL);
+    console.log("token:", token);
+    console.log("Поисковый запрос:", query);
+    console.log("Полный URL:", url);
+
+    try {
+      const res = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       });
-  };
 
-  // Обработчик фильтров с клиентской фильтрацией
-  const handleFilterApply = (filters) => {
-    console.log("Применяем фильтры в HeaderUser:", filters);
-    const url = `${BASE_URL}/api/cadastre`;
-    console.log("Запрос на получение всех данных по URL:", url);
+      console.log("[handleSearch] HTTP статус:", res.status);
+      console.log("[handleSearch] Response headers:", [...res.headers.entries()]);
 
-    fetch(url, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    })
-      .then((res) => {
-        if (!res.ok) {
-          return res.text().then((text) => {
-            throw new Error(`HTTP error ${res.status}: ${text}`);
-          });
-        }
-        return res.json();
-      })
-      .then((allData) => {
-        const dataArray = Array.isArray(allData)
-          ? allData
-          : Array.isArray(allData.data)
-          ? allData.data
-          : [];
-        const filteredData = dataArray.filter((item) => {
-          const matchModda =
-            !filters.modda ||
-            item.modda.toString() === filters.modda.replace("-modda", "");
-          const matchViloyat =
-            !filters.viloyat || item.region === filters.viloyat;
-          const matchSanasi =
-            !filters.sanasi ||
-            new Date(item.assignDate).getDate() === Number(filters.sanasi);
-          const matchToifa = !filters.toifa || item.type === filters.toifa;
-          return matchModda && matchViloyat && matchSanasi && matchToifa;
-        });
-        console.log("Отфильтрованные данные:", filteredData);
-        setTableData(filteredData);
-      })
-      .catch((error) =>
-        console.error("Error fetching or filtering data:", error)
+      const rawText = await res.text();
+      console.log("[handleSearch] Raw response body:", rawText);
+
+      let data;
+      try {
+        data = JSON.parse(rawText);
+      } catch (e) {
+        throw new Error("Ошибка парсинга JSON (handleSearch): " + e.message);
+      }
+
+      console.log("[handleSearch] Распарсенный data:", data);
+
+      if (!res.ok) {
+        // Если статус не ок, выбрасываем ошибку с телом ответа
+        throw new Error(`HTTP error ${res.status}: ${JSON.stringify(data)}`);
+      }
+
+      // Если API вернёт { data: [...] }, извлекаем массив
+      const dataArray = Array.isArray(data) ? data : data.data || [];
+      console.log("[handleSearch] Преобразованный массив данных:", dataArray);
+
+      // Фильтрация по введённому запросу
+      const searchLower = query.trim().toLowerCase();
+      const filteredData = dataArray.filter((item) =>
+        item.cadastreId.toLowerCase().includes(searchLower)
       );
+      console.log("[handleSearch] Отфильтрованные данные:", filteredData);
+
+      setTableData(filteredData);
+    } catch (error) {
+      console.error("[handleSearch] Ошибка поиска кадастра:", error);
+      setTableData([]);
+    }
   };
 
-  // Эффект для первоначальной загрузки всех данных при монтировании
-  useEffect(() => {
+  // Обработчик фильтров (клиентская фильтрация)
+  const handleFilterApply = async (filters) => {
     const url = `${BASE_URL}/api/cadastre`;
-    console.log("Начальная загрузка данных по URL:", url);
-    fetch(url, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        const dataArray = Array.isArray(data) ? data : data.data || [];
+
+    console.log("===== [handleFilterApply] =====");
+    console.log("BASE_URL:", BASE_URL);
+    console.log("token:", token);
+    console.log("Применяем фильтры:", filters);
+    console.log("Полный URL:", url);
+
+    try {
+      const res = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      console.log("[handleFilterApply] HTTP статус:", res.status);
+      console.log("[handleFilterApply] Response headers:", [...res.headers.entries()]);
+
+      const rawText = await res.text();
+      console.log("[handleFilterApply] Raw response body:", rawText);
+
+      let allData;
+      try {
+        allData = JSON.parse(rawText);
+      } catch (e) {
+        throw new Error("Ошибка парсинга JSON (handleFilterApply): " + e.message);
+      }
+
+      console.log("[handleFilterApply] Распарсенный data:", allData);
+
+      if (!res.ok) {
+        throw new Error(`HTTP error ${res.status}: ${JSON.stringify(allData)}`);
+      }
+
+      // Преобразуем ответ к массиву
+      const dataArray = Array.isArray(allData)
+        ? allData
+        : Array.isArray(allData.data)
+        ? allData.data
+        : [];
+      console.log("[handleFilterApply] Преобразованный массив всех данных:", dataArray);
+
+      // Фильтрация на клиенте
+      const filteredData = dataArray.filter((item) => {
+        const matchModda =
+          !filters.modda ||
+          item.modda?.toString() === filters.modda.replace("-modda", "");
+        const matchRegion =
+          !filters.region || item.region === filters.region;
+        const matchDeadline =
+          !filters.deadline ||
+          new Date(item.assignDate).getDate() === Number(filters.deadline);
+        const matchType = !filters.type || item.type === filters.type;
+
+        return matchModda && matchRegion && matchDeadline && matchType;
+      });
+
+      console.log("[handleFilterApply] Отфильтрованные данные:", filteredData);
+      setTableData(filteredData);
+    } catch (error) {
+      console.error("[handleFilterApply] Ошибка получения/фильтрации данных:", error);
+    }
+  };
+
+  // Эффект для первоначальной загрузки всех данных
+  useEffect(() => {
+    const loadData = async () => {
+      const url = `${BASE_URL}/api/cadastre`;
+
+      console.log("===== [useEffect - начальная загрузка] =====");
+      console.log("BASE_URL:", BASE_URL);
+      console.log("token:", token);
+      console.log("Полный URL:", url);
+
+      try {
+        const res = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        console.log("[useEffect] HTTP статус:", res.status);
+        console.log("[useEffect] Response headers:", [...res.headers.entries()]);
+
+        const rawText = await res.text();
+        console.log("[useEffect] Raw response body:", rawText);
+
+        let data;
+        try {
+          data = JSON.parse(rawText);
+        } catch (e) {
+          throw new Error("Ошибка парсинга JSON (useEffect): " + e.message);
+        }
+
+        console.log("[useEffect] Распарсенный data:", data);
+
+        if (!res.ok) {
+          throw new Error(`HTTP error ${res.status}: ${JSON.stringify(data)}`);
+        }
+
+        // Если API возвращает объект с data, используем его
+        const dataArray = data && data.data ? data.data : [];
+        console.log("[useEffect] Преобразованный массив данных:", dataArray);
+
         setTableData(dataArray);
-      })
-      .catch((error) => console.error("Error loading data:", error));
+      } catch (error) {
+        console.error("[useEffect] Ошибка загрузки данных:", error);
+      }
+    };
+
+    loadData();
   }, [setTableData, token]);
 
   return (

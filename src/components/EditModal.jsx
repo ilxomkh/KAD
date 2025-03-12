@@ -120,7 +120,7 @@ const EditModal = ({ item, onClose, onSave }) => {
               value={formData.firstName}
               onChange={handleChange}
               placeholder="Ismini kiriting"
-              className="w-full border border-[#94c6ff] rounded-xl p-2 py-3 mt-1 text-gray-700 bg-[#e8f3ff]/50"
+              className="w-full border focus:outline-none border-[#94c6ff] rounded-xl p-2 py-3 mt-1 text-gray-700 bg-[#e8f3ff]/50"
             />
           </div>
 
@@ -132,7 +132,7 @@ const EditModal = ({ item, onClose, onSave }) => {
               value={formData.lastName}
               onChange={handleChange}
               placeholder="Familiyasini kiriting"
-              className="w-full border border-[#94c6ff] rounded-xl p-2 py-3 mt-1 text-gray-700 bg-[#e8f3ff]/50"
+              className="w-full border border-[#94c6ff] focus:outline-none rounded-xl p-2 py-3 mt-1 text-gray-700 bg-[#e8f3ff]/50"
             />
           </div>
 
@@ -144,7 +144,7 @@ const EditModal = ({ item, onClose, onSave }) => {
               value={formData.middleName}
               onChange={handleChange}
               placeholder="Sharifini kiriting"
-              className="w-full border border-[#94c6ff] rounded-xl p-2 py-3 mt-1 text-gray-700 bg-[#e8f3ff]/50"
+              className="w-full border focus:outline-none border-[#94c6ff] rounded-xl p-2 py-3 mt-1 text-gray-700 bg-[#e8f3ff]/50"
             />
           </div>
 
@@ -163,7 +163,7 @@ const EditModal = ({ item, onClose, onSave }) => {
               value={formData.username}
               onChange={handleChange}
               placeholder="Username kiriting"
-              className="w-full border border-[#94c6ff] rounded-xl p-2 py-3 mt-1 text-gray-700 bg-[#e8f3ff]/50"
+              className="w-full border focus:outline-none border-[#94c6ff] rounded-xl p-2 py-3 mt-1 text-gray-700 bg-[#e8f3ff]/50"
             />
           </div>
 
@@ -175,7 +175,7 @@ const EditModal = ({ item, onClose, onSave }) => {
               value={formData.password}
               onChange={handleChange}
               placeholder="Parolini kiriting"
-              className="w-full border border-[#94c6ff] rounded-xl p-2 py-3 mt-1 text-gray-700 bg-[#e8f3ff]/50"
+              className="w-full border focus:outline-none border-[#94c6ff] rounded-xl p-2 py-3 mt-1 text-gray-700 bg-[#e8f3ff]/50"
             />
             <button
               type="button"
@@ -203,7 +203,7 @@ const EditModal = ({ item, onClose, onSave }) => {
               value={formData.passwordVerify}
               onChange={handleChange}
               placeholder="Parolini qaytadan kiriting"
-              className="w-full border border-[#94c6ff] rounded-xl p-2 py-3 mt-1 text-gray-700 bg-[#e8f3ff]/50"
+              className="w-full border focus:outline-none border-[#94c6ff] rounded-xl p-2 py-3 mt-1 text-gray-700 bg-[#e8f3ff]/50"
             />
             <button
               type="button"

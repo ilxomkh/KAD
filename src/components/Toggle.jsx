@@ -1,11 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BASE_URL } from "../utils/api";
-import { useAuth } from "../context/AuthContext"; // Импортируем useAuth
+import { useAuth } from "../context/AuthContext";
 
 const ToggleSwitch = ({ userId, initialStatus, onToggle }) => {
   const [status, setStatus] = useState(initialStatus);
-  // Получаем актуальный токен из контекста
   const { token } = useAuth();
+
+  // Обновляем локальное состояние, если initialStatus изменился
+  useEffect(() => {
+    setStatus(initialStatus);
+  }, [initialStatus]);
 
   const handleToggle = async () => {
     if (!userId) {

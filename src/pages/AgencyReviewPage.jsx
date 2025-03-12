@@ -8,24 +8,21 @@ import { ChevronRight } from "lucide-react";
 import ArcGISTwoPolygonViewer from "../components/ArcGISTwoPolygonViewer";
 import CommentModal from "../components/CommentModal";
 import { BASE_URL } from "../utils/api";
-import { useAuth } from "../context/AuthContext"; // Импортируем useAuth
+import { useAuth } from "../context/AuthContext";
 
 // Указываем путь к worker-файлу для react-pdf
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 const AgencyReviewPage = () => {
-  // Извлекаем параметр "id" из URL как строку (например, "01:01:0101010:120")
+  // Извлекаем параметр "id" из URL (например, "01:01:0101010:120")
   const { id } = useParams();
   if (!id) {
     console.error("Параметр id отсутствует");
   }
-  // Используем cadastreId для первого запроса
   const encodedId = encodeURIComponent(id);
 
   const location = useLocation();
   const navigate = useNavigate();
-
-  // Получаем токен из контекста вместо использования жёсткого значения
   const { token } = useAuth();
 
   // Состояния для PDF-отчёта
@@ -37,28 +34,31 @@ const AgencyReviewPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Состояния для модального окна
+  // Состояния для модального окна комментария (Xatolik bor)
   const [showModal, setShowModal] = useState(false);
   const [activeTab, setActiveTab] = useState("obyekt");
   const [comment, setComment] = useState("");
 
   // Состояние для показа карты (MapViewer)
   const [showMapViewer, setShowMapViewer] = useState(false);
-  // Состояние для числового идентификатора, полученного из ответа API (data.ID)
+  // Состояние для числового идентификатора, полученного из ответа API
   const [recordId, setRecordId] = useState(null);
+
+  // Состояние для модального окна подтверждения "Davom etish"
+  const [showProceedModal, setShowProceedModal] = useState(false);
+  const [sending, setSending] = useState(false);
 
   useEffect(() => {
     setLoading(true);
     setError(null);
 
-    // Проверяем наличие токена перед запросом
     if (!token) {
       setError("Отсутствует токен авторизации");
       setLoading(false);
       return;
     }
 
-    // Получаем данные кадастра по cadastreId
+    // Запрос данных кадастра
     fetch(`${BASE_URL}/api/cadastre/cad/${encodedId}`, {
       headers: {
         "Content-Type": "application/json",
@@ -92,7 +92,7 @@ const AgencyReviewPage = () => {
         } catch (e) {
           console.error("Ошибка парсинга geojson:", e);
         }
-        // Парсим fixedGeojson для modifiedPolygonCoords
+        // Парсим fixedGeojson для modifiedPolygonCoords с проверкой на тип "Polygon"
         let modifiedCoords = [];
         try {
           const fixedGeojson = JSON.parse(data.fixedGeojson);
@@ -107,6 +107,10 @@ const AgencyReviewPage = () => {
             modifiedCoords = fixedGeojson.geometry.coordinates[0].map(
               ([lon, lat]) => [lat, lon]
             );
+          } else if (fixedGeojson.type === "Polygon" && fixedGeojson.coordinates) {
+            modifiedCoords = fixedGeojson.coordinates[0].map(
+              ([lon, lat]) => [lat, lon]
+            );
           }
         } catch (e) {
           console.error("Ошибка парсинга fixedGeojson:", e);
@@ -115,11 +119,10 @@ const AgencyReviewPage = () => {
           originalPolygonCoords: originalCoords,
           modifiedPolygonCoords: modifiedCoords,
         });
-        // Сохраняем числовой идентификатор из ответа API (data.ID)
         setRecordId(data.ID);
         setLoading(false);
 
-        // После получения данных используем recordId для запроса PDF-отчёта
+        // Запрос PDF-отчёта
         if (data.ID !== undefined && data.ID !== null) {
           fetch(`${BASE_URL}/api/cadastre/${data.ID}/generated_report`, {
             headers: {
@@ -148,7 +151,7 @@ const AgencyReviewPage = () => {
       });
   }, [encodedId, location.state, token]);
 
-  // Функция для отправки PATCH запроса к /api/cadastre/{recordId}/agency_verification
+  // Функция отправки PATCH запроса для agency_verification
   const sendAgencyVerification = async (verified, commentStr) => {
     if (recordId === null) {
       console.error("recordId отсутствует, невозможно отправить запрос");
@@ -181,13 +184,15 @@ const AgencyReviewPage = () => {
   // Обработчик для кнопки "Davom etish" – verified: true, comment: ""
   const handleProceed = async () => {
     console.log("Нажата кнопка Davom etish. Отправка agency_verification: { verified: true, comment: '' }");
+    setSending(true);
     const result = await sendAgencyVerification(true, "");
+    setSending(false);
     if (result) {
       navigate("/");
     }
   };
 
-  // Обработчик для модального окна "Xatolik bor" – verified: false, comment формируется из выбранного таба и введённого текста
+  // Обработчик для модального окна "Xatolik bor"
   const handleSend = async () => {
     const errorType = activeTab === "obyekt" ? "Obyekt joyiga mos emas" : "Toifasi mos emas";
     const finalComment = comment ? `${errorType}: ${comment}` : errorType;
@@ -242,7 +247,7 @@ const AgencyReviewPage = () => {
       <div className="absolute bottom-6 z-40 right-8 bg-white p-3 rounded-xl flex space-x-4">
         <button
           className="px-6 py-3 bg-blue-600 text-white rounded-xl flex items-center transition-all hover:bg-blue-700"
-          onClick={handleProceed}
+          onClick={() => setShowProceedModal(true)}
         >
           Davom etish <ChevronRight className="ml-2 w-6 h-6 mt-0.5" />
         </button>
@@ -275,6 +280,32 @@ const AgencyReviewPage = () => {
             modifiedPolygonCoords={mapData?.modifiedPolygonCoords || []}
             onClose={() => setShowMapViewer(false)}
           />
+        </div>
+      )}
+
+      {/* Модальное окно подтверждения "Davom etishni tasdiqlaysizmi?" */}
+      {showProceedModal && (
+        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50 pointer-events-auto">
+          <div className="bg-white px-4 py-2 rounded-2xl shadow-lg max-w-md w-full text-left relative">
+            <h2 className="text-lg cursor-default font-semibold mb-4">
+              Davom etishni tasdiqlaysizmi?
+            </h2>
+            <div className="flex justify-center w-full space-x-4">
+              <button
+                className="px-6 py-3 w-full cursor-pointer bg-blue-500 text-white rounded-xl transition-all hover:bg-blue-600"
+                onClick={handleProceed}
+                disabled={sending}
+              >
+                {sending ? "Yuborilmoqda..." : "Ha"}
+              </button>
+              <button
+                className="px-6 py-3 w-full cursor-pointer bg-[#f7f9fb] border border-[#e9e9eb] text-gray-700 rounded-xl transition-all hover:bg-gray-100"
+                onClick={() => setShowProceedModal(false)}
+              >
+                Yo'q
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

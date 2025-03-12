@@ -6,43 +6,38 @@ import ArcGISPolygonEditor from "../components/ArcGISPolygonEditor";
 import FileUploadModal from "../components/FileUploadModal";
 import { ChevronRight } from "lucide-react";
 import { BASE_URL } from "../utils/api";
-import { useAuth } from "../context/AuthContext"; // Импорт useAuth
+import { useAuth } from "../context/AuthContext";
+import CadastreInfo from "../components/infoButton";
 
 const VerdictPage = () => {
-  // Извлекаем параметр "id" из URL как строку (например, "01:01:0101010:120")
+  // Извлекаем параметр "id" из URL
   const { id } = useParams();
   if (!id) {
     console.error("Параметр id отсутствует");
   }
-  // Используем cadastreId для первого запроса
   const encodedId = encodeURIComponent(id);
-
   const location = useLocation();
   const navigate = useNavigate();
-
-  // Получаем актуальный токен из контекста вместо жестко заданного
   const { token } = useAuth();
 
-  // Состояния для данных карты, полученных с бэкенда
   const [polygonCoords, setPolygonCoords] = useState([]);
-  // Состояния для выбора наличия здания и verdict
   const [buildingExists, setBuildingExists] = useState(null);
   const [verdict, setVerdict] = useState("");
-  // Состояния для модального окна и загрузки фото
   const [showModal, setShowModal] = useState(false);
   const [showFileUpload, setShowFileUpload] = useState(true);
   const [sending, setSending] = useState(false);
   const [editedPolygonData, setEditedPolygonData] = useState(null);
   const [uploadedPhoto, setUploadedPhoto] = useState(null);
-  // Состояние для сохранения числового идентификатора из API (data.ID)
   const [recordId, setRecordId] = useState(null);
+  // Состояние для модального окна подтверждения "Davom etish"
+  const [showProceedModal, setShowProceedModal] = useState(false);
 
   // 1. Запрашиваем данные кадастра по эндпоинту /api/cadastre/{cadastreId}
   useEffect(() => {
     fetch(`${BASE_URL}/api/cadastre/cad/${encodedId}`, {
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`, // Используем токен из контекста
+        Authorization: `Bearer ${token}`,
       },
     })
       .then((res) => {
@@ -52,10 +47,7 @@ const VerdictPage = () => {
         return res.json();
       })
       .then((data) => {
-        // Сохраняем числовой идентификатор из ответа API (data.ID)
         setRecordId(data.ID);
-
-        // Если поле geojson присутствует, парсим его
         if (data?.geojson) {
           try {
             const parsedGeoJSON = JSON.parse(data.geojson);
@@ -68,7 +60,6 @@ const VerdictPage = () => {
                 firstFeature?.geometry?.type === "Polygon" &&
                 firstFeature.geometry.coordinates?.length > 0
               ) {
-                // Преобразуем координаты из [долгота, широта] в [широта, долгота]
                 const coords = firstFeature.geometry.coordinates[0].map(
                   ([lon, lat]) => [lat, lon]
                 );
@@ -91,28 +82,31 @@ const VerdictPage = () => {
     setShowFileUpload(false);
   };
 
-  // 3. Нажатие "Davom etish" – отправка данных verdict (используем recordId)
+  // 3. Нажатие "Davom etish" – вывод payload в консоль и отправка данных verdict
   const handleProceed = async () => {
-    if (buildingExists === null || verdict.trim() === "") return;
+    if (buildingExists === null) return;
     const payload = {
       buildingPresence: buildingExists,
-      verdict: verdict,
     };
+    console.log("Payload для отправки на сервер (verdict):", payload);
     if (recordId === null) {
       console.error("Отсутствует числовой идентификатор записи");
       return;
     }
     try {
-      const response = await fetch(`${BASE_URL}/api/cadastre/${recordId}/verdict`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`, // Используем токен из контекста
-        },
-        body: JSON.stringify(payload),
-      });
+      const response = await fetch(
+        `${BASE_URL}/api/cadastre/${recordId}/building_presence`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        }
+      );
       if (response.ok) {
-        navigate("/role1tablepage");
+        navigate("/role4tablepage");
       } else {
         console.error("Ошибка при отправке данных verdict");
       }
@@ -121,7 +115,7 @@ const VerdictPage = () => {
     }
   };
 
-  // 4. Обработчик для кнопки "Xatolik bor" в модальном окне (также с использованием recordId)
+  // 4. Обработчик для кнопки "Xatolik bor" в модальном окне
   const handleErrorConfirm = async () => {
     setSending(true);
     const payload = {
@@ -140,14 +134,14 @@ const VerdictPage = () => {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`, // Используем токен из контекста
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify(payload),
         }
       );
       if (response.ok) {
         console.log("Данные cadastre_error успешно отправлены");
-        navigate("/role1tablepage");
+        navigate("/role4tablepage");
       } else {
         console.error("Ошибка при отправке данных cadastre_error");
       }
@@ -162,43 +156,49 @@ const VerdictPage = () => {
   return (
     <div className="relative min-h-screen w-screen flex">
       {/* Левая часть (если загружено фото) */}
-      {uploadedPhoto && (
-        <div className="w-1/2 h-full">
-          <img
-            src={uploadedPhoto}
-            alt="Загруженное фото"
-            className="w-full h-full object-cover rounded-lg shadow-lg"
-          />
-        </div>
-      )}
+      <div className="flex max-h-screen w-screen">
+  {/* Левая колонка (фото) */}
+  {uploadedPhoto && (
+    <div className="w-1/2 h-full">
+      <img
+        src={uploadedPhoto}
+        alt="Загруженное фото"
+        className="w-full h-full object-cover rounded-lg shadow-lg"
+      />
+    </div>
+  )}
 
-      {/* Правая часть (карта), если фото загружено → 50%, иначе 100% */}
-      <div className={`${uploadedPhoto ? "w-1/2" : "w-full"} h-full`}>
-        <ArcGISPolygonEditor
-          backendPolygonCoords={
-            polygonCoords && polygonCoords.length > 0
-              ? polygonCoords
-              : [[41.32, 69.25]]
-          }
-          editable={false}
-          onChangePolygonData={setEditedPolygonData}
-        />
-      </div>
+  {/* Правая колонка (карта) */}
+  <ArcGISPolygonEditor
+    backendPolygonCoords={
+      polygonCoords && polygonCoords.length > 0
+        ? polygonCoords
+        : [[41.32, 69.25]]
+    }
+    editable={false}
+    onConfirmChanges={setEditedPolygonData}
+    isHalfWidth={!!uploadedPhoto} // Если фото есть, карта будет иметь ширину 50vw
+  />
+</div>
+
 
       {/* Шапка */}
       <div className="absolute top-0 left-0 p-6 w-full z-50">
-        {/* Если recordId уже получен, передаём его, иначе используем cadastreId из URL */}
         <StatusBar currentStep={1} id={recordId || id} />
       </div>
 
       {/* Блок выбора существования здания с verdict */}
-      <div className="absolute top-0 left-0 z-50">
+      <div className="absolute top-36 left-6 z-50 pointer-events-auto">
         <BuildingExistenceSelector
-          buildingExists={buildingExists}
-          setBuildingExists={setBuildingExists}
+          selectedStatus={buildingExists}
+          setSelectedStatus={setBuildingExists}
           id={recordId || id}
-          setVerdict={setVerdict}
         />
+      </div>
+
+
+      <div className="absolute top-52 right-8">
+        <CadastreInfo cadastreId={recordId || id} />
       </div>
 
       {/* Контейнер для кнопок */}
@@ -217,9 +217,9 @@ const VerdictPage = () => {
           <div className="pointer-events-auto bg-white p-3 rounded-xl">
             <button
               className="px-6 py-3 cursor-pointer bg-blue-600 text-white rounded-xl flex items-center justify-center transition-all hover:bg-blue-700"
-              onClick={handleProceed}
-              disabled={buildingExists === null || verdict.trim() === ""}
-            >
+              onClick={() => setShowProceedModal(true)}
+              disabled={buildingExists === null}
+              >
               Davom etish <ChevronRight className="ml-2 w-6 h-6 mt-0.5" />
             </button>
           </div>
@@ -244,6 +244,32 @@ const VerdictPage = () => {
               <button
                 className="px-6 py-3 w-full cursor-pointer bg-[#f7f9fb] border border-[#e9e9eb] text-gray-700 rounded-xl transition-all hover:bg-gray-100"
                 onClick={() => setShowModal(false)}
+              >
+                Yo'q
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Модальное окно подтверждения "Davom etish" */}
+      {showProceedModal && (
+        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50 pointer-events-auto">
+          <div className="bg-white px-4 py-2 rounded-2xl shadow-lg max-w-md w-full text-left relative">
+            <h2 className="text-lg cursor-default font-semibold mb-4">
+              Davom etishni tasdiqlaysizmi?
+            </h2>
+            <div className="flex justify-center w-full space-x-4">
+              <button
+                className="px-6 py-3 w-full cursor-pointer bg-blue-500 text-white rounded-xl transition-all hover:bg-blue-600"
+                onClick={handleProceed}
+                disabled={sending}
+              >
+                {sending ? "Yuborilmoqda..." : "Ha"}
+              </button>
+              <button
+                className="px-6 py-3 w-full cursor-pointer bg-[#f7f9fb] border border-[#e9e9eb] text-gray-700 rounded-xl transition-all hover:bg-gray-100"
+                onClick={() => setShowProceedModal(false)}
               >
                 Yo'q
               </button>

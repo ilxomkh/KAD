@@ -6,13 +6,13 @@ const FilterModal = ({ isOpen, onClose, onApply }) => {
 
   // Состояние выбранных значений для каждой группы фильтрации
   const [selectedOptions, setSelectedOptions] = useState({
-    viloyat: "",
+    region: "",
     modda: "",
-    sanasi: "",
-    toifa: "",
+    deadline: "",
+    type: "",
     kadastr: "",
     status: "",
-    tekshiruv: "",
+    district: "",
   });
 
   const handleSelect = (groupKey, value) => {
@@ -21,7 +21,7 @@ const FilterModal = ({ isOpen, onClose, onApply }) => {
   };
 
   // Определяем массивы опций для каждой группы
-  const viloyatOptions = [
+  const regionOptions = [
     "Toshkent viloyati",
     "Surxondaryo",
     "Sirdaryo",
@@ -36,11 +36,11 @@ const FilterModal = ({ isOpen, onClose, onApply }) => {
     "Samarqand",
   ];
   const moddaOptions = ["5-modda", "6-modda", "7-modda", "8-modda", "9-modda"];
-  const sanasiOptions = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-  const toifaOptions = ["Toifa-1", "Toifa-2"];
+  const deadlineOptions = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+  const typeOptions = ["Toifa-1", "Toifa-2"];
   const kadastrOptions = ["1-bosqich", "2-bosqich", "3-bosqich", "4-bosqich"];
   const statusOptions = ["Ha", "Yo‘q"];
-  const tekshiruvOptions = ["Ha", "Yo‘q"];
+  const districtOptions = ["Ha", "Yo‘q"];
 
   // Функция для отрисовки группы опций с передачей ключа для состояния
   const renderOptionGroup = (groupLabel, options, groupKey) => (
@@ -89,13 +89,13 @@ const FilterModal = ({ isOpen, onClose, onApply }) => {
 
         {/* Основное содержимое модалки */}
         <div>
-          {renderOptionGroup("Viloyat", viloyatOptions, "viloyat")}
+          {renderOptionGroup("Viloyat", regionOptions, "viloyat")}
           {renderOptionGroup("Modda", moddaOptions, "modda")}
-          {renderOptionGroup("Kelgan sanasi", sanasiOptions, "sanasi")}
-          {renderOptionGroup("Toifa", toifaOptions, "toifa")}
+          {renderOptionGroup("Qolgan kuni", deadlineOptions, "kuni")}
+          {renderOptionGroup("Toifa", typeOptions, "toifa")}
           {renderOptionGroup("Kadastr kategoriyasi", kadastrOptions, "kadastr")}
           {renderOptionGroup("Status", statusOptions, "status")}
-          {renderOptionGroup("Tekshiruv kategoriyasi", tekshiruvOptions, "tekshiruv")}
+          {renderOptionGroup("Tekshiruv kategoriyasi", districtOptions, "tekshiruv")}
         </div>
 
         {/* Кнопки управления */}

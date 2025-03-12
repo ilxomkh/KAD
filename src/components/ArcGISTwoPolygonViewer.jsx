@@ -3,14 +3,11 @@ import Map from "@arcgis/core/Map";
 import MapView from "@arcgis/core/views/MapView";
 import Graphic from "@arcgis/core/Graphic";
 import GraphicsLayer from "@arcgis/core/layers/GraphicsLayer";
-import { Plus, Minus } from "lucide-react"; // Импорт иконок
+import { Plus, Minus } from "lucide-react";
 
-// Вычисляем центр по экстенту (bounding box)
+// Функция вычисления центра по координатам (bounding box)
 function computeCenter(ring) {
-  let minX = Infinity,
-    minY = Infinity,
-    maxX = -Infinity,
-    maxY = -Infinity;
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
   ring.forEach(([x, y]) => {
     if (x < minX) minX = x;
     if (y < minY) minY = y;
@@ -23,20 +20,15 @@ function computeCenter(ring) {
 const ArcGISTwoPolygonViewer = ({
   backendPolygonCoords,
   modifiedPolygonCoords,
+  isHalfWidth = false, // <— Добавили проп для ширины
 }) => {
   const mapRef = useRef(null);
   const [view, setView] = useState(null);
   const minZoomLevel = 10;
 
   // Преобразуем координаты из [lat, lng] в [lng, lat]
-  const originalRing = backendPolygonCoords.map((coord) => [
-    coord[1],
-    coord[0],
-  ]);
-  const modifiedRing = modifiedPolygonCoords.map((coord) => [
-    coord[1],
-    coord[0],
-  ]);
+  const originalRing = backendPolygonCoords.map((coord) => [coord[1], coord[0]]);
+  const modifiedRing = modifiedPolygonCoords.map((coord) => [coord[1], coord[0]]);
 
   useEffect(() => {
     const graphicsLayer = new GraphicsLayer();
@@ -45,9 +37,10 @@ const ArcGISTwoPolygonViewer = ({
       layers: [graphicsLayer],
     });
 
-    // Объединяем массивы координат
-    const combinedRing = [...originalRing, ...modifiedRing];
-    // Если массив пустой, используем центр по умолчанию
+    // Для вычисления центра объединяем обе группы координат
+    const combinedRing = [];
+    if (originalRing.length > 0) combinedRing.push(...originalRing);
+    if (modifiedRing.length > 0) combinedRing.push(...modifiedRing);
     const center =
       combinedRing.length > 0 ? computeCenter(combinedRing) : [69.25, 41.32];
 
@@ -64,7 +57,7 @@ const ArcGISTwoPolygonViewer = ({
       viewInstance.ui.remove("attribution");
       viewInstance.ui.remove("zoom");
 
-      // Рисуем оригинальный полигон
+      // Рисуем оригинальный полигон (из backendPolygonCoords)
       if (originalRing && originalRing.length > 0) {
         const originalPolygon = {
           type: "polygon",
@@ -75,14 +68,14 @@ const ArcGISTwoPolygonViewer = ({
           geometry: originalPolygon,
           symbol: {
             type: "simple-fill",
-            color: [255, 0, 0, 0], // Прозрачная заливка
+            color: [255, 0, 0, 0], // прозрачная заливка
             outline: { color: [0, 255, 0], width: 3 },
           },
         });
         graphicsLayer.add(originalGraphic);
       }
 
-      // Рисуем изменённый полигон
+      // Рисуем изменённый полигон (из fixedGeojson)
       if (modifiedRing && modifiedRing.length > 0) {
         const modifiedPolygon = {
           type: "polygon",
@@ -93,7 +86,7 @@ const ArcGISTwoPolygonViewer = ({
           geometry: modifiedPolygon,
           symbol: {
             type: "simple-fill",
-            color: [0, 0, 255, 0],
+            color: [0, 0, 255, 0], // прозрачная заливка
             outline: { color: [255, 0, 0], width: 2 },
           },
         });
@@ -106,23 +99,23 @@ const ArcGISTwoPolygonViewer = ({
     };
   }, [backendPolygonCoords, modifiedPolygonCoords]);
 
-  // Функция увеличения зума
   const handleZoomIn = () => {
-    if (view) {
-      view.zoom = view.zoom + 1;
-    }
+    if (view) view.zoom += 1;
   };
 
-  // Функция уменьшения зума
   const handleZoomOut = () => {
-    if (view && view.zoom > minZoomLevel) {
-      view.zoom = view.zoom - 1;
-    }
+    if (view && view.zoom > minZoomLevel) view.zoom -= 1;
   };
 
   return (
     <div className="relative">
-      <div ref={mapRef} style={{ width: "100vw", height: "100vh" }}></div>
+      {/* Ставим ширину 50vw, если isHalfWidth = true; иначе 100vw */}
+      <div
+        ref={mapRef}
+        style={{ width: isHalfWidth ? "50vw" : "100vw", height: "100vh" }}
+      ></div>
+
+      {/* Кнопки зума */}
       <div className="absolute top-1/2 right-4 transform -translate-y-1/2 space-y-3 z-50 pointer-events-auto">
         <div className="grid grid-cols-1 gap-6">
           <button

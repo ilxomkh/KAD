@@ -34,11 +34,12 @@ function computeAngle(ring, center) {
 const ArcGISPolygonEditor = ({
   backendPolygonCoords,
   onConfirmChanges,
-  editable = false, // Режим редактирования (true) или только просмотр (false)
+  editable = false, // режим редактирования (true) или только просмотр (false)
+  isHalfWidth = false, // если true, то ширина карты будет 50vw, иначе 100vw
 }) => {
   const mapRef = useRef(null);
-  const initialAngleRef = useRef(0); // Исходный угол полигона относительно центра
-  const initialCenterRef = useRef(null); // Исходный центр полигона
+  const initialAngleRef = useRef(0);
+  const initialCenterRef = useRef(null);
   const [view, setView] = useState(null);
   const [polygonGraphic, setPolygonGraphic] = useState(null);
   const [sketchVM, setSketchVM] = useState(null);
@@ -73,17 +74,11 @@ const ArcGISPolygonEditor = ({
         return;
       }
 
-      // Вычисляем центр по экстенту и сохраняем его
       const center = computeCenter(ring);
       initialCenterRef.current = center;
-      // Вычисляем исходный угол относительно центра
       const computedInitialAngle = computeAngle(ring, center);
       initialAngleRef.current = computedInitialAngle;
-      console.log(
-        "Начальный угол (будем считать 0°):",
-        computedInitialAngle,
-        "°"
-      );
+      console.log("Начальный угол (будем считать 0°):", computedInitialAngle, "°");
 
       const polygon = {
         type: "polygon",
@@ -102,11 +97,11 @@ const ArcGISPolygonEditor = ({
       graphicsLayer.add(graphic);
       setPolygonGraphic(graphic);
 
-      // Рисуем круг для визуальной ориентации, используя вычисленный центр
+      // Рисуем круг для визуальной ориентации
       const distances = ring.map(([x, y]) =>
         Math.sqrt(Math.pow(x - center[0], 2) + Math.pow(y - center[1], 2))
       );
-      const maxDistance = Math.max(...distances) * 1.1; // 10% отступ
+      const maxDistance = Math.max(...distances) * 1.1;
       const circleGeometry = new Circle({
         center: center,
         radius: maxDistance,
@@ -122,13 +117,11 @@ const ArcGISPolygonEditor = ({
       });
       graphicsLayer.add(circleGraphic);
 
-      // Если разрешено редактирование, создаем SketchViewModel с возможностями перемещения и поворота
       if (editable) {
         const sketch = new SketchViewModel({
           view: viewInstance,
           layer: graphicsLayer,
           updateOnGraphicClick: false,
-          // Скрываем вершины
           vertexSymbol: {
             type: "simple-marker",
             style: "circle",
@@ -136,7 +129,6 @@ const ArcGISPolygonEditor = ({
             color: [0, 0, 0, 0],
             outline: null,
           },
-          // Оставляем только поворот и перемещение
           defaultSymbols: {
             transform: {
               boundary: {
@@ -165,13 +157,10 @@ const ArcGISPolygonEditor = ({
         });
         setSketchVM(sketch);
 
-        // Блокируем попытки изменить форму или масштабировать полигон
         sketch.on("update", (event) => {
           const blockedActions = ["reshape", "vertex-move", "scale"];
           if (blockedActions.includes(event.toolEventInfo?.type)) {
-            console.log(
-              "Блокируем попытку изменить форму или масштабировать полигон."
-            );
+            console.log("Блокируем попытку изменить форму или масштабировать полигон.");
             sketch.cancel();
           }
           console.log("Update event:", event.state, event.toolEventInfo);
@@ -184,7 +173,6 @@ const ArcGISPolygonEditor = ({
     };
   }, [backendPolygonCoords, editable]);
 
-  // Функция для запуска трансформации (если редактирование разрешено)
   const handleTransform = () => {
     if (sketchVM && polygonGraphic) {
       setActiveButton("transform");
@@ -216,7 +204,6 @@ const ArcGISPolygonEditor = ({
     }
   };
 
-  // При подтверждении изменений вычисляем итоговый угол поворота относительно центра экстента
   const handleConfirm = () => {
     if (
       polygonGraphic &&
@@ -230,12 +217,9 @@ const ArcGISPolygonEditor = ({
       };
 
       const currentRing = polygonGraphic.geometry.rings[0];
-      // Вычисляем новый центр по экстенту
       const currentCenter = computeCenter(currentRing);
-      // Вычисляем текущий угол относительно нового центра
       const currentAngle = computeAngle(currentRing, currentCenter);
       let finalRotation = currentAngle - initialAngleRef.current;
-      // Нормализуем угол в диапазоне 0-360°
       const normalizedRotation = ((finalRotation % 360) + 360) % 360;
 
       console.log("Отправка geometry:", finalGeometry);
@@ -258,9 +242,11 @@ const ArcGISPolygonEditor = ({
 
   return (
     <div className="relative cursor-grab active:cursor-grabbing">
-      <div ref={mapRef} style={{ width: "100vw", height: "100vh" }}></div>
+      <div
+        ref={mapRef}
+        style={{ width: isHalfWidth ? "50vw" : "100vw", height: "100vh" }}
+      ></div>
 
-      {/* Если разрешено редактирование, показываем кнопки управления */}
       {editable && (
         <>
           <div className="absolute top-1/2 right-4 transform -translate-y-1/2 space-y-3 z-50 pointer-events-auto">

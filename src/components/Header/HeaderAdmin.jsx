@@ -21,7 +21,6 @@ const HeaderAdmin = ({ currentTable, setCurrentTable, setTableData }) => {
     { key: "role3", label: "3-bosqichdagilar" },
     { key: "ended", label: "Tugallanganlar" },
     { key: "errors", label: "Kadastr xatoliklari" },
-    { key: "users", label: "Foydalanuvchilar" },
   ];
 
   const selectedOption =
@@ -149,14 +148,14 @@ const HeaderAdmin = ({ currentTable, setCurrentTable, setTableData }) => {
             const matchModda =
               !filters.modda ||
               item.modda.toString() === filters.modda.replace("-modda", "");
-            const matchViloyat =
-              !filters.viloyat || item.region === filters.viloyat;
-            const matchSanasi =
-              !filters.sanasi ||
-              new Date(item.assignDate).getDate() === Number(filters.sanasi);
-            const matchToifa =
-              !filters.toifa || item.type === filters.toifa;
-            return matchModda && matchViloyat && matchSanasi && matchToifa;
+            const matchRegion =
+              !filters.region || item.region === filters.region;
+            const matchDeadline =
+              !filters.deadline ||
+              new Date(item.assignDate).getDate() === Number(filters.deadline);
+            const matchType =
+              !filters.type || item.type === filters.type;
+            return matchModda && matchRegion && matchDeadline && matchType;
           });
           console.log("Отфильтрованные данные для кадастра:", filteredData);
           setTableData(filteredData);
