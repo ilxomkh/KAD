@@ -75,7 +75,7 @@ function CandidatesTable({
               <tr className="border-b cursor-default border-[#F7F9FB]">
                 <th className="py-2 px-2 text-center font-medium w-8 sm:w-10 md:w-12"></th>
                 <th className="py-2 px-2 text-center font-medium w-40 md:w-48">
-                  Kadast ID
+                  Kadastr ID
                 </th>
                 <th className="py-2 px-2 text-center font-medium w-24">
                   Modda
@@ -109,6 +109,9 @@ function CandidatesTable({
                 </th>
                 <th className="py-2 px-2 text-center font-medium w-32">
                   Hokim qarori
+                </th>
+                <th className="py-2 px-2 text-center font-medium w-32">
+                  Statusi
                 </th>
                 <th className="py-2 px-2 text-end font-medium w-16 sm:w-20 md:w-24"></th>
               </tr>
@@ -167,7 +170,10 @@ function CandidatesTable({
                   <td className="py-4 px-2 bg-white text-center">
                     {item.governorDecision && <DecisionButton item={item} />}
                   </td>
-                  <td className="justify-end flex items-center py-5 bg-white rounded-r-3xl">
+                  <td className="py-4 px-2 bg-white text-center text-green-500">
+                    {item.status}
+                  </td>
+                  <td className="justify-end flex items-center py-7 bg-white rounded-r-3xl">
                     <ChevronRight className="mr-2" />
                   </td>
                 </tr>

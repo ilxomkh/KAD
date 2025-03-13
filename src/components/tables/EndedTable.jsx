@@ -125,7 +125,7 @@ const EndedTable = ({ data = [], totalItems, currentPage, onPageChange }) => {
                 <td className="py-4 px-2 bg-white text-center">
                   {item.governorDecision && <DecisionButton item={item} />}
                 </td>
-                <td className="py-4 px-6 bg-white text-center">
+                <td className="py-4 px-6 bg-white text-center text-green-500">
                   {item.status}
                 </td>
                 <td className="bg-white rounded-r-3xl text-center">

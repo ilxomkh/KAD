@@ -113,12 +113,17 @@ const HeaderAdmin = ({
 
   // Обработчик фильтров (клиентская фильтрация)
   const handleFilterApply = (filters) => {
-    // При применении фильтров сбрасываем страницу на 1
-    setCurrentPage(1);
-    const url = `${BASE_URL}/api/cadastre?page=1`;
+    // Проверяем, заданы ли какие-либо фильтры
+    const hasFilter = Object.values(filters).some((value) => value !== "" && value !== null);
+    
+    // Если фильтры заданы, запрашиваем все данные, иначе – используем пагинацию
+    const url = hasFilter 
+      ? `${BASE_URL}/api/cadastre`
+      : `${BASE_URL}/api/cadastre?page=1`;
+  
     console.log("Применяем фильтры в HeaderAdmin:", filters);
-    console.log("Запрос на получение всех данных по URL:", url);
-
+    console.log("Запрос на получение данных по URL:", url);
+  
     fetch(url, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -159,21 +164,35 @@ const HeaderAdmin = ({
               item.modda.toString() === filters.modda.replace("-modda", "");
             const matchRegion =
               !filters.region || item.region === filters.region;
+            const matchStatus =
+              !filters.status || item.status === filters.status;
             const matchDeadline =
               !filters.deadline ||
               new Date(item.assignDate).getDate() === Number(filters.deadline);
             const matchType =
               !filters.type || item.type === filters.type;
-            return matchModda && matchRegion && matchDeadline && matchType;
+            const matchKadastr =
+              !filters.kadastr || item.kadastr === filters.kadastr;
+            const matchBuildingPresence =
+              !filters.buildingPresence || item.buildingPresence === filters.buildingPresence;
+            return (
+              matchModda &&
+              matchRegion &&
+              matchDeadline &&
+              matchType &&
+              matchStatus &&
+              matchKadastr &&
+              matchBuildingPresence
+            );
           });
           console.log("Отфильтрованные данные для кадастра:", filteredData);
           setTableData(filteredData);
         }
       })
-      .catch((error) =>
-        console.error("Error fetching or filtering data:", error)
-      );
+      .catch((error) => console.error("Error fetching or filtering data:", error));
   };
+  
+  
 
   // Первоначальная загрузка данных с учетом пагинации
   useEffect(() => {

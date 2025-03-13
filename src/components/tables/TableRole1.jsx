@@ -6,7 +6,6 @@ import DecisionButton from "../DecisionButton";
 
 const TableRole1 = ({ data = [], totalItems, currentPage, onPageChange }) => {
   const navigate = useNavigate();
-  const itemsPerPage = 30;
 
   // Переход к детальному просмотру записи
   const handleRowClick = (item) => {
@@ -57,7 +56,7 @@ const TableRole1 = ({ data = [], totalItems, currentPage, onPageChange }) => {
                 Hokim qarori
               </th>
               <th className="py-2 px-2 text-center font-medium w-24 md:w-32">
-                Qaytish
+                Statusi
               </th>
               <th className="py-2 px-2 text-end font-medium w-8 sm:w-10 md:w-12"></th>
             </tr>
@@ -70,7 +69,7 @@ const TableRole1 = ({ data = [], totalItems, currentPage, onPageChange }) => {
                 onClick={() => handleRowClick(item)}
               >
                 <td className="py-4 bg-white rounded-l-3xl px-2 text-center font-semibold">
-                  {(currentPage - 1) * itemsPerPage + index + 1}.
+                {index + 1}.
                 </td>
                 <td className="py-4 px-2 bg-white text-center font-semibold transition-colors duration-500 group-hover:text-blue-500">
                   {item.cadastreId}
@@ -110,12 +109,12 @@ const TableRole1 = ({ data = [], totalItems, currentPage, onPageChange }) => {
                 </td>
                 <td
                   className={`py-4 px-2 bg-white font-medium ${
-                    item.status === "pending" ? "text-blue-500" : "text-red-500"
+                    item.status === "pending" ? "text-green-500" : "text-red-500"
                   } text-center`}
                 >
                   {item.status}
                 </td>
-                <td className="py-4 px-2 bg-white rounded-r-3xl text-center">
+                <td className="py-7 flex justify-end px-2 bg-white rounded-r-3xl text-">
                   <ChevronRight />
                 </td>
               </tr>
@@ -126,7 +125,7 @@ const TableRole1 = ({ data = [], totalItems, currentPage, onPageChange }) => {
       <div className="bg-[#f9f9f9] py-4 rounded-b-3xl">
         <Pagination
           totalItems={totalItems}
-          itemsPerPage={itemsPerPage}
+          itemsPerPage={10} // если pageSize из meta равен 10
           currentPage={currentPage}
           onPageChange={onPageChange}
         />

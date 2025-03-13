@@ -6,7 +6,6 @@ import DecisionButton from "../DecisionButton";
 
 const TableRole4 = ({ data = [], totalItems, currentPage, onPageChange }) => {
   const navigate = useNavigate();
-  const itemsPerPage = 30; // Можно использовать значение, приходящее от API (например, meta.pageSize)
 
   const handleRowClick = (item) => {
     navigate(`/verdict/${item.cadastreId}`, { state: item });
@@ -56,7 +55,7 @@ const TableRole4 = ({ data = [], totalItems, currentPage, onPageChange }) => {
                 Hokim qarori
               </th>
               <th className="py-2 px-2 text-center font-medium w-24 md:w-32">
-                Qaytish
+                Statusi
               </th>
               <th className="py-2 px-2 text-end font-medium w-8 sm:w-10 md:w-12"></th>
             </tr>
@@ -107,7 +106,11 @@ const TableRole4 = ({ data = [], totalItems, currentPage, onPageChange }) => {
                 <td className="py-4 px-2 bg-white text-center">
                   {item.governorDecision && <DecisionButton item={item} />}
                 </td>
-                <td className="py-4 px-2 bg-white text-center">
+                <td
+                  className={`py-4 px-2 bg-white font-medium ${
+                    item.status === "pending" ? "text-green-500" : "text-red-500"
+                  } text-center`}
+                >
                   {item.status}
                 </td>
                 <td className="bg-white rounded-r-3xl text-center">
@@ -119,9 +122,9 @@ const TableRole4 = ({ data = [], totalItems, currentPage, onPageChange }) => {
         </table>
       </div>
       <div className="bg-[#f9f9f9] py-4 rounded-b-3xl">
-        <Pagination
+      <Pagination
           totalItems={totalItems}
-          itemsPerPage={itemsPerPage}
+          itemsPerPage={10} // если pageSize из meta равен 10
           currentPage={currentPage}
           onPageChange={onPageChange}
         />

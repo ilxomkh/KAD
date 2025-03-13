@@ -108,12 +108,12 @@ const ErrorTable = ({ data = [], totalItems, currentPage, onPageChange }) => {
                 <td className="py-4 px-2 bg-white text-center">
                   {item.governorDecision && <DecisionButton item={item} />}
                 </td>
-                <td className="py-4 px-6 bg-white text-center">
-                  {item.cadastreError ? (
-                    <span className="text-red-500">YO‘Q</span>
-                  ) : (
-                    <span className="text-green-500">BOR</span>
-                  )}
+                <td
+                  className={`py-4 px-2 bg-white font-medium ${
+                    item.buildingPresence === "exists" ? "text-green-500" : "text-red-500"
+                  } text-center`}
+                >
+                  {item.buildingPresence}
                 </td>
                 <td className="bg-white rounded-r-3xl text-center">
                   <ChevronRight />

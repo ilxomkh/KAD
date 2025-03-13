@@ -57,6 +57,9 @@ const TableRole3 = ({ data = [], totalItems, currentPage, onPageChange }) => {
               <th className="py-2 px-2 text-center font-medium w-32 md:w-36">
                 Qurilma
               </th>
+              <th className="py-2 px-2 text-center font-medium w-32 md:w-36">
+                Statusi
+              </th>
               <th className="py-2 px-2 text-end font-medium w-16 sm:w-20 md:w-24"></th>
             </tr>
           </thead>
@@ -106,12 +109,17 @@ const TableRole3 = ({ data = [], totalItems, currentPage, onPageChange }) => {
                 <td className="py-4 px-2 bg-white text-center">
                   {item.governorDecision && <DecisionButton item={item} />}
                 </td>
-                <td className="py-4 px-6 bg-white text-center">
-                  {item.buildingPresence ? (
-                    <span className="text-red-500">YO‘Q</span>
-                  ) : (
-                    <span className="text-green-500">BOR</span>
-                  )}
+                <td
+                  className={`py-4 px-2 bg-white font-medium ${
+                    item.buildingPresence === "exists" ? "text-green-500" : "text-red-500"
+                  } text-center`}
+                >
+                  {item.buildingPresence}
+                </td>
+                <td className="py-4 px-2 bg-white text-center">
+                  <span className={`font-semibold ${item.status === "verified" ? "text-green-500" : "text-red-500"}`}>
+                    {item.status}
+                  </span>
                 </td>
                 <td className="bg-white rounded-r-3xl text-center">
                   <ChevronRight />

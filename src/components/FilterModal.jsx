@@ -2,7 +2,7 @@ import { XCircle } from "lucide-react";
 import React, { useState } from "react";
 
 const FilterModal = ({ isOpen, onClose, onApply }) => {
-  if (!isOpen) return null; // если модалка не открыта, ничего не рендерим
+  if (!isOpen) return null; // Если модалка не открыта, ничего не рендерим
 
   // Состояние выбранных значений для каждой группы фильтрации
   const [selectedOptions, setSelectedOptions] = useState({
@@ -12,7 +12,7 @@ const FilterModal = ({ isOpen, onClose, onApply }) => {
     type: "",
     kadastr: "",
     status: "",
-    district: "",
+    buildingPresence: "",
   });
 
   const handleSelect = (groupKey, value) => {
@@ -35,12 +35,12 @@ const FilterModal = ({ isOpen, onClose, onApply }) => {
     "Namangan",
     "Samarqand",
   ];
-  const moddaOptions = ["5-modda", "6-modda", "7-modda", "8-modda", "9-modda"];
-  const deadlineOptions = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+  const moddaOptions = ["4-modda", "5-modda", "6-modda", "7-modda", "8-modda", "9-modda"];
+  const deadlineOptions = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
   const typeOptions = ["Toifa-1", "Toifa-2"];
   const kadastrOptions = ["1-bosqich", "2-bosqich", "3-bosqich", "4-bosqich"];
-  const statusOptions = ["Ha", "Yo‘q"];
-  const districtOptions = ["Ha", "Yo‘q"];
+  const statusOptions = ["pending", "geometry_fixed", "verified", "in_moderation", "finished"];
+  const buildingPresenceOptions = ["exists", "nonexistent", "under_construction"];
 
   // Функция для отрисовки группы опций с передачей ключа для состояния
   const renderOptionGroup = (groupLabel, options, groupKey) => (
@@ -89,13 +89,13 @@ const FilterModal = ({ isOpen, onClose, onApply }) => {
 
         {/* Основное содержимое модалки */}
         <div>
-          {renderOptionGroup("Viloyat", regionOptions, "viloyat")}
+          {renderOptionGroup("Viloyat", regionOptions, "region")}
           {renderOptionGroup("Modda", moddaOptions, "modda")}
-          {renderOptionGroup("Qolgan kuni", deadlineOptions, "kuni")}
-          {renderOptionGroup("Toifa", typeOptions, "toifa")}
+          {renderOptionGroup("Qolgan kuni", deadlineOptions, "deadline")}
+          {renderOptionGroup("Toifa", typeOptions, "type")}
           {renderOptionGroup("Kadastr kategoriyasi", kadastrOptions, "kadastr")}
           {renderOptionGroup("Status", statusOptions, "status")}
-          {renderOptionGroup("Tekshiruv kategoriyasi", districtOptions, "tekshiruv")}
+          {renderOptionGroup("Qurilma", buildingPresenceOptions, "buildingPresence")}
         </div>
 
         {/* Кнопки управления */}

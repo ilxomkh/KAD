@@ -38,7 +38,7 @@ const AdminPanel = () => {
         url += "&status=finished";
       } else if (currentTable === "errors") {
         url += "&cadastreError=true";
-      } else if (currentTable === "role1" || currentTable === "role4") {
+      } else if (currentTable === "role1") {
         url += "&status=pending";
       } else if (currentTable === "role2") {
         url += "&status=geometry_fixed";
@@ -46,6 +46,8 @@ const AdminPanel = () => {
         url += "&status=verified";
       } else if (currentTable === "moderation") {
         url += "&status=in_moderation";
+      } else if (currentTable === "role4") {
+        url += "&status=pending";
       }
     }
 
