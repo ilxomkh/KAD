@@ -42,10 +42,10 @@ const ViewModal = ({ item, onClose }) => {
   return (
     <>
       <div
-        className="fixed inset-0 bg-black/50 z-50"
+        className="fixed inset-0 bg-black/20 z-50"
         onClick={onClose}
       />
-      <div className="fixed right-0 top-0 h-screen w-full sm:w-1/3 md:w-1/4 bg-white shadow-lg rounded-l-2xl z-50 p-6 flex flex-col">
+      <div className="fixed right-0 top-0 h-screen w-full sm:w-1/3 md:w-1/4 bg-white rounded-l-2xl z-50 p-6 flex flex-col">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold">Loglar</h2>
           <button

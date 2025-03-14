@@ -12,7 +12,7 @@ const BuildingExistenceSelector = ({
 
   return (
     <div className="bg-white rounded-2xl p-4">
-      <h2 className="text-xl font-semibold mb-3">Qurilma mavjudmi?</h2>
+      <h2 className="text-xl dark:text-gray-900 font-semibold mb-3">Qurilma mavjudmi?</h2>
       <div className="flex space-x-6">
         {options.map((option) => (
           <label
@@ -21,7 +21,7 @@ const BuildingExistenceSelector = ({
           >
             <input
               type="radio"
-              className="form-radio h-4 w-4 text-blue-500"
+              className="form-radio dark:text-blue-500 h-4 w-4 text-blue-500"
               checked={selectedStatus === option.value}
               onChange={() => setSelectedStatus(option.value)}
             />

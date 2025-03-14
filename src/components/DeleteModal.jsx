@@ -32,11 +32,11 @@ const DeleteModal = ({ item, onClose, onDelete }) => {
 
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center bg-black/50 bg-opacity-50 z-50"
+      className="fixed inset-0 flex items-center justify-center bg-black/20 z-50"
       onClick={onClose}
     >
       <div
-        className="bg-white p-3 rounded-2xl shadow-lg w-[444px] relative"
+        className="bg-white p-3 rounded-2xl w-[444px] relative"
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="text-xl font-semibold text-left text-black mb-4">

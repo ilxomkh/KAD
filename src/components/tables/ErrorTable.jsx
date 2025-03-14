@@ -59,6 +59,9 @@ const ErrorTable = ({ data = [], totalItems, currentPage, onPageChange }) => {
               <th className="py-2 px-2 text-center font-medium w-32 md:w-36">
                 Qurilma
               </th>
+              <th className="py-2 px-2 text-center font-medium w-32 md:w-36">
+                Statusi
+              </th>
               <th className="py-2 px-2 text-end font-medium w-16 sm:w-20 md:w-24"></th>
             </tr>
           </thead>
@@ -102,20 +105,38 @@ const ErrorTable = ({ data = [], totalItems, currentPage, onPageChange }) => {
                 <td className="py-4 px-2 bg-white text-orange-500 font-semibold text-center w-24 md:w-28">
                   {new Date(item.deadline).toLocaleDateString()}
                 </td>
-                <td className="py-4 px-2 bg-white text-center">
+                <td className="py-4 pl-8 bg-white text-center">
                   {item.landPlan && <PlanButton item={item} />}
                 </td>
-                <td className="py-4 px-2 bg-white text-center">
+                <td className="py-4 pl-8 bg-white text-center">
                   {item.governorDecision && <DecisionButton item={item} />}
                 </td>
                 <td
                   className={`py-4 px-2 bg-white font-medium ${
-                    item.buildingPresence === "exists" ? "text-green-500" : "text-red-500"
+                    item.buildingPresence === "exists"
+                      ? "text-green-500"
+                      : item.buildingPresence === "nonexistent"
+                      ? "text-red-500"
+                      : item.buildingPresence === "under_construction"
+                      ? "text-yellow-500"
+                      : "text-gray-500"
                   } text-center`}
                 >
-                  {item.buildingPresence}
+                  {item.buildingPresence === "exists"
+                    ? "BOR"
+                    : item.buildingPresence === "nonexistent"
+                    ? "YO'Q"
+                    : item.buildingPresence === "under_construction"
+                    ? "Qurilish davrida"
+                    : item.buildingPresence}
                 </td>
-                <td className="bg-white rounded-r-3xl text-center">
+
+                <td className="py-7 px-2 bg-white text-center">
+                  <span className="text-red-500">
+                    Kadastr Xatoligi
+                  </span>
+                </td>
+                <td className="bg-white pl-8 rounded-r-3xl text-center">
                   <ChevronRight />
                 </td>
               </tr>

@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { FaFilePdf } from "react-icons/fa";
 import { BASE_URL } from "../utils/api";
 import { useAuth } from "../context/AuthContext";
+import FILE from "../assets/File Type.svg";
 
 // Функция для форматирования дат
 const formatDate = (dateString) => {
@@ -146,9 +147,7 @@ export default function CadastreInfo({ cadastreId }) {
                     // Специальная обработка для ссылок на PDF
                     if (
                       (key === "landPlan" || key === "governorDecision") &&
-                      typeof value === "string" &&
-                      (value.startsWith("http://") ||
-                        value.startsWith("https://"))
+                      typeof value === "string"
                     ) {
                       const label = transformKey(key);
                       return (
@@ -160,9 +159,14 @@ export default function CadastreInfo({ cadastreId }) {
                             href={value}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center space-x-2 text-blue-600 hover:underline"
+                            className="flex items-center space-x-2 text-gray-900 hover:underline"
                           >
-                            <FaFilePdf className="text-red-500" />
+                            <span 
+                            className="flex group hover:text-blue-500 gap-2 hover:underline text-gray-900"
+                            >
+                              <img src={FILE} alt="file"/>
+                              PDF
+                              </span>
                             {/* Убрали текстовое название файла */}
                           </a>
                         </React.Fragment>

@@ -22,6 +22,12 @@ const AdminPanel = () => {
   const [pageSize, setPageSize] = useState(10);
 
   const { token } = useAuth();
+  const moddaValues = [4, 5, 6, 8];
+  const moddaQuery = moddaValues.map(value => `modda=${value}`).join("&");
+
+  const moddaValues79 = [7, 9];
+  const modda79Query = moddaValues79.map(value => `modda=${value}`).join("&");
+
 
   useEffect(() => {
     let url = "";
@@ -39,7 +45,7 @@ const AdminPanel = () => {
       } else if (currentTable === "errors") {
         url += "&cadastreError=true";
       } else if (currentTable === "role1") {
-        url += "&status=pending";
+        url += `&status=pending&${moddaQuery}`;
       } else if (currentTable === "role2") {
         url += "&status=geometry_fixed";
       } else if (currentTable === "role3") {
@@ -47,7 +53,7 @@ const AdminPanel = () => {
       } else if (currentTable === "moderation") {
         url += "&status=in_moderation";
       } else if (currentTable === "role4") {
-        url += "&status=pending";
+        url += `&status=pending&${modda79Query}`;
       }
     }
 
@@ -75,17 +81,6 @@ const AdminPanel = () => {
             : Array.isArray(data)
             ? data
             : data.data || [];
-
-        // Дополнительная фильтрация для role4 / role1
-        if (currentTable === "role4") {
-          dataArray = dataArray.filter(
-            (item) => item.modda === 7 || item.modda === 9
-          );
-        } else if (currentTable === "role1") {
-          dataArray = dataArray.filter(
-            (item) => item.modda !== 7 && item.modda !== 9
-          );
-        }
 
         // Сохраняем массив записей в состояние
         setTableData(dataArray);

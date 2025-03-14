@@ -60,7 +60,7 @@ const StatusBar = ({ currentStep, id, role, onMapButtonClick, mapActive }) => {
   return (
     <div className="flex items-center bg-white py-3 px-6 z-40 rounded-2xl w-full relative">
       <button
-        className="mr-4 cursor-pointer text-gray-700 flex items-center hover:text-black transition"
+        className="mr-4 cursor-pointer hover:text-blue-500 text-gray-700 flex items-center transition"
         onClick={() => navigate(-1)}
       >
         <ChevronLeft size={20} className="mr-1" /> Orqaga

@@ -14,7 +14,7 @@ const RoleDropdown = ({
     { value: "geometry_fix", label: "1-rol" },
     { value: "verify", label: "2-rol" },
     { value: "agency", label: "3-rol" },
-    { value: "verdict_79", label: "4-rol" },
+    { value: "verdict_79", label: "4-rol(7-9)" },
   ];
   const dropdownRef = useRef(null);
 

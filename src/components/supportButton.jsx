@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom"; // Импортируем useNavigate
 import headphoneIcon from "../assets/headphone.svg"; // <-- Импорт вашего SVG-файла
 import { BASE_URL } from "../utils/api";
 import { useAuth } from "../context/AuthContext";
@@ -6,6 +7,7 @@ import { useAuth } from "../context/AuthContext";
 const SupportButton = ({ cadastreId }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { token } = useAuth();
+  const navigate = useNavigate(); // Инициализируем navigate
 
   // Открыть модальное окно
   const handleOpenModal = () => {
@@ -46,6 +48,7 @@ const SupportButton = ({ cadastreId }) => {
 
       console.log("SupportButton: Успешно отправлено в модерацию!");
       handleCloseModal();
+      navigate("/"); // Переход на главную страницу
     } catch (error) {
       console.error("SupportButton: Ошибка при отправке в модерацию:", error);
       // Здесь можно добавить UI-уведомление об ошибке
@@ -86,26 +89,26 @@ const SupportButton = ({ cadastreId }) => {
         <>
           {/* Контейнер модального окна */}
           <div className="fixed inset-0 bg-black/20 flex justify-center items-center z-50 pointer-events-auto">
-          <div className="bg-white px-4 py-2 rounded-2xl shadow-lg max-w-md w-full text-left relative">
-            <h2 className="text-lg cursor-default font-semibold mb-4">
-              Moderatsiyaga jo'natishni tasdiqlaysizmi?
-            </h2>
-            <div className="flex justify-center w-full space-x-4">
-              <button
-                className="px-6 py-3 w-full cursor-pointer bg-blue-500 text-white rounded-xl transition-all hover:bg-blue-600"
-                onClick={handleConfirm}
-              >
-                Ha
-              </button>
-              <button
-                className="px-6 py-3 w-full cursor-pointer bg-[#f7f9fb] border border-[#e9e9eb] text-gray-700 rounded-xl transition-all hover:bg-gray-100"
-                onClick={handleCloseModal}
-              >
-                Yo'q
-              </button>
+            <div className="bg-white px-4 py-2 rounded-2xl shadow-lg max-w-md w-full text-left relative">
+              <h2 className="text-lg dark:text-gray-900 cursor-default font-semibold mb-4">
+                Moderatsiyaga jo'natishni tasdiqlaysizmi?
+              </h2>
+              <div className="flex justify-center w-full space-x-4">
+                <button
+                  className="px-6 py-3 w-full cursor-pointer bg-blue-500 text-white rounded-xl transition-all hover:bg-blue-600"
+                  onClick={handleConfirm}
+                >
+                  Ha
+                </button>
+                <button
+                  className="px-6 py-3 w-full cursor-pointer bg-[#f7f9fb] border border-[#e9e9eb] text-gray-700 rounded-xl transition-all hover:bg-gray-100"
+                  onClick={handleCloseModal}
+                >
+                  Yo'q
+                </button>
+              </div>
             </div>
           </div>
-        </div>
         </>
       )}
     </div>

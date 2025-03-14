@@ -13,7 +13,7 @@ const CommentModal = ({
     <div className="fixed inset-0 bg-black/20 flex justify-center items-center z-50 pointer-events-auto">
       <div className="bg-white rounded-2xl w-1/4 p-6 text-left relative">
         {/* Заголовок */}
-        <h2 className="text-2xl font-semibold mb-6">Izoh qoldiring</h2>
+        <h2 className="text-2xl dark:text-gray-900 font-semibold mb-6">Izoh qoldiring</h2>
 
         {/* Табы для выбора типа ошибки */}
         <div className="w-full bg-white border border-[#E9E9EB] mb-6 rounded-xl">
@@ -43,8 +43,8 @@ const CommentModal = ({
 
         {/* Текстовое поле для ввода комментария */}
         <textarea
-          className="w-full border focus:outline-none border-[#E9E9EB] rounded-xl p-4 h-32 placeholder-gray-400 mb-6 resize-none"
-          placeholder="Izoh yozing"
+          className="w-full border dark:text-gray-900 focus:outline-none border-[#E9E9EB] rounded-xl p-4 h-32 placeholder-gray-400 mb-6 resize-none"
+          placeholder="Izoh yozing" 
           value={comment}
           onChange={(e) => setComment(e.target.value)}
         />

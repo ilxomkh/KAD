@@ -25,7 +25,7 @@ const SearchBar = ({ placeholder = "Kadastr raqamini kiriting", onSearch }) => {
         value={searchValue}
         onChange={handleInputChange}
         onKeyDown={handleKeyDown}
-        className="pl-10 pr-4 py-3 bg-gray-100 rounded-full outline-none w-80"
+        className="pl-10 pr-4 py-3 bg-gray-100 dark:placeholder:text-gray-400 dark:text-gray-400 rounded-full outline-none w-80"
       />
     </div>
   );

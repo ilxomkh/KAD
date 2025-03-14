@@ -164,16 +164,31 @@ function CandidatesTable({
                       ? new Date(item.deadline).toLocaleDateString()
                       : ""}
                   </td>
-                  <td className="py-4 px-2 bg-white text-center">
+                  <td className="py-4 pl-8 bg-white text-center">
                     {item.landPlan && <PlanButton item={item} />}
                   </td>
-                  <td className="py-4 px-2 bg-white text-center">
+                  <td className="py-4 pl-8 bg-white text-center">
                     {item.governorDecision && <DecisionButton item={item} />}
                   </td>
-                  <td className="py-4 px-2 bg-white text-center text-green-500">
-                    {item.status}
+
+                  <td className="py-4 px-2 bg-white text-center">
+                    <span className="">
+                      {item.status === "geometry_fixed"
+                        ? "Surildi"
+                        : item.status === "pending"
+                        ? "Kutilmoqda"
+                        : item.status === "verified"
+                        ? "Tekshirildi"
+                        : item.status === "finished"
+                        ? "Tugallandi"
+                        : item.status === "in_moderation"
+                        ? "Moderatsiyada"
+                        : item.status === "agency_verified"
+                        ? "Agentlik Tekshirdi"
+                        : item.status}
+                    </span>
                   </td>
-                  <td className="justify-end flex items-center py-7 bg-white rounded-r-3xl">
+                  <td className="pl-8 py-7 bg-white rounded-r-3xl">
                     <ChevronRight className="mr-2" />
                   </td>
                 </tr>
@@ -186,7 +201,7 @@ function CandidatesTable({
         <div className="flex justify-center py-4 bg-[#f9f9f9] rounded-b-3xl">
           <Pagination
             totalItems={totalItems}
-            itemsPerPage={itemsPerPage}  // <-- берём из пропсов
+            itemsPerPage={itemsPerPage} // <-- берём из пропсов
             currentPage={currentPage}
             onPageChange={onPageChange}
           />
@@ -203,7 +218,7 @@ function CandidatesTable({
           ></div>
 
           {/* Панель модального окна */}
-          <div className="fixed top-0 rounded-l-2xl right-0 w-full sm:w-[320px] md:w-[400px] lg:w-[500px] h-full bg-white z-50 shadow-lg flex flex-col">
+          <div className="fixed top-0 dark:text-gray-900 rounded-l-2xl right-0 w-full sm:w-[320px] md:w-[400px] lg:w-[500px] h-full bg-white z-50 shadow-lg flex flex-col">
             <div className="flex items-center justify-between p-4">
               <h2 className="text-lg font-bold">Loglar</h2>
               <button

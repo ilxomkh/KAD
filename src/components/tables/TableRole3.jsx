@@ -103,25 +103,47 @@ const TableRole3 = ({ data = [], totalItems, currentPage, onPageChange }) => {
                 <td className="py-4 px-2 bg-white text-orange-500 font-semibold text-center w-24 md:w-28">
                   {new Date(item.deadline).toLocaleDateString()}
                 </td>
-                <td className="py-4 px-2 bg-white text-center">
+                <td className="py-4 pl-8 bg-white text-center">
                   {item.landPlan && <PlanButton item={item} />}
                 </td>
-                <td className="py-4 px-2 bg-white text-center">
+                <td className="py-4 pl-8 bg-white text-center">
                   {item.governorDecision && <DecisionButton item={item} />}
                 </td>
                 <td
                   className={`py-4 px-2 bg-white font-medium ${
-                    item.buildingPresence === "exists" ? "text-green-500" : "text-red-500"
+                    item.buildingPresence === "exists"
+                      ? "text-green-500"
+                      : item.buildingPresence === "nonexistent"
+                      ? "text-red-500"
+                      : item.buildingPresence === "under_construction"
+                      ? "text-yellow-500"
+                      : "text-gray-500"
                   } text-center`}
                 >
-                  {item.buildingPresence}
+                  {item.buildingPresence === "exists"
+                    ? "BOR"
+                    : item.buildingPresence === "nonexistent"
+                    ? "YO'Q"
+                    : item.buildingPresence === "under_construction"
+                    ? "Qurilish davrida"
+                    : item.buildingPresence}
                 </td>
+
                 <td className="py-4 px-2 bg-white text-center">
-                  <span className={`font-semibold ${item.status === "verified" ? "text-green-500" : "text-red-500"}`}>
-                    {item.status}
+                  <span
+                    className={`font-semibold ${
+                      item.status === "verified"
+                        ? "text-green-500"
+                        : "text-gray-500"
+                    }`}
+                  >
+                    {item.status === "verified"
+                      ? "Tekshirildi"
+                      : item.status}
                   </span>
                 </td>
-                <td className="bg-white rounded-r-3xl text-center">
+
+                <td className="bg-white pl-8 rounded-r-3xl text-center">
                   <ChevronRight />
                 </td>
               </tr>

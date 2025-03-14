@@ -78,7 +78,7 @@ const FilterModal = ({ isOpen, onClose, onApply }) => {
       <div className="bg-white w-full max-w-3xl p-6 rounded-2xl relative">
         {/* Заголовок и кнопка закрытия */}
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">Filter</h2>
+          <h2 className="text-xl dark:text-gray-900 font-semibold">Filter</h2>
           <button
             className="text-gray-500 cursor-pointer hover:text-gray-700"
             onClick={onClose}
@@ -88,7 +88,7 @@ const FilterModal = ({ isOpen, onClose, onApply }) => {
         </div>
 
         {/* Основное содержимое модалки */}
-        <div>
+        <div className="dark:text-gray-900">
           {renderOptionGroup("Viloyat", regionOptions, "region")}
           {renderOptionGroup("Modda", moddaOptions, "modda")}
           {renderOptionGroup("Qolgan kuni", deadlineOptions, "deadline")}
@@ -108,7 +108,7 @@ const FilterModal = ({ isOpen, onClose, onApply }) => {
           </button>
           <button
             onClick={onClose}
-            className="cursor-pointer px-4 py-4 w-full bg-[#f7f9fb] border border-[#e9e9eb] rounded-2xl hover:bg-gray-100"
+            className="cursor-pointer dark:text-gray-600  px-4 py-4 w-full bg-[#f7f9fb] border border-[#e9e9eb] rounded-2xl hover:bg-gray-100"
           >
             Bekor qilish
           </button>

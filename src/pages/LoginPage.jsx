@@ -54,7 +54,7 @@ const LoginPage = () => {
               alt="ZBEKOSMOS"
               className="h-16 my-8 w-auto"
             />
-            <p className="text-3xl cursor-default font-bold mb-4 text-center">
+            <p className="text-3xl text-gray-600 cursor-default font-bold mb-4 text-center">
               Etirof'ga xush kelibsiz!
             </p>
             <p className="text-gray-600 mb-6 cursor-default text-center">
@@ -72,7 +72,7 @@ const LoginPage = () => {
                 </span>
                 <input
                   type="text"
-                  className="w-full pl-10 pr-3 py-3 border border-[#F3F6F9] rounded-xl outline-none focus:border-blue-400 transition-colors"
+                  className="w-full pl-10 pr-3 py-3 border dark:text-gray-600 border-[#F3F6F9] dark:placeholder:text-gray-400 rounded-xl outline-none focus:border-blue-400 transition-colors"
                   placeholder="Loginni kiriting"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
@@ -86,7 +86,7 @@ const LoginPage = () => {
                 </span>
                 <input
                   type={showPassword ? "text" : "password"}
-                  className="w-full pl-10 pr-10 py-3 border border-[#F3F6F9] rounded-xl outline-none focus:border-blue-400 transition-colors"
+                  className="w-full pl-10 pr-10 py-3 border dark:text-gray-600 dark:placeholder:text-gray-400 border-[#F3F6F9] rounded-xl outline-none focus:border-blue-400 transition-colors"
                   placeholder="Parolni kiriting"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}

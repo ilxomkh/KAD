@@ -108,7 +108,7 @@ const ArcGISTwoPolygonViewer = ({
   };
 
   return (
-    <div className="relative">
+    <div className="relative cursor-grab active:cursor-grabbing">
       {/* Ставим ширину 50vw, если isHalfWidth = true; иначе 100vw */}
       <div
         ref={mapRef}
@@ -116,7 +116,7 @@ const ArcGISTwoPolygonViewer = ({
       ></div>
 
       {/* Кнопки зума */}
-      <div className="absolute top-1/2 right-4 transform -translate-y-1/2 space-y-3 z-50 pointer-events-auto">
+      <div className="absolute top-1/2 right-8 transform -translate-y-1/2 space-y-3 z-50 pointer-events-auto">
         <div className="grid grid-cols-1 gap-6">
           <button
             className="p-2 w-10 bg-white cursor-pointer shadow-lg rounded-xl hover:text-blue-500 text-gray-700"

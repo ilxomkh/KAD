@@ -5,10 +5,10 @@ const PositionDropdown = ({ value, onChange, borderColor = "border-gray-300", bg
   const [isOpen, setIsOpen] = useState(false);
   // Локальные данные для позиций пользователя
   const positionsData = [
-    { value: "Analitik", label: "Analitik" },
-    { value: "Valanter", label: "Valanter" },
+    { value: "Rahbar", label: "Rahbar" },
+    { value: "Rahbar o'rinbosari", label: "Rahbar o'rinbosari" },
     { value: "Agentlik", label: "Agentlik" },
-    { value: "Rahbar", label: "Rahbar" }
+    { value: "Valantyor", label: "Valantyor" }
   ];
   const dropdownRef = useRef(null);
 

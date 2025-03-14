@@ -4,6 +4,7 @@ import { Dialog } from "@headlessui/react";
 import { CloudUpload, File, Trash } from "lucide-react";
 import { BASE_URL } from "../utils/api";
 import { useAuth } from "../context/AuthContext"; // Импорт useAuth
+import IMG from "../assets/Vector (3).svg";
 
 function FileUploadModal({ isOpen, onClose, onUpload, cadasterId }) {
   // Важно: здесь cadasterId должен быть числовым идентификатором (data.ID),
@@ -79,14 +80,14 @@ function FileUploadModal({ isOpen, onClose, onUpload, cadasterId }) {
     >
       <div className="bg-white p-6 rounded-2xl w-1/4">
         <div className="flex justify-between items-center">
-          <h2 className="text-xl font-bold cursor-default text-left">
+          <h2 className="text-xl dark:text-gray-900 font-bold cursor-default text-left">
             Faylni yuklang
           </h2>
         </div>
 
         {/* Область для выбора файла */}
         <label className="border-dashed border-2 border-[#BABBBF] rounded-2xl p-6 flex flex-col items-center justify-center text-gray-500 cursor-pointer hover:border-blue-500 mt-4">
-          <CloudUpload className="mb-4" size={20} />
+          <img src={IMG} className="size-7 mb-4" alt="img"/>
           <p className="text-[#BABBBF]">
             <span className="text-black underline">Yuklash uchun bosing</span>{" "}
             yoki faylni tortib olib keling.
@@ -129,7 +130,7 @@ function FileUploadModal({ isOpen, onClose, onUpload, cadasterId }) {
           </button>
           <button
             onClick={onClose}
-            className="bg-[#f7f9fb] cursor-pointer border text-lg font-bold border-[#E9E9EB] px-4 py-3 w-full rounded-xl hover:bg-gray-100"
+            className="bg-[#f7f9fb] dark:text-gray-600 cursor-pointer border text-lg font-bold border-[#E9E9EB] px-4 py-3 w-full rounded-xl hover:bg-gray-100"
           >
             Orqaga
           </button>

@@ -287,7 +287,7 @@ const AgencyReviewPage = () => {
       {showProceedModal && (
         <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50 pointer-events-auto">
           <div className="bg-white px-4 py-2 rounded-2xl shadow-lg max-w-md w-full text-left relative">
-            <h2 className="text-lg cursor-default font-semibold mb-4">
+            <h2 className="text-lg dark:text-gray-900 cursor-default font-semibold mb-4">
               Davom etishni tasdiqlaysizmi?
             </h2>
             <div className="flex justify-center w-full space-x-4">

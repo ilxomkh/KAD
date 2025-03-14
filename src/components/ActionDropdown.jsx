@@ -42,7 +42,7 @@ const ActionDropdown = ({ item }) => {
 
       {/* Выпадающее меню */}
       {openDropdown === item.id && (
-        <div className="absolute -right-3 mt-1 z-50 w-52 bg-white rounded-lg border shadow-sm border-[#e9e9eb] p-2 dropdown-menu">
+        <div className="absolute right-0 mt-1 z-50 w-52 bg-white rounded-lg border border-[#e9e9eb] p-2 dropdown-menu">
           <button
             onClick={() => handleOpenModal("view")}
             className="flex items-center gap-2 px-4 py-2 text-gray-700 cursor-pointer hover:text-blue-500 w-full text-left"

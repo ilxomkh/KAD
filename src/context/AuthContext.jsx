@@ -10,8 +10,6 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [refreshToken, setRefreshToken] = useState(null);
   const [role, setRole] = useState(null);
-
-  // Состояние, которое показывает, идет ли проверка при запуске
   const [isLoading, setIsLoading] = useState(true);
 
   const navigate = useNavigate();
@@ -28,9 +26,26 @@ export const AuthProvider = ({ children }) => {
       setRole(storedRole);
     }
 
-    // После проверки выставляем isLoading в false
     setIsLoading(false);
   }, []);
+
+  // Автообновление refreshToken каждые 60 минут
+  useEffect(() => {
+    if (!refreshToken) return;
+
+    const interval = setInterval(async () => {
+      try {
+        await refreshTokenRequest();
+      } catch (error) {
+        console.error("Ошибка обновления токена", error);
+        if (error.response && error.response.status === 401) {
+          logout();
+        }
+      }
+    }, 60 * 60 * 1000); // 60 минут
+
+    return () => clearInterval(interval);
+  }, [refreshToken]);
 
   // Настраиваем axios interceptor
   useEffect(() => {
@@ -38,18 +53,16 @@ export const AuthProvider = ({ children }) => {
       (response) => response,
       async (error) => {
         const originalRequest = error.config;
-        // Если запрос к логину или обновлению токена — сразу пробрасываем ошибку
         if (
           originalRequest.url.includes("/api/auth/login") ||
           originalRequest.url.includes("/api/auth/refresh")
         ) {
           return Promise.reject(error);
         }
-        // Если ошибка 401 и refreshToken доступен, пробуем обновить токен
+
         if (error.response && error.response.status === 401 && refreshToken) {
           try {
             await refreshTokenRequest();
-            // После успешного обновления повторяем исходный запрос
             return axios(originalRequest);
           } catch (err) {
             console.error("Не удалось обновить токен", err);
@@ -59,6 +72,7 @@ export const AuthProvider = ({ children }) => {
         return Promise.reject(error);
       }
     );
+
     return () => {
       axios.interceptors.response.eject(interceptor);
     };
@@ -75,11 +89,19 @@ export const AuthProvider = ({ children }) => {
 
   const refreshTokenRequest = async () => {
     if (!refreshToken) throw new Error("No refresh token available");
-    const response = await axios.post(`${BASE_URL}/api/auth/refresh`, {
-      refreshToken,
-    });
-    const { token: newToken, refreshToken: newRefresh } = response.data;
-    setTokensAndUser({ token: newToken, refreshToken: newRefresh, role });
+
+    try {
+      const response = await axios.post(`${BASE_URL}/api/auth/refresh`, {
+        refreshToken,
+      });
+      const { token: newToken, refreshToken: newRefresh } = response.data;
+      setTokensAndUser({ token: newToken, refreshToken: newRefresh, role });
+    } catch (error) {
+      if (error.response && error.response.status === 401) {
+        logout();
+      }
+      throw error;
+    }
   };
 
   const logout = () => {
@@ -98,7 +120,7 @@ export const AuthProvider = ({ children }) => {
         token,
         refreshToken,
         role,
-        isLoading, // <-- Добавили в контекст
+        isLoading,
         setTokensAndUser,
         refreshTokenRequest,
         logout,

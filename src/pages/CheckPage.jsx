@@ -247,14 +247,31 @@ const CheckPage = () => {
           </div>
           {/* Блок для отображения buildingPresence */}
           <div className="absolute top-40 left-8 bg-white px-4 py-3 rounded-xl">
-            <h2 className="text-lg font-semibold">
+            <h2 className="text-lg dark:text-gray-900 font-semibold">
               Qurilma:{" "}
-              <span className="text-gray-800">{mapData.buildingPresence}</span>
+              <span
+                className={
+                  mapData.buildingPresence === "exists"
+                    ? "text-green-500"
+                    : mapData.buildingPresence === "nonexistent"
+                    ? "text-red-500"
+                    : mapData.buildingPresence === "under_construction"
+                    ? "text-yellow-500"
+                    : "text-gray-500"
+                }
+              >
+                {mapData.buildingPresence === "exists"
+                  ? "Bor"
+                  : mapData.buildingPresence === "nonexistent"
+                  ? "Yo'q"
+                  : mapData.buildingPresence === "under_construction"
+                  ? "Qurilish davrida"
+                  : ""}
+              </span>
             </h2>
           </div>
-          {/* Блок для отображения verdict */}
 
-          <div className="absolute top-80 right-3">
+          <div className="absolute top-52 right-8">
             <CadastreInfo cadastreId={recordId || id} />
           </div>
           {/* Кнопка "Davom etish" – открывает модальное окно подтверждения */}
@@ -288,7 +305,7 @@ const CheckPage = () => {
           {showProceedModal && (
             <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50 pointer-events-auto">
               <div className="bg-white px-4 py-2 rounded-2xl shadow-lg max-w-md w-full text-left relative">
-                <h2 className="text-lg cursor-default font-semibold mb-4">
+                <h2 className="text-lg dark:text-gray-900 cursor-default font-semibold mb-4">
                   Davom etishni tasdiqlaysizmi?
                 </h2>
                 <div className="flex justify-center w-full space-x-4">

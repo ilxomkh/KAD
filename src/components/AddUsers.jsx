@@ -86,11 +86,11 @@ const AddUsers = ({ onClose }) => {
 
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center bg-black/50 bg-opacity-50 z-50"
+      className="fixed inset-0 flex items-center justify-center bg-black/20 z-50"
       onClick={onClose}
     >
       <div
-        className="bg-white p-6 rounded-2xl shadow-lg w-1/2 relative"
+        className="bg-white p-6 rounded-2xl w-1/3 relative"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center mb-8">
@@ -172,7 +172,7 @@ const AddUsers = ({ onClose }) => {
             />
             <button
               type="button"
-              className="absolute right-3 top-10 text-gray-400 focus:outline-none hover:text-gray-700"
+              className="absolute right-3 top-10 text-gray-400 focus:outline-none hover:text-gray-500"
               onClick={() => setShowPassword(!showPassword)}
             >
               {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
@@ -200,7 +200,7 @@ const AddUsers = ({ onClose }) => {
             />
             <button
               type="button"
-              className="absolute right-3 top-10 text-gray-400 focus:outline-none hover:text-gray-700"
+              className="absolute right-3 top-10 text-gray-400 focus:outline-none hover:text-gray-500"
               onClick={() => setShowPassword(!showPassword)}
             >
               {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}

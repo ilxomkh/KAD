@@ -100,20 +100,23 @@ const TableRole4 = ({ data = [], totalItems, currentPage, onPageChange }) => {
                 <td className="py-4 px-2 bg-white text-orange-500 font-semibold text-center w-20 md:w-24">
                   {new Date(item.deadline).toLocaleDateString()}
                 </td>
-                <td className="py-4 px-2 bg-white text-center">
+                <td className="py-4 pl-8 bg-white text-center">
                   {item.landPlan && <PlanButton item={item} />}
                 </td>
-                <td className="py-4 px-2 bg-white text-center">
+                <td className="py-4 pl-8 bg-white text-center">
                   {item.governorDecision && <DecisionButton item={item} />}
                 </td>
                 <td
-                  className={`py-4 px-2 bg-white font-medium ${
-                    item.status === "pending" ? "text-green-500" : "text-red-500"
+                  className={`py-7 px-2 bg-white font-medium ${
+                    item.status === "pending"
+                      ? "text-green-500"
+                      : "text-red-500"
                   } text-center`}
                 >
-                  {item.status}
+                  {item.status === "pending" ? "Kutilmoqda" : item.status}
                 </td>
-                <td className="bg-white rounded-r-3xl text-center">
+
+                <td className="bg-white px-4 rounded-r-3xl text-center">
                   <ChevronRight />
                 </td>
               </tr>
@@ -122,7 +125,7 @@ const TableRole4 = ({ data = [], totalItems, currentPage, onPageChange }) => {
         </table>
       </div>
       <div className="bg-[#f9f9f9] py-4 rounded-b-3xl">
-      <Pagination
+        <Pagination
           totalItems={totalItems}
           itemsPerPage={10} // если pageSize из meta равен 10
           currentPage={currentPage}

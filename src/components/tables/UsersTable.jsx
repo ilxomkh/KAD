@@ -24,17 +24,17 @@ const UsersTable = ({ data = [], totalItems, currentPage, onPageChange }) => {
         <table className="w-full border-separate border-spacing-y-3">
           <thead>
             <tr className="text-gray-600 cursor-default text-left uppercase text-md bg-[#f9f9f9]">
-              <th className="py-3 px-4">Foydalanuvchi ID</th>
-              <th className="py-3 px-4">Ismi</th>
-              <th className="py-3 px-4">Familiyasi</th>
-              <th className="py-3 px-4">Sharifi</th>
-              <th className="py-3 px-4">Roli</th>
-              <th className="py-3 px-4">Lavozimi</th>
-              <th className="py-3 px-4">Holati</th>
-              <th className="py-3 px-4">Bajarilganlar</th>
-              <th className="py-3 px-4">Xatoliklar</th>
-              <th className="py-3 px-4">Qo‘shilgan sanasi</th>
-              <th className="py-3 px-4"></th>
+              <th className="py-3 px-4 text-center">Foydalanuvchi ID</th>
+              <th className="py-3 px-4 text-center">Ismi</th>
+              <th className="py-3 px-4 text-center">Familiyasi</th>
+              <th className="py-3 px-4 text-center">Sharifi</th>
+              <th className="py-3 px-4 text-center">Roli</th>
+              <th className="py-3 px-4 text-center">Lavozimi</th>
+              <th className="py-3 px-4 text-center">Holati</th>
+              <th className="py-3 px-4 text-center">Bajarilganlar</th>
+              <th className="py-3 px-4 text-center">Xatoliklar</th>
+              <th className="py-3 px-4 text-center">Qo‘shilgan sanasi</th>
+              <th className="py-3 px-4 text-center"></th>
             </tr>
           </thead>
           <tbody className="text-gray-700 text-md">
@@ -45,24 +45,54 @@ const UsersTable = ({ data = [], totalItems, currentPage, onPageChange }) => {
                   key={userId || index}
                   className="group transition rounded-3xl cursor-pointer relative"
                 >
-                  <td className="py-6 px-4 bg-white rounded-l-3xl">
-                    {(currentPage - 1) * itemsPerPage + index + 1}.
+                  <td className="py-6 px-4 text-center bg-white rounded-l-3xl">
+                    {item.ID}
                   </td>
-                  <td className="py-6 px-4 bg-white">{item.firstName}</td>
-                  <td className="py-6 px-4 bg-white">{item.lastName}</td>
-                  <td className="py-6 px-4 bg-white">{item.middleName}</td>
-                  <td className="py-6 px-4 bg-white">{item.role}</td>
-                  <td className="py-6 px-4 bg-white">{item.position}</td>
-                  <td className="py-6 px-4 bg-white">
+                  <td className="py-6 px-4 bg-white text-center">
+                    {item.firstName}
+                  </td>
+                  <td className="py-6 px-4 bg-white text-center">
+                    {item.lastName}
+                  </td>
+                  <td className="py-6 px-4 bg-white text-center">
+                    {item.middleName}
+                  </td>
+                  <td className="py-6 px-4 bg-white text-blue-500 text-center">
+                    {item.role === "geometry_fix"
+                      ? "1-rol"
+                      : item.role === "verify"
+                      ? "2-rol"
+                      : item.role === "agency"
+                      ? "3-rol"
+                      : item.role === "verdict_79"
+                      ? "4-rol(7-9)"
+                      : item.role === "cadastre_integration"
+                      ? "Kadastr Xodimi"
+                      : item.role === "admin"
+                      ? "Adminstrator"
+                      : item.role}
+                  </td>
+                  <td className="py-6 px-4 bg-white text-center">
+                    {item.position}
+                  </td>
+                  <td className="py-6 pl-16 bg-white text-center">
                     <ToggleSwitch
                       userId={item.ID}
                       initialStatus={item.active}
                       onToggle={() => toggleStatus(item.ID)}
                     />
                   </td>
-                  <td className="py-6 px-4 bg-white">{item.tasksCompleted}</td>
-                  <td className="py-6 px-4 bg-white">{item.tasksFailed}</td>
-                  <td className="py-6 px-4 bg-white">
+                  <td className="py-6 px-4 bg-white text-center">
+                    {item.tasksCompleted}
+                  </td>
+                  <td
+                    className={`py-6 px-4 text-center bg-white ${
+                      item.tasksFailed === 0 ? "text-green-500" : "text-red-600"
+                    }`}
+                  >
+                    {item.tasksFailed}
+                  </td>{" "}
+                  <td className="py-6 px-4 text-center bg-white">
                     {item.CreatedAt
                       ? new Date(item.CreatedAt).toLocaleDateString()
                       : ""}

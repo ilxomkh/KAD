@@ -158,30 +158,29 @@ const VerdictPage = () => {
     <div className="relative min-h-screen w-screen flex">
       {/* Левая часть (если загружено фото) */}
       <div className="flex max-h-screen w-screen">
-  {/* Левая колонка (фото) */}
-  {uploadedPhoto && (
-    <div className="w-1/2 h-full">
-      <img
-        src={uploadedPhoto}
-        alt="Загруженное фото"
-        className="w-full h-full object-cover rounded-lg shadow-lg"
-      />
-    </div>
-  )}
+        {/* Левая колонка (фото) */}
+        {uploadedPhoto && (
+          <div className="w-1/2 h-full">
+            <img
+              src={uploadedPhoto}
+              alt="Загруженное фото"
+              className="w-full h-full object-cover shadow-lg"
+            />
+          </div>
+        )}
 
-  {/* Правая колонка (карта) */}
-  <ArcGISPolygonEditor
-    backendPolygonCoords={
-      polygonCoords && polygonCoords.length > 0
-        ? polygonCoords
-        : [[41.32, 69.25]]
-    }
-    editable={false}
-    onConfirmChanges={setEditedPolygonData}
-    isHalfWidth={!!uploadedPhoto} // Если фото есть, карта будет иметь ширину 50vw
-  />
-</div>
-
+        {/* Правая колонка (карта) */}
+        <ArcGISPolygonEditor
+          backendPolygonCoords={
+            polygonCoords && polygonCoords.length > 0
+              ? polygonCoords
+              : [[41.32, 69.25]]
+          }
+          editable={false}
+          onConfirmChanges={setEditedPolygonData}
+          isHalfWidth={!!uploadedPhoto} // Если фото есть, карта будет иметь ширину 50vw
+        />
+      </div>
 
       {/* Шапка */}
       <div className="absolute top-0 left-0 p-6 w-full z-50">
@@ -197,12 +196,11 @@ const VerdictPage = () => {
         />
       </div>
 
-
-      <div className="absolute top-52 right-8">
+      <div className="absolute top-36 right-8">
         <CadastreInfo cadastreId={recordId || id} />
       </div>
 
-      <div className="absolute top-52 right-22">
+      <div className="absolute top-36 right-22">
         <SupportButton cadastreId={recordId || id} />
       </div>
 
@@ -224,7 +222,7 @@ const VerdictPage = () => {
               className="px-6 py-3 cursor-pointer bg-blue-600 text-white rounded-xl flex items-center justify-center transition-all hover:bg-blue-700"
               onClick={() => setShowProceedModal(true)}
               disabled={buildingExists === null}
-              >
+            >
               Davom etish <ChevronRight className="ml-2 w-6 h-6 mt-0.5" />
             </button>
           </div>
@@ -235,7 +233,7 @@ const VerdictPage = () => {
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
           <div className="bg-white px-4 py-2 rounded-2xl shadow-lg max-w-md w-full text-left relative">
-            <h2 className="text-lg font-semibold mb-4">
+            <h2 className="text-lg dark:text-gray-900 font-semibold mb-4">
               Xatolik borligini tasdiqlaysizmi?
             </h2>
             <div className="flex justify-center w-full space-x-4">
@@ -261,7 +259,7 @@ const VerdictPage = () => {
       {showProceedModal && (
         <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50 pointer-events-auto">
           <div className="bg-white px-4 py-2 rounded-2xl shadow-lg max-w-md w-full text-left relative">
-            <h2 className="text-lg cursor-default font-semibold mb-4">
+            <h2 className="text-lg cursor-default dark:text-gray-900 font-semibold mb-4">
               Davom etishni tasdiqlaysizmi?
             </h2>
             <div className="flex justify-center w-full space-x-4">

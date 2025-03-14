@@ -248,7 +248,7 @@ const HeaderAdmin = ({
                   <button
                     key={option.key}
                     onClick={() => handleSelectTable(option.key)}
-                    className={`block cursor-pointer px-4 py-2 w-full text-left text-lg ${
+                    className={`block dark:text-gray-900 cursor-pointer px-4 py-2 w-full text-left text-lg ${
                       currentTable === option.key
                         ? "bg-white"
                         : "transition-colors duration-500 hover:text-blue-500"

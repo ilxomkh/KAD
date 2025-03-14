@@ -69,7 +69,7 @@ const TableRole1 = ({ data = [], totalItems, currentPage, onPageChange }) => {
                 onClick={() => handleRowClick(item)}
               >
                 <td className="py-4 bg-white rounded-l-3xl px-2 text-center font-semibold">
-                {index + 1}.
+                  {index + 1}.
                 </td>
                 <td className="py-4 px-2 bg-white text-center font-semibold transition-colors duration-500 group-hover:text-blue-500">
                   {item.cadastreId}
@@ -92,29 +92,30 @@ const TableRole1 = ({ data = [], totalItems, currentPage, onPageChange }) => {
                 <td className="py-4 px-2 bg-white text-center">
                   {new Date(item.spaceImageDate).toLocaleDateString()}
                 </td>
-                <td className="py-4 px-2 bg-white text-center">
-                  {item.type}
-                </td>
+                <td className="py-4 px-2 bg-white text-center">{item.type}</td>
                 <td className="py-4 px-2 bg-white text-center">
                   {new Date(item.assignDate).toLocaleDateString()}
                 </td>
                 <td className="py-4 px-2 bg-white text-orange-500 font-semibold text-center">
                   {new Date(item.deadline).toLocaleDateString()}
                 </td>
-                <td className="py-4 px-2 bg-white text-center">
+                <td className="py-4 pl-8 bg-white text-center">
                   {item.landPlan && <PlanButton item={item} />}
                 </td>
-                <td className="py-4 px-2 bg-white text-center">
+                <td className="py-4 pl-8 bg-white text-center">
                   {item.governorDecision && <DecisionButton item={item} />}
                 </td>
                 <td
-                  className={`py-4 px-2 bg-white font-medium ${
-                    item.status === "pending" ? "text-green-500" : "text-red-500"
+                  className={`py-7 px-2 bg-white font-medium ${
+                    item.status === "pending"
+                      ? "text-green-500"
+                      : "text-red-500"
                   } text-center`}
                 >
-                  {item.status}
+                  {item.status === "pending" ? "Kutilmoqda" : item.status}
                 </td>
-                <td className="py-7 flex justify-end px-2 bg-white rounded-r-3xl text-">
+
+                <td className="py-7 pl-8 px-2 bg-white rounded-r-3xl text-center">
                   <ChevronRight />
                 </td>
               </tr>

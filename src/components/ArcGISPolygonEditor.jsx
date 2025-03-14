@@ -45,6 +45,7 @@ const ArcGISPolygonEditor = ({
   const [sketchVM, setSketchVM] = useState(null);
   const [activeButton, setActiveButton] = useState(null);
   const [showConfirmButton, setShowConfirmButton] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
   const minZoomLevel = 10;
 
   // Преобразуем координаты из [lat, lng] в [lng, lat]
@@ -78,7 +79,11 @@ const ArcGISPolygonEditor = ({
       initialCenterRef.current = center;
       const computedInitialAngle = computeAngle(ring, center);
       initialAngleRef.current = computedInitialAngle;
-      console.log("Начальный угол (будем считать 0°):", computedInitialAngle, "°");
+      console.log(
+        "Начальный угол (будем считать 0°):",
+        computedInitialAngle,
+        "°"
+      );
 
       const polygon = {
         type: "polygon",
@@ -160,7 +165,9 @@ const ArcGISPolygonEditor = ({
         sketch.on("update", (event) => {
           const blockedActions = ["reshape", "vertex-move", "scale"];
           if (blockedActions.includes(event.toolEventInfo?.type)) {
-            console.log("Блокируем попытку изменить форму или масштабировать полигон.");
+            console.log(
+              "Блокируем попытку изменить форму или масштабировать полигон."
+            );
             sketch.cancel();
           }
           console.log("Update event:", event.state, event.toolEventInfo);
@@ -233,7 +240,8 @@ const ArcGISPolygonEditor = ({
       });
 
       setActiveButton(null);
-      setShowConfirmButton(false);
+      setShowConfirmButton(true);
+      setConfirmed(true);
       if (sketchVM) sketchVM.cancel();
     } else {
       console.error("Геометрия полигона не определена");
@@ -249,13 +257,13 @@ const ArcGISPolygonEditor = ({
 
       {editable && (
         <>
-          <div className="absolute top-1/2 right-4 transform -translate-y-1/2 space-y-3 z-50 pointer-events-auto">
+          <div className="absolute top-1/2 right-8 transform -translate-y-1/2 space-y-3 z-50 pointer-events-auto">
             <div className="grid grid-cols-1 gap-6">
               <button
-                className={`p-2 w-10 bg-white cursor-pointer shadow-lg rounded-xl hover:text-blue-500 text-gray-700 transition-all ${
+                className={`p-2 w-10 cursor-pointer shadow-lg rounded-xl hover:text-blue-500 text-gray-700 transition-all ${
                   activeButton === "transform"
-                    ? "bg-blue-500 text-gray-700"
-                    : "bg-blue-500"
+                    ? "bg-blue-500 text-white hover:text-white"
+                    : "bg-white"
                 }`}
                 onClick={handleTransform}
               >
@@ -278,14 +286,17 @@ const ArcGISPolygonEditor = ({
           </div>
 
           {showConfirmButton && (
-            <div className="absolute top-36 right-8 rounded-xl flex space-x-4 z-50 pointer-events-auto">
-              <button
-                className="px-6 py-3 flex cursor-pointer bg-white items-center justify-center text-black rounded-xl transition-all hover:bg-gray-100"
-                onClick={handleConfirm}
-              >
-                Tasdiqlash <CheckIcon size={18} className="ml-2" />
-              </button>
-            </div>
+            <button
+              className={`px-6 py-3 absolute top-36 right-8 flex cursor-pointer items-center justify-center rounded-xl transition-all ${
+                confirmed
+                  ? "bg-green-500 text-white"
+                  : "bg-white border border-[#e9e9eb] hover:border-green-500 text-black hover:text-green-500"
+              }`}
+              onClick={handleConfirm}
+            >
+              {confirmed ? "Tasdiqlandi" : "Tasdiqlash"}
+              <CheckIcon size={18} className="ml-2" />
+            </button>
           )}
         </>
       )}

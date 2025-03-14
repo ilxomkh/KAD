@@ -92,11 +92,11 @@ const EditModal = ({ item, onClose, onSave }) => {
 
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center bg-black/50 bg-opacity-50 z-50"
+      className="fixed inset-0 flex items-center justify-center bg-black/20 bg-opacity-50 z-50"
       onClick={onClose}
     >
       <div
-        className="bg-white p-6 rounded-2xl shadow-lg w-1/2 relative"
+        className="bg-white p-6 rounded-2xl w-1/3 relative"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center mb-8">
