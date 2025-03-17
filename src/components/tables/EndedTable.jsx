@@ -151,12 +151,12 @@ const EndedTable = ({ data = [], totalItems, currentPage, onPageChange }) => {
                 <td className="py-7 px-2 bg-white text-center">
                   <span
                     className={`font-semibold ${
-                      item.status === "finished"
+                      item.status === "agency_verified"
                         ? "text-green-500"
                         : "text-gray-500"
                     }`}
                   >
-                    {item.status === "finished"
+                    {item.status === "agency_verified"
                       ? "Tugallandi"
                       : item.status}
                   </span>

@@ -83,7 +83,25 @@ const VerdictPage = () => {
     setShowFileUpload(false);
   };
 
-  // 3. Нажатие "Davom etish" – вывод payload в консоль и отправка данных verdict
+  // 3. Обработчик для открытия модального окна "Davom etish"
+  const handleProceedModalOpen = () => {
+    if (buildingExists === null) {
+      alert("Iltimos, avval bino mavjudligini tanlang.");
+      return;
+    }
+    setShowProceedModal(true);
+  };
+
+  // 4. Обработчик для открытия модального окна "Xatolik bor"
+  const handleErrorModalOpen = () => {
+    if (buildingExists === null) {
+      alert("Iltimos, avval bino mavjudligini tanlang.");
+      return;
+    }
+    setShowModal(true);
+  };
+
+  // 5. Нажатие "Davom etish" – вывод payload в консоль и отправка данных verdict
   const handleProceed = async () => {
     if (buildingExists === null) return;
     const payload = {
@@ -116,7 +134,7 @@ const VerdictPage = () => {
     }
   };
 
-  // 4. Обработчик для кнопки "Xatolik bor" в модальном окне
+  // 6. Обработчик для кнопки "Xatolik bor" в модальном окне
   const handleErrorConfirm = async () => {
     setSending(true);
     const payload = {
@@ -211,7 +229,7 @@ const VerdictPage = () => {
           <div className="pointer-events-auto bg-white p-3 rounded-xl">
             <button
               className="px-6 py-3 cursor-pointer bg-red-500 text-white rounded-xl transition-all hover:bg-red-600"
-              onClick={() => setShowModal(true)}
+              onClick={handleErrorModalOpen}
             >
               Xatolik bor
             </button>
@@ -220,8 +238,7 @@ const VerdictPage = () => {
           <div className="pointer-events-auto bg-white p-3 rounded-xl">
             <button
               className="px-6 py-3 cursor-pointer bg-blue-600 text-white rounded-xl flex items-center justify-center transition-all hover:bg-blue-700"
-              onClick={() => setShowProceedModal(true)}
-              disabled={buildingExists === null}
+              onClick={handleProceedModalOpen}
             >
               Davom etish <ChevronRight className="ml-2 w-6 h-6 mt-0.5" />
             </button>

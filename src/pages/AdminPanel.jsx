@@ -41,7 +41,7 @@ const AdminPanel = () => {
 
       // Дополнительные фильтры по статусам
       if (currentTable === "ended") {
-        url += "&status=finished";
+        url += "&status=agency_verified";
       } else if (currentTable === "errors") {
         url += "&cadastreError=true";
       } else if (currentTable === "role1") {

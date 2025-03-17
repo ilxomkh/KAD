@@ -76,7 +76,7 @@ const TableRole3 = ({ data = [], totalItems, currentPage, onPageChange }) => {
                 <td className="py-4 px-2 bg-white text-center font-semibold w-40 md:w-48 transition-colors duration-500 group-hover:text-blue-500">
                   {item.cadastreId}
                 </td>
-                <td className="py-4 px-2 bg-white text-center font-bold w-24 md:w-28">
+                <td className="py-7 px-2 bg-white text-center font-bold w-24 md:w-28">
                   {item.modda}
                 </td>
                 <td className="py-4 px-2 bg-white text-center w-32 md:w-36">

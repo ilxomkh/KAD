@@ -24,10 +24,10 @@ const ComparePage = () => {
   const [sending, setSending] = useState(false);
   const [editedPolygonData, setEditedPolygonData] = useState(null);
   const [recordId, setRecordId] = useState(null);
-  
+
   // Новый стейт для модального окна при нажатии "Davom etish"
   const [showProceedModal, setShowProceedModal] = useState(false);
-  
+
   // Существующий стейт для модального окна "Xatolik bor"
   const [showErrorModal, setShowErrorModal] = useState(false);
 
@@ -100,95 +100,96 @@ const ComparePage = () => {
     console.log("Сохраненные данные полигона:", data);
   };
 
-  // Отправка данных для geometry_fix
-// Функция для преобразования координаты из Web Mercator в WGS84 (градусы)
-const webMercatorToWGS84 = (x, y) => {
-  const R = 6378137;
-  const lon = (x / R) * (180 / Math.PI);
-  const lat = Math.atan(Math.sinh(y / R)) * (180 / Math.PI);
-  return [parseFloat(lon.toFixed(5)), parseFloat(lat.toFixed(5))];
-};
-
-const sendGeometryFixData = async () => {
-  let finalCoordinates = [];
-
-  if (editedPolygonData && editedPolygonData.geometry) {
-    if (Array.isArray(editedPolygonData.geometry)) {
-      finalCoordinates = editedPolygonData.geometry;
-    } else if (
-      editedPolygonData.geometry.rings &&
-      Array.isArray(editedPolygonData.geometry.rings)
-    ) {
-      finalCoordinates = editedPolygonData.geometry.rings[0] || [];
-    } else if (
-      editedPolygonData.geometry.coordinates &&
-      Array.isArray(editedPolygonData.geometry.coordinates)
-    ) {
-      finalCoordinates = editedPolygonData.geometry.coordinates[0] || [];
-    } else {
-      console.error(
-        "Неверный формат данных полигона:",
-        editedPolygonData.geometry
-      );
-      return false;
-    }
-  } else if (polygonCoords.length > 0) {
-    finalCoordinates = polygonCoords.map((coord) => [coord[1], coord[0]]);
-  } else {
-    console.error("Нет данных для формирования fixedGeojson");
-    return false;
-  }
-
-  // Преобразуем каждую координату из Web Mercator в WGS84
-  const convertedCoordinates = finalCoordinates.map(([x, y]) =>
-    webMercatorToWGS84(x, y)
-  );
-
-  const fixedGeojson = {
-    type: "Polygon",
-    coordinates: [convertedCoordinates],
+  // Функция для преобразования координаты из Web Mercator в WGS84 (градусы)
+  const webMercatorToWGS84 = (x, y) => {
+    const R = 6378137;
+    const lon = (x / R) * (180 / Math.PI);
+    const lat = Math.atan(Math.sinh(y / R)) * (180 / Math.PI);
+    return [parseFloat(lon.toFixed(5)), parseFloat(lat.toFixed(5))];
   };
 
-  const payload = {
-    fixedGeojson: JSON.stringify(fixedGeojson),
-    geometryRotation:
-      editedPolygonData && editedPolygonData.rotation
-        ? editedPolygonData.rotation
-        : 0,
-    moveDistance:
-      editedPolygonData && editedPolygonData.moveDistance
-        ? editedPolygonData.moveDistance
-        : 0,
-  };
+  const sendGeometryFixData = async () => {
+    let finalCoordinates = [];
 
-  console.log("Отправка данных на сервер (geometry_fix):", payload);
-
-  try {
-    const idToUse = recordId !== null ? recordId : encodedId;
-    const response = await fetch(
-      `${BASE_URL}/api/cadastre/${idToUse}/geometry_fix`,
-      {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
+    if (editedPolygonData && editedPolygonData.geometry) {
+      if (Array.isArray(editedPolygonData.geometry)) {
+        finalCoordinates = editedPolygonData.geometry;
+      } else if (
+        editedPolygonData.geometry.rings &&
+        Array.isArray(editedPolygonData.geometry.rings)
+      ) {
+        finalCoordinates = editedPolygonData.geometry.rings[0] || [];
+      } else if (
+        editedPolygonData.geometry.coordinates &&
+        Array.isArray(editedPolygonData.geometry.coordinates)
+      ) {
+        finalCoordinates = editedPolygonData.geometry.coordinates[0] || [];
+      } else {
+        console.error(
+          "Неверный формат данных полигона:",
+          editedPolygonData.geometry
+        );
+        return false;
       }
-    );
-    if (response.ok) {
-      console.log("Данные geometry_fix успешно отправлены");
-      return true;
+
+      // Если поворот или перемещение изменились (не равны 0), применяем преобразование координат
+      if (editedPolygonData.rotation !== 0 || editedPolygonData.moveDistance !== 0) {
+        finalCoordinates = finalCoordinates.map(([x, y]) =>
+          webMercatorToWGS84(x, y)
+        );
+      }
+      // Если изменений не было, оставляем finalCoordinates как есть
+    } else if (polygonCoords.length > 0) {
+      finalCoordinates = polygonCoords.map((coord) => [coord[1], coord[0]]);
     } else {
-      console.error("Ошибка при отправке данных geometry_fix на сервер");
+      console.error("Нет данных для формирования fixedGeojson");
       return false;
     }
-  } catch (error) {
-    console.error("Ошибка при отправке данных geometry_fix:", error);
-    return false;
-  }
-};
 
+    const fixedGeojson = {
+      type: "Polygon",
+      coordinates: [finalCoordinates],
+    };
+
+    const payload = {
+      fixedGeojson: JSON.stringify(fixedGeojson),
+      geometryRotation:
+        editedPolygonData && editedPolygonData.rotation
+          ? editedPolygonData.rotation
+          : 0,
+      moveDistance:
+        editedPolygonData && editedPolygonData.moveDistance
+          ? editedPolygonData.moveDistance
+          : 0,
+    };
+
+    console.log("Отправка данных на сервер (geometry_fix):", payload);
+
+    try {
+      const idToUse = recordId !== null ? recordId : encodedId;
+      const response = await fetch(
+        `${BASE_URL}/api/cadastre/${idToUse}/geometry_fix`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+      if (response.ok) {
+        console.log("Данные geometry_fix успешно отправлены");
+        return true;
+      } else {
+        console.error("Ошибка при отправке данных geometry_fix на сервер");
+        return false;
+      }
+    } catch (error) {
+      console.error("Ошибка при отправке данных geometry_fix:", error);
+      return false;
+    }
+  };
 
   // Отправка данных для buildingPresence
   const sendBuildingPresenceData = async () => {
@@ -257,6 +258,24 @@ const sendGeometryFixData = async () => {
       console.error("Ошибка при отправке данных cadastre_error:", error);
       return false;
     }
+  };
+
+  // Новый обработчик для открытия модального окна "Davom etish"
+  const handleProceedModalOpen = () => {
+    if (buildingExists === null) {
+      alert("Iltimos, avval bino mavjudligini tanlang.");
+      return;
+    }
+    setShowProceedModal(true);
+  };
+
+  // Новый обработчик для открытия модального окна "Xatolik bor"
+  const handleErrorModalOpen = () => {
+    if (buildingExists === null) {
+      alert("Iltimos, avval bino mavjudligini tanlang.");
+      return;
+    }
+    setShowErrorModal(true);
   };
 
   // Обработчик для кнопки "Davom etish" – вызывается из модального окна
@@ -332,11 +351,8 @@ const sendGeometryFixData = async () => {
       <div className="absolute bottom-6 right-8 bg-white p-3 rounded-xl flex space-x-4 z-50 pointer-events-auto">
         <button
           className="px-6 py-3 cursor-pointer bg-blue-600 text-white rounded-xl flex items-center justify-center transition-all hover:bg-blue-700"
-          onClick={() => setShowProceedModal(true)}
-          disabled={
-            (!editedPolygonData && polygonCoords.length === 0) ||
-            buildingExists === null
-          }
+          onClick={handleProceedModalOpen}
+          disabled={(!editedPolygonData && polygonCoords.length === 0)}
         >
           Davom etish <ChevronRight className="ml-2 w-6 h-6 mt-0.5" />
         </button>
@@ -346,7 +362,8 @@ const sendGeometryFixData = async () => {
       <div className="absolute bottom-6 left-8 bg-white p-3 rounded-xl flex space-x-4 z-50 pointer-events-auto">
         <button
           className="px-6 py-3 cursor-pointer bg-red-500 text-white rounded-xl transition-all hover:bg-red-600"
-          onClick={() => setShowErrorModal(true)}
+          onClick={handleErrorModalOpen}
+          disabled={(!editedPolygonData && polygonCoords.length === 0) || sending}
         >
           Xatolik bor
         </button>
@@ -368,7 +385,7 @@ const sendGeometryFixData = async () => {
                 {sending ? "Yuborilmoqda..." : "Ha"}
               </button>
               <button
-                className="px-6 py-3 w-full cursor-pointer bg-[#f7f9fb] border border-[#e9e9eb] text-gray-700 rounded-xl transition-all hover:bg-gray-100"
+                className="px-6 py-3 w-full cursor-pointer bg-[#f7f9fb] border border-[#e9e9eb] text-gray-700 rounded-xl transition-all hover:border-green-500 hover:text-green-500"
                 onClick={() => setShowProceedModal(false)}
               >
                 Yo'q
@@ -389,11 +406,7 @@ const sendGeometryFixData = async () => {
               <button
                 className="px-6 py-3 w-full cursor-pointer bg-red-500 text-white rounded-xl transition-all hover:bg-red-600"
                 onClick={handleErrorConfirm}
-                disabled={
-                  sending ||
-                  (!editedPolygonData && polygonCoords.length === 0) ||
-                  buildingExists === null
-                }
+                disabled={sending || (!editedPolygonData && polygonCoords.length === 0)}
               >
                 {sending ? "Yuborilmoqda..." : "Ha"}
               </button>
