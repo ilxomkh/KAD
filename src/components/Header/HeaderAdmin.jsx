@@ -243,7 +243,7 @@ const HeaderAdmin = ({
               <ChevronDown className="ml-2 mt-1 w-5 h-5" />
             </button>
             {dropdownOpen && (
-              <div className="absolute -left-3 mt-4 w-56 bg-white rounded-3xl p-2 z-10">
+              <div className="absolute -left-6 mt-4 w-60 bg-white rounded-3xl p-2 z-10">
                 {menuOptions.map((option) => (
                   <button
                     key={option.key}

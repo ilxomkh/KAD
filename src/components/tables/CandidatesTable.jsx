@@ -42,7 +42,7 @@ function CandidatesTable({
         }
       );
       if (!response.ok) {
-        throw new Error("Ошибка при загрузке логов");
+        throw new Error("Loglarni yuklashda xatolik");
       }
       const logsData = await response.json();
       setLogs(logsData);
@@ -230,10 +230,10 @@ function CandidatesTable({
             </div>
             <div className="p-4 overflow-y-auto flex-1">
               {logsLoading ? (
-                <div className="text-center">Загрузка логов...</div>
+                <div className="text-center">Loglar yuklanmoqda...</div>
               ) : logsError ? (
                 <div className="text-center text-red-500">
-                  Ошибка: {logsError}
+                  Xato: {logsError}
                 </div>
               ) : logs && logs.length > 0 ? (
                 logs.map((log, idx) => (
@@ -245,23 +245,23 @@ function CandidatesTable({
                       {log.comment || "Без комментария"}
                     </div>
                     <div className="text-sm text-gray-700 mt-1">
-                      Статус: <strong>{log.processedStatus}</strong>
+                      Status: <strong>{log.processedStatus}</strong>
                     </div>
                     <div className="text-sm mt-1">
                       {log.success ? (
                         <span className="text-green-600 font-semibold">
-                          Успешно
+                          Muvofaqiyatli
                         </span>
                       ) : (
                         <span className="text-red-600 font-semibold">
-                          Ошибка
+                          Xato
                         </span>
                       )}
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="text-center text-gray-500">Логов нет</div>
+                <div className="text-center text-gray-500">Loglar yo'q</div>
               )}
             </div>
           </div>
