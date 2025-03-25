@@ -47,6 +47,7 @@ const AgencyReviewPage = () => {
   // Состояние для модального окна подтверждения "Davom etish"
   const [showProceedModal, setShowProceedModal] = useState(false);
   const [sending, setSending] = useState(false);
+  const [signing, setSigning] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -62,7 +63,7 @@ const AgencyReviewPage = () => {
     fetch(`${BASE_URL}/api/cadastre/cad/${encodedId}`, {
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
       },
     })
       .then((res) => {
@@ -77,14 +78,20 @@ const AgencyReviewPage = () => {
         let originalCoords = [];
         try {
           const geojson = JSON.parse(data.geojson);
-          if (geojson.type === "FeatureCollection" && geojson.features.length > 0) {
+          if (
+            geojson.type === "FeatureCollection" &&
+            geojson.features.length > 0
+          ) {
             const firstFeature = geojson.features[0];
             if (firstFeature?.geometry?.coordinates) {
               originalCoords = firstFeature.geometry.coordinates[0].map(
                 ([lon, lat]) => [lat, lon]
               );
             }
-          } else if (geojson.type === "Feature" && geojson.geometry?.coordinates) {
+          } else if (
+            geojson.type === "Feature" &&
+            geojson.geometry?.coordinates
+          ) {
             originalCoords = geojson.geometry.coordinates[0].map(
               ([lon, lat]) => [lat, lon]
             );
@@ -96,21 +103,31 @@ const AgencyReviewPage = () => {
         let modifiedCoords = [];
         try {
           const fixedGeojson = JSON.parse(data.fixedGeojson);
-          if (fixedGeojson.type === "FeatureCollection" && fixedGeojson.features.length > 0) {
+          if (
+            fixedGeojson.type === "FeatureCollection" &&
+            fixedGeojson.features.length > 0
+          ) {
             const firstFeature = fixedGeojson.features[0];
             if (firstFeature?.geometry?.coordinates) {
               modifiedCoords = firstFeature.geometry.coordinates[0].map(
                 ([lon, lat]) => [lat, lon]
               );
             }
-          } else if (fixedGeojson.type === "Feature" && fixedGeojson.geometry?.coordinates) {
+          } else if (
+            fixedGeojson.type === "Feature" &&
+            fixedGeojson.geometry?.coordinates
+          ) {
             modifiedCoords = fixedGeojson.geometry.coordinates[0].map(
               ([lon, lat]) => [lat, lon]
             );
-          } else if (fixedGeojson.type === "Polygon" && fixedGeojson.coordinates) {
-            modifiedCoords = fixedGeojson.coordinates[0].map(
-              ([lon, lat]) => [lat, lon]
-            );
+          } else if (
+            fixedGeojson.type === "Polygon" &&
+            fixedGeojson.coordinates
+          ) {
+            modifiedCoords = fixedGeojson.coordinates[0].map(([lon, lat]) => [
+              lat,
+              lon,
+            ]);
           }
         } catch (e) {
           console.error("Ошибка парсинга fixedGeojson:", e);
@@ -126,7 +143,7 @@ const AgencyReviewPage = () => {
         if (data.ID !== undefined && data.ID !== null) {
           fetch(`${BASE_URL}/api/cadastre/${data.ID}/generated_report`, {
             headers: {
-              "Authorization": `Bearer ${token}`,
+              Authorization: `Bearer ${token}`,
             },
           })
             .then((res) => {
@@ -151,6 +168,34 @@ const AgencyReviewPage = () => {
       });
   }, [encodedId, location.state, token]);
 
+  const signPdfWithEImzo = async () => {
+    return new Promise((resolve, reject) => {
+      try {
+        fetch("http://127.0.0.1:8090/info")
+          .then(() => {
+            window.imzo.getKeyList((keys) => {
+              if (!keys || keys.length === 0) {
+                reject("Ключ ЭЦП не найден");
+                return;
+              }
+              const keyId = keys[0].id;
+              const dataToSign = "PDF_DOCUMENT_SIGN_PLACEHOLDER"; // ⚠️ Тут можно использовать hash PDF, base64 или строку
+
+              window.imzo.createPkcs7(keyId, dataToSign, (signed) => {
+                console.log("PDF подписан:", signed);
+                resolve(signed);
+              });
+            });
+          })
+          .catch((err) => {
+            reject("E-IMZO агент не работает: " + err.message);
+          });
+      } catch (error) {
+        reject("Ошибка подписи: " + error.message);
+      }
+    });
+  };
+
   // Функция отправки PATCH запроса для agency_verification
   const sendAgencyVerification = async (verified, commentStr) => {
     if (recordId === null) {
@@ -160,14 +205,17 @@ const AgencyReviewPage = () => {
     const payload = { verified, comment: commentStr };
     console.log("Отправка данных на сервер (agency_verification):", payload);
     try {
-      const response = await fetch(`${BASE_URL}/api/cadastre/${recordId}/agency_verification`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
+      const response = await fetch(
+        `${BASE_URL}/api/cadastre/${recordId}/agency_verification`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        }
+      );
       if (response.ok) {
         console.log("Данные agency_verification успешно отправлены");
         return true;
@@ -183,18 +231,32 @@ const AgencyReviewPage = () => {
 
   // Обработчик для кнопки "Davom etish" – verified: true, comment: ""
   const handleProceed = async () => {
-    console.log("Нажата кнопка Davom etish. Отправка agency_verification: { verified: true, comment: '' }");
-    setSending(true);
-    const result = await sendAgencyVerification(true, "");
-    setSending(false);
-    if (result) {
-      navigate("/");
+    console.log("Начинается подписание PDF перед agency_verification");
+    setSigning(true); // показать loading
+
+    try {
+      const signedData = await signPdfWithEImzo();
+
+      // если подпись прошла — отправка верификации
+      const result = await sendAgencyVerification(true, "");
+
+      if (result) {
+        navigate("/");
+      } else {
+        alert("Ошибка при отправке данных.");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Ошибка подписи: " + error);
+    } finally {
+      setSigning(false);
     }
   };
 
   // Обработчик для модального окна "Xatolik bor"
   const handleSend = async () => {
-    const errorType = activeTab === "obyekt" ? "Obyekt joyiga mos emas" : "Toifasi mos emas";
+    const errorType =
+      activeTab === "obyekt" ? "Obyekt joyiga mos emas" : "Toifasi mos emas";
     const finalComment = comment ? `${errorType}: ${comment}` : errorType;
     console.log("Нажата кнопка Yuklash. Отправка agency_verification:", {
       verified: false,
@@ -283,6 +345,16 @@ const AgencyReviewPage = () => {
         </div>
       )}
 
+      {signing && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex justify-center items-center">
+          <div className="bg-white px-6 py-4 rounded-xl shadow-lg">
+            <p className="text-lg font-medium">
+              PDF hujjat E-IMZO orqali imzolanmoqda...
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Модальное окно подтверждения "Davom etishni tasdiqlaysizmi?" */}
       {showProceedModal && (
         <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50 pointer-events-auto">
@@ -294,10 +366,11 @@ const AgencyReviewPage = () => {
               <button
                 className="px-6 py-3 w-full cursor-pointer bg-blue-500 text-white rounded-xl transition-all hover:bg-blue-600"
                 onClick={handleProceed}
-                disabled={sending}
+                disabled={signing}
               >
-                {sending ? "Yuborilmoqda..." : "Ha"}
+                {signing ? "Подписывается..." : "Ha"}
               </button>
+
               <button
                 className="px-6 py-3 w-full cursor-pointer bg-[#f7f9fb] border border-[#e9e9eb] text-gray-700 rounded-xl transition-all hover:bg-gray-100"
                 onClick={() => setShowProceedModal(false)}
