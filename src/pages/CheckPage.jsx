@@ -243,10 +243,10 @@ const CheckPage = () => {
           </div>
 
           <div className="absolute top-0 left-0 p-6 w-full z-50">
-            <StatusBar currentStep={2} id={id} />
+            <StatusBar currentStep={2} id={recordId || id} />
           </div>
           {/* Блок для отображения buildingPresence */}
-          <div className="absolute top-40 left-8 bg-white px-4 py-3 rounded-xl">
+          <div className="absolute top-36 left-8 bg-white px-4 py-3 rounded-xl">
             <h2 className="text-lg dark:text-gray-900 font-semibold">
               Qurilma:{" "}
               <span
@@ -271,7 +271,7 @@ const CheckPage = () => {
             </h2>
           </div>
 
-          <div className="absolute top-52 right-8">
+          <div className="absolute top-44 right-8">
             <CadastreInfo cadastreId={recordId || id} />
           </div>
           {/* Кнопка "Davom etish" – открывает модальное окно подтверждения */}

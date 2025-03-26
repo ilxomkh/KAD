@@ -4,7 +4,7 @@ import StatusBar from "../components/StatusBar";
 import BuildingExistenceSelector from "../components/BuildingExistenceSelector";
 import ArcGISPolygonEditor from "../components/ArcGISPolygonEditor";
 import FileUploadModal from "../components/FileUploadModal";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Copy } from "lucide-react";
 import { BASE_URL } from "../utils/api";
 import { useAuth } from "../context/AuthContext";
 import CadastreInfo from "../components/infoButton";
@@ -172,6 +172,52 @@ const VerdictPage = () => {
     }
   };
 
+  // Функция для формирования GeoJSON на основе данных из editedPolygonData или polygonCoords
+  const getGeojson = () => {
+    let finalCoordinates = [];
+    if (editedPolygonData && editedPolygonData.geometry) {
+      if (Array.isArray(editedPolygonData.geometry)) {
+        finalCoordinates = editedPolygonData.geometry;
+      } else if (
+        editedPolygonData.geometry.rings &&
+        Array.isArray(editedPolygonData.geometry.rings)
+      ) {
+        finalCoordinates = editedPolygonData.geometry.rings[0] || [];
+      } else if (
+        editedPolygonData.geometry.coordinates &&
+        Array.isArray(editedPolygonData.geometry.coordinates)
+      ) {
+        finalCoordinates = editedPolygonData.geometry.coordinates[0] || [];
+      } else {
+        console.error(
+          "Неверный формат данных полигона:",
+          editedPolygonData.geometry
+        );
+      }
+    } else if (polygonCoords.length > 0) {
+      // polygonCoords хранит координаты в формате [lat, lon], для GeoJSON нужен формат [lon, lat]
+      finalCoordinates = polygonCoords.map(coord => [coord[1], coord[0]]);
+    } else {
+      console.error("Нет данных для формирования GeoJSON");
+    }
+    return {
+      type: "Polygon",
+      coordinates: [finalCoordinates],
+    };
+  };
+
+  // Функция копирования GeoJSON в буфер обмена
+  const copyGeojsonToClipboard = () => {
+    const geojson = getGeojson();
+    navigator.clipboard.writeText(JSON.stringify(geojson, null, 2))
+      .then(() => {
+        alert("GeoJSON Nusxasi saqlandi");
+      })
+      .catch((err) => {
+        console.error("Nusxalashda xatolik yuz berdi", err);
+      });
+  };
+
   return (
     <div className="relative min-h-screen w-screen flex">
       {/* Левая часть (если загружено фото) */}
@@ -203,6 +249,12 @@ const VerdictPage = () => {
       {/* Шапка */}
       <div className="absolute top-0 left-0 p-6 w-full z-50">
         <StatusBar currentStep={1} id={recordId || id} />
+        <button
+          onClick={copyGeojsonToClipboard}
+          className="absolute right-8 top-54 flex justify-center items-center mt-2 px-4 py-2 bg-white text-gray-900 hover:text-blue-600 rounded-xl transition-colors"
+        >
+          <Copy className="mr-2 h-5 w-6"/>Copy
+        </button>
       </div>
 
       {/* Блок выбора существования здания с verdict */}
@@ -214,11 +266,11 @@ const VerdictPage = () => {
         />
       </div>
 
-      <div className="absolute top-36 right-8">
+      <div className="absolute top-42 right-8">
         <CadastreInfo cadastreId={recordId || id} />
       </div>
 
-      <div className="absolute top-36 right-22">
+      <div className="absolute top-42 right-22">
         <SupportButton cadastreId={recordId || id} />
       </div>
 

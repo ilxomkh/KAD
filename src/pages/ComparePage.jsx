@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Copy } from "lucide-react";
 import StatusBar from "../components/StatusBar";
 import BuildingExistenceSelector from "../components/BuildingExistenceSelector";
 import ArcGISPolygonEditor from "../components/ArcGISPolygonEditor";
@@ -24,6 +24,8 @@ const ComparePage = () => {
   const [sending, setSending] = useState(false);
   const [editedPolygonData, setEditedPolygonData] = useState(null);
   const [recordId, setRecordId] = useState(null);
+  const [initialGeojson, setInitialGeojson] = useState(null);
+  const [copied, setCopied] = useState(false);
 
   // Новый стейт для модального окна при нажатии "Davom etish"
   const [showProceedModal, setShowProceedModal] = useState(false);
@@ -52,6 +54,8 @@ const ComparePage = () => {
           console.error("В ответе отсутствует поле geojson");
           return;
         }
+        // Сохраняем исходный geojson для кнопки копирования
+        setInitialGeojson(geojsonStr);
         let geoData;
         try {
           geoData = JSON.parse(geojsonStr);
@@ -194,7 +198,7 @@ const ComparePage = () => {
   // Отправка данных для buildingPresence
   const sendBuildingPresenceData = async () => {
     const payload = {
-      buildingPresence: buildingExists.toString() // Приводим к строке или используем нужный формат
+      buildingPresence: buildingExists.toString(), // Приводим к строке или используем нужный формат
     };
 
     console.log("Отправка данных на сервер (buildingPresence):", payload);
@@ -327,8 +331,25 @@ const ComparePage = () => {
         onConfirmChanges={handleConfirmChanges}
       />
 
+      {/* Кнопка для копирования исходного geojson */}
+      {initialGeojson && (
+        <div className="absolute top-70 right-8 z-50 pointer-events-auto">
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(initialGeojson);
+              setCopied(true);
+              setTimeout(() => setCopied(false), 2000);
+            }}
+            className="px-5 py-2 bg-white text-gray-900 hover:text-blue-600 rounded-xl flex items-center space-x-2"
+          >
+            <Copy size={16} />
+            <span>{copied ? "Copied" : "Copy"}</span>
+          </button>
+        </div>
+      )}
+
       <div className="absolute top-0 left-0 p-6 w-full z-50 pointer-events-auto">
-        <StatusBar currentStep={1} kadasterId={recordId || id} />
+        <StatusBar currentStep={1} id={recordId || id} />
       </div>
 
       <div className="absolute top-36 left-6 z-50 pointer-events-auto">
@@ -339,11 +360,11 @@ const ComparePage = () => {
         />
       </div>
 
-      <div className="absolute top-52 right-8">
+      <div className="absolute top-56 right-8">
         <CadastreInfo cadastreId={recordId || id} />
       </div>
 
-      <div className="absolute top-52 right-22">
+      <div className="absolute top-56 right-22">
         <SupportButton cadastreId={recordId || id} />
       </div>
 
@@ -385,7 +406,7 @@ const ComparePage = () => {
                 {sending ? "Yuborilmoqda..." : "Ha"}
               </button>
               <button
-                className="px-6 py-3 w-full cursor-pointer bg-[#f7f9fb] border border-[#e9e9eb] text-gray-700 rounded-xl transition-all hover:border-green-500 hover:text-green-500"
+                className="px-6 py-3 w-full cursor-pointer bg-[#f7f9fb] border border-[#e9e9eb] text-gray-700 rounded-xl transition-all hover:border-gray-300"
                 onClick={() => setShowProceedModal(false)}
               >
                 Yo'q

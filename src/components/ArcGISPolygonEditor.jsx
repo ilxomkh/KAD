@@ -7,19 +7,24 @@ import SketchViewModel from "@arcgis/core/widgets/Sketch/SketchViewModel";
 import { Plus, Minus, CheckIcon, Move } from "lucide-react";
 import Circle from "@arcgis/core/geometry/Circle";
 
-// Вычисляем центр полигона по его экстенту (bounding box)
-function computeCenter(ring) {
-  let minX = Infinity,
-    minY = Infinity,
-    maxX = -Infinity,
-    maxY = -Infinity;
-  ring.forEach(([x, y]) => {
-    if (x < minX) minX = x;
-    if (y < minY) minY = y;
-    if (x > maxX) maxX = x;
-    if (y > maxY) maxY = y;
-  });
-  return [(minX + maxX) / 2, (minY + maxY) / 2];
+// Вычисление центроида полигона по формуле многоугольника (при условии, что координаты в географической проекции)
+function computeCentroid(ring) {
+  let area = 0;
+  let cx = 0;
+  let cy = 0;
+  const len = ring.length;
+  for (let i = 0; i < len; i++) {
+    const [x0, y0] = ring[i];
+    const [x1, y1] = ring[(i + 1) % len];
+    const a = x0 * y1 - x1 * y0;
+    area += a;
+    cx += (x0 + x1) * a;
+    cy += (y0 + y1) * a;
+  }
+  area /= 2;
+  cx /= (6 * area);
+  cy /= (6 * area);
+  return [cx, cy];
 }
 
 // Вычисляем угол (в градусах) между горизонталью и вектором от указанного центра к первой вершине
@@ -27,8 +32,28 @@ function computeAngle(ring, center) {
   if (!ring || ring.length === 0) return 0;
   const [x0, y0] = ring[0];
   const angleRad = Math.atan2(y0 - center[1], x0 - center[0]);
-  const angleDeg = angleRad * (180 / Math.PI);
-  return angleDeg;
+  return angleRad * (180 / Math.PI);
+}
+
+// Преобразование координат [lon, lat] в проекцию Web Mercator [x, y] в метрах
+function geographicToWebMercator([lon, lat]) {
+  const R = 6378137; // радиус Земли в метрах для Web Mercator
+  const x = R * (lon * Math.PI / 180);
+  const y = R * Math.log(Math.tan((Math.PI / 4) + (lat * Math.PI / 360)));
+  return [x, y];
+}
+
+// Преобразование координат из Web Mercator [x, y] обратно в географические [lon, lat]
+function webMercatorToGeographic([x, y]) {
+  const R = 6378137;
+  const lon = (x / R) * (180 / Math.PI);
+  const lat = (Math.PI / 2 - 2 * Math.atan(Math.exp(-y / R))) * (180 / Math.PI);
+  return [lon, lat];
+}
+
+// Преобразование массива координат (ring) из Web Mercator в географические координаты
+function reprojectRingToGeographic(ring) {
+  return ring.map(coord => webMercatorToGeographic(coord));
 }
 
 const ArcGISPolygonEditor = ({
@@ -39,7 +64,7 @@ const ArcGISPolygonEditor = ({
 }) => {
   const mapRef = useRef(null);
   const initialAngleRef = useRef(0);
-  const initialCenterRef = useRef(null);
+  const initialCenterRef = useRef(null); // хранится в географических координатах
   const [view, setView] = useState(null);
   const [polygonGraphic, setPolygonGraphic] = useState(null);
   const [sketchVM, setSketchVM] = useState(null);
@@ -48,7 +73,7 @@ const ArcGISPolygonEditor = ({
   const [confirmed, setConfirmed] = useState(false);
   const minZoomLevel = 10;
 
-  // Преобразуем координаты из [lat, lng] в [lng, lat]
+  // Преобразуем координаты из [lat, lng] в [lng, lat] – они приходят в географическом формате
   const ring = backendPolygonCoords.map((coord) => [coord[1], coord[0]]);
 
   useEffect(() => {
@@ -75,15 +100,13 @@ const ArcGISPolygonEditor = ({
         return;
       }
 
-      const center = computeCenter(ring);
-      initialCenterRef.current = center;
-      const computedInitialAngle = computeAngle(ring, center);
+      // Вычисляем центроид (в географических координатах) и сохраняем его как начальный
+      const centroid = computeCentroid(ring);
+      initialCenterRef.current = centroid;
+      const computedInitialAngle = computeAngle(ring, centroid);
       initialAngleRef.current = computedInitialAngle;
-      console.log(
-        "Начальный угол (будем считать 0°):",
-        computedInitialAngle,
-        "°"
-      );
+      console.log("Начальный центроид:", centroid);
+      console.log("Начальный угол (будем считать 0°):", computedInitialAngle, "°");
 
       const polygon = {
         type: "polygon",
@@ -104,11 +127,11 @@ const ArcGISPolygonEditor = ({
 
       // Рисуем круг для визуальной ориентации
       const distances = ring.map(([x, y]) =>
-        Math.sqrt(Math.pow(x - center[0], 2) + Math.pow(y - center[1], 2))
+        Math.sqrt(Math.pow(x - centroid[0], 2) + Math.pow(y - centroid[1], 2))
       );
       const maxDistance = Math.max(...distances) * 1.1;
       const circleGeometry = new Circle({
-        center: center,
+        center: centroid,
         radius: maxDistance,
         spatialReference: { wkid: 4326 },
       });
@@ -165,9 +188,7 @@ const ArcGISPolygonEditor = ({
         sketch.on("update", (event) => {
           const blockedActions = ["reshape", "vertex-move", "scale"];
           if (blockedActions.includes(event.toolEventInfo?.type)) {
-            console.log(
-              "Блокируем попытку изменить форму или масштабировать полигон."
-            );
+            console.log("Блокируем попытку изменить форму или масштабировать полигон.");
             sketch.cancel();
           }
           console.log("Update event:", event.state, event.toolEventInfo);
@@ -223,20 +244,35 @@ const ArcGISPolygonEditor = ({
         spatialReference: polygonGraphic.geometry.spatialReference,
       };
 
+      // Получаем текущий ring. Если SketchViewModel изменил проекцию, то ring может быть в Web Mercator.
       const currentRing = polygonGraphic.geometry.rings[0];
-      const currentCenter = computeCenter(currentRing);
-      const currentAngle = computeAngle(currentRing, currentCenter);
+      // Преобразуем текущий ring из Web Mercator обратно в географические координаты
+      const currentRingGeographic = reprojectRingToGeographic(currentRing);
+      // Вычисляем центроид текущего полигона (в географических координатах)
+      const currentCentroid = computeCentroid(currentRingGeographic);
+      const currentAngle = computeAngle(currentRingGeographic, currentCentroid);
       let finalRotation = currentAngle - initialAngleRef.current;
       const normalizedRotation = ((finalRotation % 360) + 360) % 360;
 
+      // Для вычисления смещения преобразуем оба центроида (начальный и текущий) в Web Mercator и вычисляем евклидово расстояние
+      const initialWM = geographicToWebMercator(initialCenterRef.current);
+      const currentWM = geographicToWebMercator(currentCentroid);
+      const dx = currentWM[0] - initialWM[0];
+      const dy = currentWM[1] - initialWM[1];
+      const moveDistance = Math.sqrt(dx * dx + dy * dy);
+
       console.log("Отправка geometry:", finalGeometry);
+      console.log("Начальный центроид:", initialCenterRef.current);
       console.log("Начальный угол (0°):", initialAngleRef.current, "°");
       console.log("Текущий угол:", currentAngle, "°");
       console.log("Итоговый угол поворота (0-360):", normalizedRotation, "°");
+      console.log("Окончательный центроид (географические координаты):", currentCentroid);
+      console.log("Перемещение (метры):", moveDistance);
 
       onConfirmChanges({
         geometry: finalGeometry,
         rotation: normalizedRotation,
+        moveDistance, // передаём смещение в метрах
       });
 
       setActiveButton(null);
@@ -250,10 +286,7 @@ const ArcGISPolygonEditor = ({
 
   return (
     <div className="relative cursor-grab active:cursor-grabbing">
-      <div
-        ref={mapRef}
-        style={{ width: isHalfWidth ? "50vw" : "100vw", height: "100vh" }}
-      ></div>
+      <div ref={mapRef} style={{ width: isHalfWidth ? "50vw" : "100vw", height: "100vh" }}></div>
 
       {editable && (
         <>
@@ -287,7 +320,7 @@ const ArcGISPolygonEditor = ({
 
           {showConfirmButton && (
             <button
-              className={`px-6 py-3 absolute top-36 right-8 flex cursor-pointer items-center justify-center rounded-xl transition-all ${
+              className={`px-6 py-3 absolute top-42 right-8 flex cursor-pointer items-center justify-center rounded-xl transition-all ${
                 confirmed
                   ? "bg-green-500 text-white"
                   : "bg-white border border-[#e9e9eb] hover:border-green-500 text-black hover:text-green-500"

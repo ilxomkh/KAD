@@ -1,42 +1,57 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { ChevronLeft } from "lucide-react";
-import PdfIcon from "../assets/File Type.svg"; // Иконка PDF
-import PdfIconBlue from "../assets/File Type1.svg"; 
-import { Document, Page, pdfjs } from "react-pdf";
+import PdfIcon from "../assets/File Type.svg";
+import PdfIconBlue from "../assets/File Type1.svg";
 import MapButton from "./MapButton";
 import { BASE_URL } from "../utils/api";
+import { useAuth } from "../context/AuthContext";
 
-// Настройка worker для корректного рендеринга PDF
-pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+// Импорт компонентов для отображения PDF из react-pdf-viewer
+import { Worker, Viewer } from "@react-pdf-viewer/core";
+import "@react-pdf-viewer/core/lib/styles/index.css";
+import "@react-pdf-viewer/default-layout/lib/styles/index.css";
 
 const StatusBar = ({ currentStep, id, role, onMapButtonClick, mapActive }) => {
   const navigate = useNavigate();
+  const { token } = useAuth();
+
   const [steps] = useState([
     { id: 1, label: "1-bosqich", name: "Solishtirish" },
     { id: 2, label: "2-bosqich", name: "Tekshirish" },
     { id: 3, label: "3-bosqich", name: "Agentlik tekshiruvi" },
   ]);
 
-  // Состояния для PDF, запрашиваемого с /cadastre/{id}/land_plan
+  // Состояния для PDF с /cadastre/{id}/land_plan
   const [pdfUrl, setPdfUrl] = useState(null);
-  const [numPages, setNumPages] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
-  // Состояния для PDF, запрашиваемого с /cadastre/{id}/generated_report
+  // Состояния для PDF с /cadastre/{id}/generated_report
   const [generatedPdfUrl, setGeneratedPdfUrl] = useState(null);
-  const [generatedNumPages, setGeneratedNumPages] = useState(null);
   const [showModalGenerated, setShowModalGenerated] = useState(false);
 
   // Функция для запроса PDF с /cadastre/{id}/land_plan
   const fetchPdf = () => {
-    // Если модальное окно уже открыто, закрываем его
+    if (!token) {
+      console.error("Нет токена авторизации – запрос land_plan невозможен");
+      return;
+    }
+    // Если модальное окно для land_plan уже открыто, закрываем его
     if (showModal) {
       setShowModal(false);
       return;
     }
+    // Закрываем второй PDF, если он открыт
+    if (showModalGenerated) {
+      setShowModalGenerated(false);
+    }
     setPdfUrl(null);
-    fetch(`${BASE_URL}/cadastre/${id}/land_plan`)
+
+    fetch(`${BASE_URL}/api/cadastre/${id}/land_plan`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
       .then((res) => {
         if (!res.ok) {
           return res.text().then((text) => {
@@ -57,13 +72,26 @@ const StatusBar = ({ currentStep, id, role, onMapButtonClick, mapActive }) => {
 
   // Функция для запроса PDF с /cadastre/{id}/generated_report
   const fetchGeneratedPdf = () => {
-    // Если модальное окно уже открыто, закрываем его
+    if (!token) {
+      console.error("Нет токена авторизации – запрос generated_report невозможен");
+      return;
+    }
+    // Если модальное окно для generated_report уже открыто, закрываем его
     if (showModalGenerated) {
       setShowModalGenerated(false);
       return;
     }
+    // Закрываем первый PDF, если он открыт
+    if (showModal) {
+      setShowModal(false);
+    }
     setGeneratedPdfUrl(null);
-    fetch(`${BASE_URL}/cadastre/${id}/generated_report`)
+
+    fetch(`${BASE_URL}/api/cadastre/${id}/generated_report`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
       .then((res) => {
         if (!res.ok) {
           return res.text().then((text) => {
@@ -171,10 +199,10 @@ const StatusBar = ({ currentStep, id, role, onMapButtonClick, mapActive }) => {
             <img src={PdfIcon} alt="PDF" className="w-8 h-8" />
           </button>
           <div className="absolute right-0 top-24 mb-2 hidden group-hover:block">
-              <span className="px-4 py-2 bg-white text-black text-md rounded-xl">
-                Reja
-              </span>
-            </div>
+            <span className="px-4 py-2 bg-white text-black text-md rounded-xl">
+              Reja
+            </span>
+          </div>
         </div>
 
         {/* Если роль равна 2 – отображается вторая кнопка для PDF с /cadastre/{id}/generated_report */}
@@ -201,23 +229,15 @@ const StatusBar = ({ currentStep, id, role, onMapButtonClick, mapActive }) => {
 
       {/* Модальное окно для PDF с /cadastre/{id}/land_plan */}
       {showModal && (
-        <div className="absolute top-40 inset-0 flex justify-end items-center z-50">
-          <div className="bg-white max-w-3xl w-full relative">
+        <div className="absolute top-[520px] inset-0 flex justify-end items-center z-50">
+          <div className="max-w-2xl bg-white/0 w-full relative">
             <div className="overflow-hidden w-full flex justify-center p-2">
               {pdfUrl ? (
-                <Document
-                  file={pdfUrl}
-                  onLoadSuccess={({ numPages }) => setNumPages(numPages)}
-                  className="flex flex-col items-center"
-                >
-                  {Array.from(new Array(numPages), (_, index) => (
-                    <Page
-                      key={`page_${index + 1}`}
-                      pageNumber={index + 1}
-                      width={600}
-                    />
-                  ))}
-                </Document>
+                <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js">
+                  <div style={{ height: "100%", width: "100%" }}>
+                    <Viewer fileUrl={pdfUrl} />
+                  </div>
+                </Worker>
               ) : (
                 <p className="text-gray-500 text-lg">
                   Файл не найден. Ожидается загрузка...
@@ -230,25 +250,15 @@ const StatusBar = ({ currentStep, id, role, onMapButtonClick, mapActive }) => {
 
       {/* Модальное окно для PDF с /cadastre/{id}/generated_report */}
       {showModalGenerated && (
-        <div className="absolute top-40 inset-0 flex justify-end items-center z-50">
-          <div className="bg-white max-w-3xl w-full relative">
+        <div className="absolute top-[560px] inset-0 flex justify-end items-center z-50">
+          <div className="max-w-2xl bg-white/0 w-full relative">
             <div className="overflow-hidden w-full flex justify-center p-2">
               {generatedPdfUrl ? (
-                <Document
-                  file={generatedPdfUrl}
-                  onLoadSuccess={({ numPages }) =>
-                    setGeneratedNumPages(numPages)
-                  }
-                  className="flex flex-col items-center"
-                >
-                  {Array.from(new Array(generatedNumPages), (_, index) => (
-                    <Page
-                      key={`page_generated_${index + 1}`}
-                      pageNumber={index + 1}
-                      width={600}
-                    />
-                  ))}
-                </Document>
+                <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js">
+                  <div style={{ height: "100%", width: "100%" }}>
+                    <Viewer fileUrl={generatedPdfUrl} />
+                  </div>
+                </Worker>
               ) : (
                 <p className="text-gray-500 text-lg">
                   Файл не найден. Ожидается загрузка...
