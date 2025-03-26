@@ -8,9 +8,9 @@ import { BASE_URL } from "../utils/api";
 import { useAuth } from "../context/AuthContext";
 
 // Импорт компонентов react-pdf-viewer
-import { Worker, Viewer } from '@react-pdf-viewer/core';
-import '@react-pdf-viewer/core/lib/styles/index.css';
-import '@react-pdf-viewer/default-layout/lib/styles/index.css';
+import { Worker, Viewer } from "@react-pdf-viewer/core";
+import "@react-pdf-viewer/core/lib/styles/index.css";
+import "@react-pdf-viewer/default-layout/lib/styles/index.css";
 
 const AgencyReviewPage = () => {
   const { id } = useParams();
@@ -44,6 +44,10 @@ const AgencyReviewPage = () => {
   // Состояние для модального окна подтверждения
   const [showProceedModal, setShowProceedModal] = useState(false);
   const [sending, setSending] = useState(false);
+  //ЭЦП
+  const [signing, setSigning] = useState(false);
+  const [keys, setKeys] = useState([]);
+  const [selectedKey, setSelectedKey] = useState(null);
 
   useEffect(() => {
     setLoading(true);
@@ -59,7 +63,7 @@ const AgencyReviewPage = () => {
     fetch(`${BASE_URL}/api/cadastre/cad/${encodedId}`, {
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
       },
     })
       .then((res) => {
@@ -74,14 +78,20 @@ const AgencyReviewPage = () => {
         let originalCoords = [];
         try {
           const geojson = JSON.parse(data.geojson);
-          if (geojson.type === "FeatureCollection" && geojson.features.length > 0) {
+          if (
+            geojson.type === "FeatureCollection" &&
+            geojson.features.length > 0
+          ) {
             const firstFeature = geojson.features[0];
             if (firstFeature?.geometry?.coordinates) {
               originalCoords = firstFeature.geometry.coordinates[0].map(
                 ([lon, lat]) => [lat, lon]
               );
             }
-          } else if (geojson.type === "Feature" && geojson.geometry?.coordinates) {
+          } else if (
+            geojson.type === "Feature" &&
+            geojson.geometry?.coordinates
+          ) {
             originalCoords = geojson.geometry.coordinates[0].map(
               ([lon, lat]) => [lat, lon]
             );
@@ -93,21 +103,31 @@ const AgencyReviewPage = () => {
         let modifiedCoords = [];
         try {
           const fixedGeojson = JSON.parse(data.fixedGeojson);
-          if (fixedGeojson.type === "FeatureCollection" && fixedGeojson.features.length > 0) {
+          if (
+            fixedGeojson.type === "FeatureCollection" &&
+            fixedGeojson.features.length > 0
+          ) {
             const firstFeature = fixedGeojson.features[0];
             if (firstFeature?.geometry?.coordinates) {
               modifiedCoords = firstFeature.geometry.coordinates[0].map(
                 ([lon, lat]) => [lat, lon]
               );
             }
-          } else if (fixedGeojson.type === "Feature" && fixedGeojson.geometry?.coordinates) {
+          } else if (
+            fixedGeojson.type === "Feature" &&
+            fixedGeojson.geometry?.coordinates
+          ) {
             modifiedCoords = fixedGeojson.geometry.coordinates[0].map(
               ([lon, lat]) => [lat, lon]
             );
-          } else if (fixedGeojson.type === "Polygon" && fixedGeojson.coordinates) {
-            modifiedCoords = fixedGeojson.coordinates[0].map(
-              ([lon, lat]) => [lat, lon]
-            );
+          } else if (
+            fixedGeojson.type === "Polygon" &&
+            fixedGeojson.coordinates
+          ) {
+            modifiedCoords = fixedGeojson.coordinates[0].map(([lon, lat]) => [
+              lat,
+              lon,
+            ]);
           }
         } catch (e) {
           console.error("Ошибка парсинга fixedGeojson:", e);
@@ -123,7 +143,7 @@ const AgencyReviewPage = () => {
         if (data.ID !== undefined && data.ID !== null) {
           fetch(`${BASE_URL}/api/cadastre/${data.ID}/generated_report`, {
             headers: {
-              "Authorization": `Bearer ${token}`,
+              Authorization: `Bearer ${token}`,
             },
           })
             .then((res) => {
@@ -157,14 +177,17 @@ const AgencyReviewPage = () => {
     const payload = { verified, comment: commentStr };
     console.log("Отправка данных на сервер (agency_verification):", payload);
     try {
-      const response = await fetch(`${BASE_URL}/api/cadastre/${recordId}/agency_verification`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
+      const response = await fetch(
+        `${BASE_URL}/api/cadastre/${recordId}/agency_verification`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        }
+      );
       if (response.ok) {
         console.log("Данные agency_verification успешно отправлены");
         return true;
@@ -178,18 +201,102 @@ const AgencyReviewPage = () => {
     }
   };
 
+  //ЭЦП
+  const loadKeys = () => {
+    return new Promise((resolve, reject) => {
+      fetch("http://127.0.0.1:8090/info")
+        .then(() => {
+          window.imzo.getKeyList((keyList) => {
+            if (!keyList || keyList.length === 0) {
+              reject("ЭЦП-ключи не найдены");
+            } else {
+              resolve(keyList);
+            }
+          });
+        })
+        .catch((err) => reject("E-IMZO агент не запущен"));
+    });
+  };
+
+  //ЭЦП
+  const signPdfAndVerify = async (keyId) => {
+    const dataToSign = "Kadastr hujjati tasdiqlandi";
+
+    return new Promise((resolve, reject) => {
+      window.imzo.createPkcs7(keyId, dataToSign, async (signedData) => {
+        try {
+          const response = await fetch(
+            `${BASE_URL}/api/cadastre/${recordId}/verify_signature`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({
+                signedData,
+                originalData: dataToSign,
+                recordId,
+              }),
+            }
+          );
+
+          if (!response.ok) {
+            reject("Сервер не принял подпись");
+          }
+
+          const result = await response.json();
+          if (result.success) {
+            resolve(true);
+          } else {
+            reject("Подпись недействительна");
+          }
+        } catch (err) {
+          reject("Ошибка верификации подписи: " + err.message);
+        }
+      });
+    });
+  };
+
+  //ЭЦП
+  const handleSignWithKey = async () => {
+    if (!selectedKey) {
+      alert("Iltimos, kalitni tanlang");
+      return;
+    }
+    setSigning(true);
+    try {
+      const isVerified = await signPdfAndVerify(selectedKey.id);
+      if (isVerified) {
+        const result = await sendAgencyVerification(true, "");
+        if (result) navigate("/");
+      } else {
+        alert("Подпись не прошла проверку");
+      }
+    } catch (err) {
+      alert(err);
+    } finally {
+      setSigning(false);
+      setKeys([]);
+      setSelectedKey(null);
+    }
+  };
+
   const handleProceed = async () => {
-    console.log("Нажата кнопка Davom etish. Отправка agency_verification: { verified: true, comment: '' }");
-    setSending(true);
-    const result = await sendAgencyVerification(true, "");
-    setSending(false);
-    if (result) {
-      navigate("/");
+    setSigning(true);
+    try {
+      const foundKeys = await loadKeys();
+      setKeys(foundKeys);
+      setShowProceedModal(false);
+    } catch (err) {
+      alert(err);
+      setSigning(false);
     }
   };
 
   const handleSend = async () => {
-    const errorType = activeTab === "obyekt" ? "Obyekt joyiga mos emas" : "Toifasi mos emas";
+    const errorType =
+      activeTab === "obyekt" ? "Obyekt joyiga mos emas" : "Toifasi mos emas";
     const finalComment = comment ? `${errorType}: ${comment}` : errorType;
     console.log("Нажата кнопка Yuklash. Отправка agency_verification:", {
       verified: false,
@@ -220,7 +327,7 @@ const AgencyReviewPage = () => {
           {pdfUrl ? (
             // Используем react-pdf-viewer для отображения PDF
             <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js">
-              <div style={{ height: '100%', width: '100%' }}>
+              <div style={{ height: "100%", width: "100%" }}>
                 <Viewer fileUrl={pdfUrl} />
               </div>
             </Worker>
@@ -288,6 +395,49 @@ const AgencyReviewPage = () => {
                 onClick={() => setShowProceedModal(false)}
               >
                 Yo'q
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {keys.length > 0 && (
+        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
+          <div className="bg-white px-6 py-4 rounded-2xl max-w-md w-full">
+            <h2 className="text-lg font-semibold mb-4">
+              E-IMZO kalitni tanlang
+            </h2>
+            <ul className="mb-4 space-y-2 max-h-48 overflow-y-auto">
+              {keys.map((key, index) => (
+                <li
+                  key={index}
+                  className={`cursor-pointer px-3 py-2 rounded-lg border ${
+                    selectedKey?.id === key.id
+                      ? "bg-blue-600 text-white"
+                      : "hover:bg-gray-100"
+                  }`}
+                  onClick={() => setSelectedKey(key)}
+                >
+                  {key.name} — {key.serialNumber}
+                </li>
+              ))}
+            </ul>
+            <div className="flex justify-between space-x-4">
+              <button
+                className="w-full py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700"
+                onClick={handleSignWithKey}
+                disabled={signing}
+              >
+                {signing ? "Imzolanmoqda..." : "Imzolash"}
+              </button>
+              <button
+                className="w-full py-2 bg-gray-200 rounded-xl"
+                onClick={() => {
+                  setKeys([]);
+                  setSelectedKey(null);
+                }}
+              >
+                Bekor qilish
               </button>
             </div>
           </div>
