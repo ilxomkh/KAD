@@ -13,6 +13,31 @@ import "@react-pdf-viewer/core/lib/styles/index.css";
 import "@react-pdf-viewer/default-layout/lib/styles/index.css";
 
 const AgencyReviewPage = () => {
+  useEffect(() => {
+    const API_KEYS = [
+      "localhost",
+      "ВАШ_API_KEY_ЛОКАЛХОСТ",
+      "127.0.0.1",
+      "ВАШ_API_KEY_127.0.0.1",
+      "yourdomain.uz",
+      "ВАШ_API_KEY_ДОМЕН",
+    ];
+
+    if (window.CAPIWS) {
+      window.CAPIWS.apikey(
+        API_KEYS,
+        (event, data) => {
+          if (!data.success) {
+            alert("Ошибка инициализации API-KEY: " + data.reason);
+          }
+        },
+        (error) => {
+          alert("Ошибка соединения с E-IMZO: " + error);
+        }
+      );
+    }
+  }, []);
+
   const { id } = useParams();
   if (!id) {
     console.error("Параметр id отсутствует");
@@ -46,6 +71,7 @@ const AgencyReviewPage = () => {
   const [sending, setSending] = useState(false);
   //ЭЦП
   const [signing, setSigning] = useState(false);
+  const [successMessage, setSuccessMessage] = useState(false); // новое
   const [keys, setKeys] = useState([]);
   const [selectedKey, setSelectedKey] = useState(null);
 
@@ -214,7 +240,7 @@ const AgencyReviewPage = () => {
             }
           });
         })
-        .catch((err) => reject("E-IMZO агент не запущен"));
+        .catch(() => reject("E-IMZO агент не запущен"));
     });
   };
 
@@ -258,23 +284,97 @@ const AgencyReviewPage = () => {
     });
   };
 
+  //эцп
+  const loadKey = (keyId) => {
+    return new Promise((resolve, reject) => {
+      window.imzo.loadKey(keyId, (keyInfo) => {
+        if (keyInfo) {
+          resolve(keyInfo);
+        } else {
+          reject("Не удалось загрузить ключ");
+        }
+      });
+    });
+  };
+
+  const getChallenge = async () => {
+    const response = await fetch(
+      `${BASE_URL}/api/cadastre/${recordId}/get_challenge`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+
+    if (!response.ok) throw new Error("Не удалось получить challenge");
+
+    const data = await response.json();
+    return data.challenge;
+  };
+
+  const signChallengeAndVerify = async (keyId) => {
+    try {
+      const challenge = await getChallenge();
+      await loadKey(keyId);
+
+      return new Promise((resolve, reject) => {
+        window.imzo.createPkcs7(keyId, challenge, async (pkcs7) => {
+          try {
+            const response = await fetch(
+              `${BASE_URL}/api/cadastre/${recordId}/verify_signature`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                  signedData: pkcs7,
+                  originalData: challenge,
+                  recordId,
+                }),
+              }
+            );
+
+            const result = await response.json();
+
+            if (result.success) {
+              resolve(true);
+            } else {
+              reject("Подпись недействительна");
+            }
+          } catch (err) {
+            reject("Ошибка проверки подписи: " + err.message);
+          }
+        });
+      });
+    } catch (err) {
+      throw new Error("Ошибка подписи: " + err.message);
+    }
+  };
+
   //ЭЦП
   const handleSignWithKey = async () => {
     if (!selectedKey) {
       alert("Iltimos, kalitni tanlang");
       return;
     }
+
     setSigning(true);
+    setSuccessMessage(false); // сбрасываем
+
     try {
-      const isVerified = await signPdfAndVerify(selectedKey.id);
+      const isVerified = await signChallengeAndVerify(selectedKey.id);
       if (isVerified) {
         const result = await sendAgencyVerification(true, "");
-        if (result) navigate("/");
+        if (result) {
+          setSuccessMessage(true); // показываем сообщение об успехе
+          setTimeout(() => navigate("/"), 2500); // перекидываем через 2.5 сек
+        }
       } else {
         alert("Подпись не прошла проверку");
       }
     } catch (err) {
-      alert(err);
+      alert(err.message || "Ошибка при подписании");
     } finally {
       setSigning(false);
       setKeys([]);
@@ -440,6 +540,34 @@ const AgencyReviewPage = () => {
                 Bekor qilish
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Загрузка во время подписания */}
+      {signing && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
+          <div className="bg-white p-6 rounded-xl shadow-lg text-center">
+            <p className="text-lg font-medium mb-2">
+              Идет подписание документа...
+            </p>
+            <p className="text-gray-500 text-sm">
+              Пожалуйста, не закрывайте окно
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Успешно подписано */}
+      {successMessage && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
+          <div className="bg-green-100 border border-green-300 p-6 rounded-xl shadow-lg text-center">
+            <p className="text-lg font-semibold text-green-700 mb-2">
+              Документ успешно подписан!
+            </p>
+            <p className="text-gray-600 text-sm">
+              Сейчас произойдет перенаправление...
+            </p>
           </div>
         </div>
       )}
