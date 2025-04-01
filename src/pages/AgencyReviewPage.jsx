@@ -69,9 +69,9 @@ const AgencyReviewPage = () => {
   // Состояние для модального окна подтверждения
   const [showProceedModal, setShowProceedModal] = useState(false);
   const [sending, setSending] = useState(false);
-  //ЭЦП
+  // ЭЦП
   const [signing, setSigning] = useState(false);
-  const [successMessage, setSuccessMessage] = useState(false); // новое
+  const [successMessage, setSuccessMessage] = useState(false);
   const [keys, setKeys] = useState([]);
   const [selectedKey, setSelectedKey] = useState(null);
 
@@ -194,7 +194,7 @@ const AgencyReviewPage = () => {
       });
   }, [encodedId, location.state, token]);
 
-  // Функция отправки PATCH запроса
+  // Отправка PATCH запроса для agency_verification
   const sendAgencyVerification = async (verified, commentStr) => {
     if (recordId === null) {
       console.error("recordId отсутствует, невозможно отправить запрос");
@@ -227,7 +227,9 @@ const AgencyReviewPage = () => {
     }
   };
 
-  //ЭЦП
+  // ========== ЭЦП функции ==========
+
+  // Получаем список ключей
   const loadKeys = () => {
     return new Promise((resolve, reject) => {
       fetch("http://127.0.0.1:8090/info")
@@ -244,47 +246,7 @@ const AgencyReviewPage = () => {
     });
   };
 
-  //ЭЦП
-  const signPdfAndVerify = async (keyId) => {
-    const dataToSign = "Kadastr hujjati tasdiqlandi";
-
-    return new Promise((resolve, reject) => {
-      window.imzo.createPkcs7(keyId, dataToSign, async (signedData) => {
-        try {
-          const response = await fetch(
-            `${BASE_URL}/api/cadastre/${recordId}/verify_signature`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-              },
-              body: JSON.stringify({
-                signedData,
-                originalData: dataToSign,
-                recordId,
-              }),
-            }
-          );
-
-          if (!response.ok) {
-            reject("Сервер не принял подпись");
-          }
-
-          const result = await response.json();
-          if (result.success) {
-            resolve(true);
-          } else {
-            reject("Подпись недействительна");
-          }
-        } catch (err) {
-          reject("Ошибка верификации подписи: " + err.message);
-        }
-      });
-    });
-  };
-
-  //эцп
+  // Загружаем ключ по keyId (при необходимости можно добавить обработку пароля)
   const loadKey = (keyId) => {
     return new Promise((resolve, reject) => {
       window.imzo.loadKey(keyId, (keyInfo) => {
@@ -297,81 +259,137 @@ const AgencyReviewPage = () => {
     });
   };
 
-  const getChallenge = async () => {
-    const response = await fetch(
-      `${BASE_URL}/api/cadastre/${recordId}/get_challenge`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
-
+  // Получение challenge через POST запрос к e-imzo-server (/frontend/challenge)
+  const getChallengeFromEimzo = async () => {
+    const response = await fetch(`${BASE_URL}/frontend/challenge`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    });
     if (!response.ok) throw new Error("Не удалось получить challenge");
-
     const data = await response.json();
     return data.challenge;
   };
 
-  const signChallengeAndVerify = async (keyId) => {
-    try {
-      const challenge = await getChallenge();
-      await loadKey(keyId);
-
-      return new Promise((resolve, reject) => {
-        window.imzo.createPkcs7(keyId, challenge, async (pkcs7) => {
-          try {
-            const response = await fetch(
-              `${BASE_URL}/api/cadastre/${recordId}/verify_signature`,
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({
-                  signedData: pkcs7,
-                  originalData: challenge,
-                  recordId,
-                }),
-              }
-            );
-
-            const result = await response.json();
-
-            if (result.success) {
-              resolve(true);
-            } else {
-              reject("Подпись недействительна");
-            }
-          } catch (err) {
-            reject("Ошибка проверки подписи: " + err.message);
-          }
-        });
-      });
-    } catch (err) {
-      throw new Error("Ошибка подписи: " + err.message);
-    }
+  // Подписываем challenge (запрашиваем пароль, создаём PKCS7)
+  const signChallenge = async (keyId) => {
+    const challenge = await getChallengeFromEimzo();
+    const password = prompt("Введите пароль для ЭЦП (подпись challenge):");
+    if (!password) throw new Error("Пароль не введен");
+    await loadKey(keyId);
+    return new Promise((resolve, reject) => {
+      window.imzo.createPkcs7(keyId, challenge, (pkcs7) => {
+        if (!pkcs7) {
+          reject("Ошибка создания PKCS7 для challenge");
+          return;
+        }
+        resolve(pkcs7);
+      }, password);
+    });
   };
 
-  //ЭЦП
+  // Аутентификация на бекенде: отправляем PKCS7, полученный после подписи challenge
+  const authenticate = async (pkcs7) => {
+    const response = await fetch(`${BASE_URL}/backend/auth`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ pkcs7 }),
+    });
+    if (!response.ok) throw new Error("Аутентификация не прошла");
+    const data = await response.json();
+    return data;
+  };
+
+  // Подписываем документ для подписи (запрашиваем пароль и создаём PKCS7)
+  const signDocument = async (keyId, documentContent) => {
+    const password = prompt("Введите пароль для ЭЦП (подпись документа):");
+    if (!password) throw new Error("Пароль не введен");
+    await loadKey(keyId);
+    return new Promise((resolve, reject) => {
+      window.imzo.createPkcs7(keyId, documentContent, (pkcs7) => {
+        if (!pkcs7) {
+          reject("Ошибка создания PKCS7 для документа");
+          return;
+        }
+        resolve(pkcs7);
+      }, password);
+    });
+  };
+
+  // Получаем Timestamp для PKCS7 через POST запрос к /frontend/timestamp/pkcs7
+  const getTimestamp = async (pkcs7) => {
+    const response = await fetch(`${BASE_URL}/frontend/timestamp/pkcs7`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ pkcs7 }),
+    });
+    if (!response.ok) throw new Error("Ошибка получения Timestamp");
+    const data = await response.json();
+    // Предполагаем, что возвращается поле timestamp или объединённый объект PKCS7+Timestamp
+    return data.timestamp;
+  };
+
+  // Отправляем PKCS7+Timestamp на бекенд для верификации (/backend/pkcs7/verify/attached)
+  const verifyTimestamp = async (pkcs7Timestamp) => {
+    const response = await fetch(`${BASE_URL}/backend/pkcs7/verify/attached`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ pkcs7: pkcs7Timestamp }),
+    });
+    if (!response.ok) throw new Error("Ошибка проверки подписи с Timestamp");
+    const data = await response.json();
+    return data;
+  };
+
+  // Общая функция для подписи документа с получением timestamp и верификацией
+  const signDocumentAndTimestamp = async (keyId, documentContent) => {
+    // Шаг 1. Подписываем документ
+    const docPkcs7 = await signDocument(keyId, documentContent);
+    // Шаг 2. Получаем timestamp для PKCS7
+    const timestamp = await getTimestamp(docPkcs7);
+    // Формируем объединённый объект (формат зависит от API, здесь пример объединения)
+    const pkcs7Timestamp = { pkcs7: docPkcs7, timestamp };
+    // Шаг 3. Отправляем для верификации
+    await verifyTimestamp(pkcs7Timestamp);
+    return pkcs7Timestamp;
+  };
+
+  // Обновлённая функция обработки подписи с ключом
   const handleSignWithKey = async () => {
     if (!selectedKey) {
-      alert("Iltimos, kalitni tanlang");
+      alert("Пожалуйста, выберите ключ");
       return;
     }
 
     setSigning(true);
-    setSuccessMessage(false); // сбрасываем
+    setSuccessMessage(false);
 
     try {
-      const isVerified = await signChallengeAndVerify(selectedKey.id);
-      if (isVerified) {
-        const result = await sendAgencyVerification(true, "");
-        if (result) {
-          setSuccessMessage(true); // показываем сообщение об успехе
-          setTimeout(() => navigate("/"), 2500); // перекидываем через 2.5 сек
-        }
-      } else {
-        alert("Подпись не прошла проверку");
+      // Этап 1: Подписываем challenge и аутентифицируемся на бекенде
+      const challengePkcs7 = await signChallenge(selectedKey.id);
+      await authenticate(challengePkcs7);
+
+      // Этап 2: Формируем документ для подписи.
+      // Здесь documentContent – содержимое или хэш документа для подписи.
+      // Замените значение на фактическое, если оно отличается.
+      const documentContent = "Содержимое документа для подписания";
+
+      // Подписываем документ, получаем Timestamp и верифицируем подпись
+      await signDocumentAndTimestamp(selectedKey.id, documentContent);
+
+      // Финальный этап: Отправляем данные agency_verification
+      const result = await sendAgencyVerification(true, "");
+      if (result) {
+        setSuccessMessage(true);
+        setTimeout(() => navigate("/"), 2500);
       }
     } catch (err) {
       alert(err.message || "Ошибка при подписании");
@@ -382,6 +400,7 @@ const AgencyReviewPage = () => {
     }
   };
 
+  // Обработка нажатия кнопки для получения списка ключей
   const handleProceed = async () => {
     setSigning(true);
     try {
@@ -394,6 +413,7 @@ const AgencyReviewPage = () => {
     }
   };
 
+  // Обработка отправки формы с комментарием
   const handleSend = async () => {
     const errorType =
       activeTab === "obyekt" ? "Obyekt joyiga mos emas" : "Toifasi mos emas";
@@ -425,7 +445,6 @@ const AgencyReviewPage = () => {
       <div className="flex-grow flex justify-center items-center p-8">
         <div className="bg-white p-1 rounded-2xl max-w-4xl w-full flex flex-col items-center">
           {pdfUrl ? (
-            // Используем react-pdf-viewer для отображения PDF
             <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js">
               <div style={{ height: "100%", width: "100%" }}>
                 <Viewer fileUrl={pdfUrl} />
@@ -544,7 +563,6 @@ const AgencyReviewPage = () => {
         </div>
       )}
 
-      {/* Загрузка во время подписания */}
       {signing && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
           <div className="bg-white p-6 rounded-xl shadow-lg text-center">
@@ -558,7 +576,6 @@ const AgencyReviewPage = () => {
         </div>
       )}
 
-      {/* Успешно подписано */}
       {successMessage && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
           <div className="bg-green-100 border border-green-300 p-6 rounded-xl shadow-lg text-center">
