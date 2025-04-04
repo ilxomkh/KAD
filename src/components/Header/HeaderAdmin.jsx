@@ -25,6 +25,7 @@ const HeaderAdmin = ({
     { key: "role4", label: "1-bosqichdagilar (7-9)" },
     { key: "role2", label: "2-bosqichdagilar" },
     { key: "role3", label: "3-bosqichdagilar" },
+    { key: "sended", label: "Imzolanganlar" },
     { key: "ended", label: "Tugallanganlar" },
     { key: "errors", label: "Kadastr xatoliklari" },
     { key: "moderation", label: "Moderatsiya" },

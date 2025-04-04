@@ -194,41 +194,6 @@ const AgencyReviewPage = () => {
       });
   }, [encodedId, location.state, token]);
 
-  // Отправка PATCH запроса для agency_verification
-  const sendAgencyVerification = async (verified, commentStr) => {
-    if (recordId === null) {
-      console.error("recordId отсутствует, невозможно отправить запрос");
-      return false;
-    }
-    const payload = { verified, comment: commentStr };
-    console.log("Отправка данных agency_verification:", payload);
-    try {
-      const response = await fetch(
-        `${BASE_URL}/api/cadastre/${recordId}/agency_verification`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(payload),
-        }
-      );
-      if (response.ok) {
-        console.log("Данные agency_verification успешно отправлены");
-        return true;
-      } else {
-        console.error("Ошибка при отправке данных agency_verification");
-        return false;
-      }
-    } catch (error) {
-      console.error("Ошибка при отправке данных agency_verification:", error);
-      return false;
-    }
-  };
-
-  // ========== Функции для работы с ЭЦП (E‑IMZO) ==========
-
   // Функция для получения списка ключей (автоматически ищет все сертификаты из DSKEYS)
   const loadKeys = () => {
     return new Promise((resolve, reject) => {
@@ -318,7 +283,6 @@ const AgencyReviewPage = () => {
     });
   };
 
-  // Получение challenge с сервера E‑IMZO (POST /frontend/challenge)
   // const getChallengeFromEimzo = async () => {
   //   try {
   //     const response = await fetch(`/api/eimzo/frontend/challenge`, {
@@ -347,6 +311,7 @@ const AgencyReviewPage = () => {
   // };
 
   // Подписание challenge выбранным ключом (с запросом пароля) – возвращает PKCS7 документ
+
   const signDocument = async (keyId, binaryContent) => {
     const base64Document = btoa(binaryContent);
 
@@ -383,8 +348,6 @@ const AgencyReviewPage = () => {
       );
     });
   };
-
-  // Аутентификация на бекенде: отправка подписанного challenge (PKCS7) на POST /backend/auth
   // const authenticate = async (PKCS7) => {
   //   const response = await fetch(`${BASE_URL}/backend/auth`, {
   //     method: "POST",
@@ -407,44 +370,6 @@ const AgencyReviewPage = () => {
   //   }
 
   //   return data;
-  // };
-
-  // Подписание документа (PDF): запрашивается пароль, происходит загрузка ключа и создаётся PKCS7
-  // const signDocument = async (keyId, documentContent) => {
-  //   const password = prompt("Введите пароль для ЭЦП (подпись документа):");
-  //   if (!password) throw new Error("Пароль не введен");
-
-  //   const loadedKeyId = await loadKey(keyId);
-  //   console.log("🔐 Загруженный ключ (после loadKey):", loadedKeyId);
-  //   if (!loadedKeyId) {
-  //     throw new Error("❌ Не удалось загрузить ключ, keyId пустой");
-  //   }
-  //   const base64Document = btoa(documentContent); // подписываем в base64
-
-  //   return new Promise((resolve, reject) => {
-  //     window.CAPIWS.callFunction(
-  //       {
-  //         plugin: "pkcs7",
-  //         name: "create_pkcs7",
-  //         arguments: {
-  //           key: loadedKeyId,
-  //           data: base64Document,
-  //           detached: true,
-  //           password,
-  //         },
-  //       },
-  //       (event, data) => {
-  //         if (data.success) {
-  //           resolve(data.pkcs7);
-  //         } else {
-  //           reject("Ошибка создания PKCS7 для документа: " + data.reason);
-  //         }
-  //       },
-  //       (error) => {
-  //         reject("Ошибка создания PKCS7 для документа: " + error);
-  //       }
-  //     );
-  //   });
   // };
 
   // Получение Timestamp для PKCS7 (POST /frontend/timestamp/pkcs7)
@@ -495,12 +420,28 @@ const AgencyReviewPage = () => {
     setSigning(true);
     setSuccessMessage(false);
 
+    // Повторный fetch с логом
+    const retryFetch = async (url, options, retries = 3, delay = 1000) => {
+      for (let i = 0; i < retries; i++) {
+        try {
+          const response = await fetch(url, options);
+          if (!response.ok) throw new Error(`Статус: ${response.status}`);
+          return response;
+        } catch (err) {
+          console.warn(`🔁 Попытка ${i + 1} не удалась:`, err.message);
+          if (i < retries - 1)
+            await new Promise((res) => setTimeout(res, delay));
+          else throw new Error("❌ Ошибка получения Timestamp после 3 попыток");
+        }
+      }
+    };
+
     try {
-      // === 1. Загрузка ключа (временный идентификатор) ===
+      // === 1. Загрузка ключа ===
       const keyId = await loadKey(selectedKey);
       console.log("✅ Загружен временный keyId:", keyId);
 
-      // === 2. Чтение содержимого PDF ===
+      // === 2. Чтение PDF ===
       const pdfContent = await new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.readAsBinaryString(pdfBlob);
@@ -508,12 +449,12 @@ const AgencyReviewPage = () => {
         reader.onerror = reject;
       });
 
-      // === 3. Подпись документа через create_pkcs7 ===
+      // === 3. Подпись ===
       const pkcs7 = await signDocument(keyId, pdfContent);
       console.log("🖋️ Документ подписан (PKCS7):", pkcs7);
 
-      // === 4. Отправка на сервер для добавления Timestamp ===
-      const timestampResponse = await fetch(
+      // === 4. Timestamp через повторный fetch ===
+      const timestampResponse = await retryFetch(
         "/api/eimzo/frontend/timestamp/pkcs7",
         {
           method: "POST",
@@ -522,20 +463,16 @@ const AgencyReviewPage = () => {
         }
       );
 
-      if (!timestampResponse.ok) {
-        throw new Error("❌ Ошибка получения Timestamp");
-      }
-
       const { pkcs7b64: pkcs7WithTimestamp } = await timestampResponse.json();
       console.log("🕒 Получен PKCS7 + Timestamp:", pkcs7WithTimestamp);
 
-      // === 5. Верификация на бекенде ===
+      // === 5. Верификация ===
       const verifyResponse = await fetch(
         BASE_URL + "/api/eimzo/pkcs7/verify/attached",
         {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${token}`, // <--- здесь добавляем токен
+            Authorization: `Bearer ${token}`,
           },
           body: pkcs7WithTimestamp,
         }
@@ -548,7 +485,34 @@ const AgencyReviewPage = () => {
       const verifyResult = await verifyResponse.json();
       console.log("✅ Верификация успешна:", verifyResult);
 
-      // === 6. Успешно завершили ===
+      // === 6. Отправка agency_verification ===
+      if (recordId === null) {
+        console.error(
+          "❌ recordId отсутствует, невозможно отправить verification"
+        );
+      } else {
+        const payload = { verified: true, comment: "Документ подписан ЭЦП" };
+
+        const response = await fetch(
+          `${BASE_URL}/api/cadastre/${recordId}/agency_verification`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(payload),
+          }
+        );
+
+        if (response.ok) {
+          console.log("✅ Данные agency_verification успешно отправлены");
+        } else {
+          console.error("❌ Ошибка при отправке agency_verification");
+        }
+      }
+
+      // === 7. Успех ===
       setSuccessMessage(true);
       setTimeout(() => navigate("/"), 2500);
     } catch (err) {
@@ -692,15 +656,16 @@ const AgencyReviewPage = () => {
                 <li
                   key={index}
                   className={`cursor-pointer px-3 py-3 rounded-xl border-[#e9e9e9] ${
-                    selectedKey?.id === key.name
-                      ? ""
-                      : "bg-blue-500 hover:bg-blue-600 text-white"
+                    selectedKey?.name === key.name
+                      ? "bg-blue-500 hover:bg-blue-600 text-white"
+                      : "bg-gray-50 hover:bg-gray-100 text-gray-900 hover:text-blue-600 transition-colors duration-300 border border-gray-200"
                   }`}
                   onClick={() => {
                     console.log("Выбран ключ:", key);
                     setSelectedKey(key);
                   }}
                 >
+                  {/* {selectedKey.id} */}
                   {key.name}
                 </li>
               ))}
@@ -731,30 +696,52 @@ const AgencyReviewPage = () => {
         </div>
       )}
 
-      {/* {signing && (
+      {signing && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-xl shadow-lg text-center">
-            <p className="text-lg font-medium mb-2">
-              Идет подписание документа...
-            </p>
-            <p className="text-gray-500 text-sm">
-              Пожалуйста, не закрывайте окно
-            </p>
+          <div className="bg-white text-black p-6 rounded-xl shadow-lg text-center animate-fadeIn">
+            <div className="flex flex-col items-center space-y-4">
+              {/* Spinner */}
+              <div className="animate-spin rounded-full h-8 w-8 border-2 border-dashed border-black"></div>
+
+              <p className="text-lg font-medium">Hujjat imzolanmoqda...</p>
+              <p className="text-gray-500 text-sm">
+                Iltimos, sahifani yopmang.
+              </p>
+            </div>
           </div>
         </div>
-      )} */}
+      )}
 
       {successMessage && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
-          <div className="bg-green-100 border border-green-300 p-6 rounded-xl shadow-lg text-center">
-            <p className="text-lg font-semibold text-green-700 mb-2">
-              Документ успешно подписан!
-            </p>
-            <p className="text-gray-600 text-sm">
-              Сейчас произойдет перенаправление...
-            </p>
+      <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
+        <div className="bg-green-100 border border-green-300 p-6 rounded-xl shadow-lg text-center animate-scaleIn">
+          {/* Checkmark icon (inline SVG) */}
+          <div className="flex justify-center">
+          <svg
+            version="1.1"
+            id="Layer_1"
+            xmlns="http://www.w3.org/2000/svg"
+            x="0px"
+            y="0px"
+            width="122.88px"
+            height="122.88px"
+            viewBox="0 0 122.88 122.88"
+            className="w-10 h-10 mb-4"
+          >
+            <g>
+              <path
+                fill="#6BBE66"
+                d="M34.388,67.984c-0.286-0.308-0.542-0.638-0.762-0.981c-0.221-0.345-0.414-0.714-0.573-1.097 c-0.531-1.265-0.675-2.631-0.451-3.934c0.224-1.294,0.812-2.531,1.744-3.548l0.34-0.35c2.293-2.185,5.771-2.592,8.499-0.951 c0.39,0.233,0.762,0.51,1.109,0.827l0.034,0.031c1.931,1.852,5.198,4.881,7.343,6.79l1.841,1.651l22.532-23.635 c0.317-0.327,0.666-0.62,1.035-0.876c0.378-0.261,0.775-0.482,1.185-0.661c0.414-0.181,0.852-0.323,1.3-0.421 c0.447-0.099,0.903-0.155,1.356-0.165h0.026c0.451-0.005,0.893,0.027,1.341,0.103c0.437,0.074,0.876,0.193,1.333,0.369 c0.421,0.161,0.825,0.363,1.207,0.604c0.365,0.231,0.721,0.506,1.056,0.822l0.162,0.147c0.316,0.313,0.601,0.653,0.85,1.014 c0.256,0.369,0.475,0.766,0.652,1.178c0.183,0.414,0.325,0.852,0.424,1.299c0.1,0.439,0.154,0.895,0.165,1.36v0.23 c-0.004,0.399-0.042,0.804-0.114,1.204c-0.079,0.435-0.198,0.863-0.356,1.271c-0.16,0.418-0.365,0.825-0.607,1.21 c-0.238,0.377-0.518,0.739-0.832,1.07l-27.219,28.56c-0.32,0.342-0.663,0.642-1.022,0.898c-0.369,0.264-0.767,0.491-1.183,0.681 c-0.417,0.188-0.851,0.337-1.288,0.44c-0.435,0.104-0.889,0.166-1.35,0.187l-0.125,0.003c-0.423,0.009-0.84-0.016-1.241-0.078 l-0.102-0.02c-0.415-0.07-0.819-0.174-1.205-0.31c-0.421-0.15-0.833-0.343-1.226-0.575l-0.063-0.04 c-0.371-0.224-0.717-0.477-1.032-0.754l-0.063-0.06c-1.58-1.466-3.297-2.958-5.033-4.466c-3.007-2.613-7.178-6.382-9.678-9.02 L34.388,67.984L34.388,67.984z M61.44,0c16.96,0,32.328,6.883,43.453,17.987c11.104,11.125,17.986,26.493,17.986,43.453 c0,16.961-6.883,32.329-17.986,43.454C93.769,115.998,78.4,122.88,61.44,122.88c-16.961,0-32.329-6.882-43.454-17.986 C6.882,93.769,0,78.4,0,61.439C0,44.48,6.882,29.112,17.986,17.987C29.112,6.883,44.479,0,61.44,0L61.44,0z M96.899,25.981 C87.826,16.907,75.29,11.296,61.44,11.296c-13.851,0-26.387,5.611-35.46,14.685c-9.073,9.073-14.684,21.609-14.684,35.458 c0,13.851,5.611,26.387,14.684,35.46s21.609,14.685,35.46,14.685c13.85,0,26.386-5.611,35.459-14.685s14.684-21.609,14.684-35.46 C111.583,47.59,105.973,35.054,96.899,25.981L96.899,25.981z"
+              />
+            </g>
+          </svg>
           </div>
+
+          <p className="text-lg font-semibold text-green-700 mb-2">
+            Hujjat muvaffaqiyatli imzolandi!
+          </p>
         </div>
+      </div>
       )}
     </div>
   );

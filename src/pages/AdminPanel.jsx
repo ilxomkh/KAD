@@ -11,6 +11,7 @@ import ErrorTable from "../components/tables/ErrorTable";
 import { BASE_URL } from "../utils/api";
 import { useAuth } from "../context/AuthContext";
 import ModerationTable from "../components/tables/ModerationTable";
+import SendedTable from "../components/tables/SendedTable";
 
 const AdminPanel = () => {
   const [currentTable, setCurrentTable] = useState("default");
@@ -23,11 +24,10 @@ const AdminPanel = () => {
 
   const { token } = useAuth();
   const moddaValues = [4, 5, 6, 8];
-  const moddaQuery = moddaValues.map(value => `modda=${value}`).join("&");
+  const moddaQuery = moddaValues.map((value) => `modda=${value}`).join("&");
 
   const moddaValues79 = [7, 9];
-  const modda79Query = moddaValues79.map(value => `modda=${value}`).join("&");
-
+  const modda79Query = moddaValues79.map((value) => `modda=${value}`).join("&");
 
   useEffect(() => {
     let url = "";
@@ -50,6 +50,8 @@ const AdminPanel = () => {
         url += "&status=geometry_fixed";
       } else if (currentTable === "role3") {
         url += "&status=verified";
+      } else if (currentTable === "sended") {
+        url += "&status=agency_verified";
       } else if (currentTable === "moderation") {
         url += "&status=in_moderation";
       } else if (currentTable === "role4") {
@@ -169,6 +171,16 @@ const AdminPanel = () => {
 
         {currentTable === "users" && (
           <UsersTable
+            data={tableData}
+            totalItems={totalItems}
+            currentPage={currentPage}
+            onPageChange={setCurrentPage}
+            itemsPerPage={pageSize}
+          />
+        )}
+
+        {currentTable === "sended" && (
+          <SendedTable
             data={tableData}
             totalItems={totalItems}
             currentPage={currentPage}

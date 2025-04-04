@@ -56,6 +56,38 @@ h1 {
 }
 
 
+/* animations.css */
+
+.animate-fadeIn {
+  animation: fadeIn 0.9s ease-in-out forwards;
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+
+/* animations.css */
+
+.animate-scaleIn {
+  animation: scaleIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes scaleIn {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
 
 
 

@@ -4,7 +4,7 @@ import Pagination from "../Pagination";
 import PlanButton from "../PlanButton";
 import DecisionButton from "../DecisionButton";
 
-const EndedTable = ({ data = [], totalItems, currentPage, onPageChange }) => {
+const SendedTable = ({ data = [], totalItems, currentPage, onPageChange }) => {
   const itemsPerPage = 30; // Это значение нужно для корректного расчёта нумерации
 
   // Функция для скачивания PDF (если необходимо)
@@ -144,13 +144,13 @@ const EndedTable = ({ data = [], totalItems, currentPage, onPageChange }) => {
                 <td className="py-7 px-2 bg-white text-center">
                   <span
                     className={`font-semibold ${
-                      item.status === "finished"
+                      item.status === "agency_verified"
                         ? "text-green-500"
                         : "text-gray-500"
                     }`}
                   >
-                    {item.status === "finished"
-                      ? "Tugallandi"
+                    {item.status === "agency_verified"
+                      ? "Imzolandi"
                       : item.status}
                   </span>
                 </td>
@@ -175,4 +175,4 @@ const EndedTable = ({ data = [], totalItems, currentPage, onPageChange }) => {
   );
 };
 
-export default EndedTable;
+export default SendedTable;
