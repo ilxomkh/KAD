@@ -196,7 +196,7 @@ const VerdictPage = () => {
       }
     } else if (polygonCoords.length > 0) {
       // polygonCoords хранит координаты в формате [lat, lon], для GeoJSON нужен формат [lon, lat]
-      finalCoordinates = polygonCoords.map(coord => [coord[1], coord[0]]);
+      finalCoordinates = polygonCoords.map((coord) => [coord[1], coord[0]]);
     } else {
       console.error("Нет данных для формирования GeoJSON");
     }
@@ -209,13 +209,32 @@ const VerdictPage = () => {
   // Функция копирования GeoJSON в буфер обмена
   const copyGeojsonToClipboard = () => {
     const geojson = getGeojson();
-    navigator.clipboard.writeText(JSON.stringify(geojson, null, 2))
-      .then(() => {
-        alert("GeoJSON Nusxasi saqlandi");
-      })
-      .catch((err) => {
-        console.error("Nusxalashda xatolik yuz berdi", err);
-      });
+
+    // Проверяем, что геоданные корректны и содержат координаты.
+    if (geojson && geojson.coordinates && geojson.coordinates.length > 0) {
+      // Для полигона мы ожидаем, что координаты расположены в виде массива с внешним кольцом.
+      const polygonCoordinates = geojson.coordinates[0];
+      if (polygonCoordinates.length === 0) {
+        console.error("В массиве координат полигона нет точек");
+        return;
+      }
+      // Выбираем случайную точку из внешнего кольца
+      const randomIndex = Math.floor(Math.random() * polygonCoordinates.length);
+      const coordinate = polygonCoordinates[randomIndex]; // формат [longitude, latitude]
+
+      // Если нужно, можно поменять порядок: выводим сначала широту, затем долготу.
+      const formattedPoint = `${coordinate[1]}, ${coordinate[0]}`;
+
+      navigator.clipboard
+        .writeText(formattedPoint)
+        .then(() => {
+          console.log("Координата скопирована в буфер обмена:", formattedPoint);})
+        .catch((err) => {
+          console.error("Ошибка при копировании координаты", err);
+        });
+    } else {
+      console.error("GeoJSON не содержит корректных координат");
+    }
   };
 
   return (
@@ -235,11 +254,7 @@ const VerdictPage = () => {
 
         {/* Правая колонка (карта) */}
         <ArcGISPolygonEditor
-          backendPolygonCoords={
-            polygonCoords && polygonCoords.length > 0
-              ? polygonCoords
-              : [[41.32, 69.25]]
-          }
+          backendPolygonCoords={polygonCoords}
           editable={false}
           onConfirmChanges={setEditedPolygonData}
           isHalfWidth={!!uploadedPhoto} // Если фото есть, карта будет иметь ширину 50vw
@@ -253,7 +268,8 @@ const VerdictPage = () => {
           onClick={copyGeojsonToClipboard}
           className="absolute right-8 top-54 flex justify-center items-center mt-2 px-4 py-2 bg-white text-gray-900 hover:text-blue-600 rounded-xl transition-colors"
         >
-          <Copy className="mr-2 h-5 w-6"/>Copy
+          <Copy className="mr-2 h-5 w-6" />
+          Copy
         </button>
       </div>
 

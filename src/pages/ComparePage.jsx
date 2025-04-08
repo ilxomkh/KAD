@@ -8,6 +8,7 @@ import { BASE_URL } from "../utils/api";
 import { useAuth } from "../context/AuthContext";
 import CadastreInfo from "../components/infoButton";
 import SupportButton from "../components/supportButton";
+import FileUploadModal from "../components/FileUploadModal";
 
 const ComparePage = () => {
   const { id } = useParams();
@@ -24,8 +25,9 @@ const ComparePage = () => {
   const [sending, setSending] = useState(false);
   const [editedPolygonData, setEditedPolygonData] = useState(null);
   const [recordId, setRecordId] = useState(null);
-  const [initialGeojson, setInitialGeojson] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [showFileUpload, setShowFileUpload] = useState(true); // -
+  const [uploadedPhoto, setUploadedPhoto] = useState(null); // -
 
   // Новый стейт для модального окна при нажатии "Davom etish"
   const [showProceedModal, setShowProceedModal] = useState(false);
@@ -55,7 +57,6 @@ const ComparePage = () => {
           return;
         }
         // Сохраняем исходный geojson для кнопки копирования
-        setInitialGeojson(geojsonStr);
         let geoData;
         try {
           geoData = JSON.parse(geojsonStr);
@@ -137,7 +138,10 @@ const ComparePage = () => {
       }
 
       // Если поворот или перемещение изменились (не равны 0), применяем преобразование координат
-      if (editedPolygonData.rotation !== 0 || editedPolygonData.moveDistance !== 0) {
+      if (
+        editedPolygonData.rotation !== 0 ||
+        editedPolygonData.moveDistance !== 0
+      ) {
         finalCoordinates = finalCoordinates.map(([x, y]) =>
           webMercatorToWGS84(x, y)
         );
@@ -273,6 +277,11 @@ const ComparePage = () => {
     setShowProceedModal(true);
   };
 
+  const handlePhotoUpload = (photoUrl) => {
+    setUploadedPhoto(photoUrl);
+    setShowFileUpload(false);
+  };
+
   // Новый обработчик для открытия модального окна "Xatolik bor"
   const handleErrorModalOpen = () => {
     if (buildingExists === null) {
@@ -297,10 +306,14 @@ const ComparePage = () => {
     setSending(false);
     setShowProceedModal(false);
     if (geometryFixResult && buildingPresenceResult) {
-      console.log("Оба запроса успешно отправлены, переходим на главную страницу");
+      console.log(
+        "Оба запроса успешно отправлены, переходим на главную страницу"
+      );
       navigate("/");
     } else {
-      console.error("Ошибка отправки данных на сервер (geometry_fix или buildingPresence)");
+      console.error(
+        "Ошибка отправки данных на сервер (geometry_fix или buildingPresence)"
+      );
     }
   };
 
@@ -316,7 +329,9 @@ const ComparePage = () => {
     setSending(false);
     setShowErrorModal(false);
     if (cadastreErrorResult) {
-      console.log("Данные cadastre_error успешно отправлены, переходим на главную страницу");
+      console.log(
+        "Данные cadastre_error успешно отправлены, переходим на главную страницу"
+      );
       navigate("/");
     } else {
       console.error("Ошибка отправки данных cadastre_error на сервер");
@@ -325,18 +340,42 @@ const ComparePage = () => {
 
   return (
     <div className="relative min-h-screen w-screen">
-      <ArcGISPolygonEditor
+      {/* <ArcGISPolygonEditor
         backendPolygonCoords={polygonCoords}
         editable={true}
         onConfirmChanges={handleConfirmChanges}
-      />
+      /> вернуть в место*/}
+
+      {/* убрать */}
+      <div className="flex max-h-screen w-screen">
+        {/* Левая колонка (фото) */}
+        {uploadedPhoto && (
+          <div className="w-1/2 h-full">
+            <img
+              src={uploadedPhoto}
+              alt="Загруженное фото"
+              className="w-full h-full object-cover shadow-lg"
+            />
+          </div>
+        )}
+
+        {/* Правая колонка (карта) */}
+        <ArcGISPolygonEditor
+          backendPolygonCoords={polygonCoords}
+          editable={true}
+          onConfirmChanges={handleConfirmChanges}
+          isHalfWidth={!!uploadedPhoto} // Если фото есть, карта будет иметь ширину 50vw
+        />
+      </div>
 
       {/* Кнопка для копирования исходного geojson */}
-      {initialGeojson && (
+      {polygonCoords && polygonCoords.length > 0 && (
         <div className="absolute top-70 right-8 z-50 pointer-events-auto">
           <button
             onClick={() => {
-              navigator.clipboard.writeText(initialGeojson);
+              const point = polygonCoords[0]; // можно изменить индекс или алгоритм выбора точки
+              const pointStr = `${point[0]},${point[1]}`;
+              navigator.clipboard.writeText(pointStr);
               setCopied(true);
               setTimeout(() => setCopied(false), 2000);
             }}
@@ -373,7 +412,7 @@ const ComparePage = () => {
         <button
           className="px-6 py-3 cursor-pointer bg-blue-600 text-white rounded-xl flex items-center justify-center transition-all hover:bg-blue-700"
           onClick={handleProceedModalOpen}
-          disabled={(!editedPolygonData && polygonCoords.length === 0)}
+          disabled={!editedPolygonData && polygonCoords.length === 0}
         >
           Davom etish <ChevronRight className="ml-2 w-6 h-6 mt-0.5" />
         </button>
@@ -384,7 +423,9 @@ const ComparePage = () => {
         <button
           className="px-6 py-3 cursor-pointer bg-red-500 text-white rounded-xl transition-all hover:bg-red-600"
           onClick={handleErrorModalOpen}
-          disabled={(!editedPolygonData && polygonCoords.length === 0) || sending}
+          disabled={
+            (!editedPolygonData && polygonCoords.length === 0) || sending
+          }
         >
           Xatolik bor
         </button>
@@ -427,7 +468,9 @@ const ComparePage = () => {
               <button
                 className="px-6 py-3 w-full cursor-pointer bg-red-500 text-white rounded-xl transition-all hover:bg-red-600"
                 onClick={handleErrorConfirm}
-                disabled={sending || (!editedPolygonData && polygonCoords.length === 0)}
+                disabled={
+                  sending || (!editedPolygonData && polygonCoords.length === 0)
+                }
               >
                 {sending ? "Yuborilmoqda..." : "Ha"}
               </button>
@@ -440,6 +483,14 @@ const ComparePage = () => {
             </div>
           </div>
         </div>
+      )}
+      {showFileUpload && (
+        <FileUploadModal
+          isOpen={showFileUpload}
+          onClose={() => setShowFileUpload(false)}
+          onUpload={handlePhotoUpload}
+          cadasterId={recordId || id}
+        />
       )}
     </div>
   );
