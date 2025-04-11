@@ -45,152 +45,134 @@ const HeaderAdmin = ({
 
   const { token } = useAuth();
 
-  // Функция поиска для пользователей и кадастров
-  const handleSearch = (query) => {
-    const encodedQuery = encodeURIComponent(query.trim());
-    let url = "";
-    if (currentTable === "users") {
-      url = `${BASE_URL}/api/users?page=${currentPage}`;
-    } else {
-      url = `${BASE_URL}/api/cadastre?page=${currentPage}&search=${encodedQuery}`;
-    }
-    console.log("Запрос по URL:", url);
+  // ДОБАВИТЬ В НАЧАЛО ПОД useAuth
+const fetchAllCadastreData = async () => {
+  let allData = [];
+  let page = 1;
+  let totalPages = 1;
 
-    fetch(url, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    })
-      .then((res) => {
-        if (!res.ok) {
-          setTableData([]);
-          return res.text().then((text) => {
-            throw new Error(`HTTP error ${res.status}: ${text}`);
-          });
-        }
-        return res.json();
-      })
-      .then((data) => {
-        console.log(
-          currentTable === "users"
-            ? "Search results for users:"
-            : "Search results for cadastre:",
-          data
-        );
-        const dataArray =
-          currentTable === "users"
-            ? (Array.isArray(data) ? data : data.users || data.data || [])
-            : (Array.isArray(data) ? data : data.data || []);
-
-        if (currentTable === "users") {
-          const searchLower = query.trim().toLowerCase();
-          const filteredData = dataArray.filter((item) =>
-            (item.username &&
-              item.username.toLowerCase().includes(searchLower)) ||
-            (item.firstName &&
-              item.firstName.toLowerCase().includes(searchLower)) ||
-            (item.lastName &&
-              item.lastName.toLowerCase().includes(searchLower)) ||
-            (item.middleName &&
-              item.middleName.toLowerCase().includes(searchLower)) ||
-            (item.ID && item.ID.toString().toLowerCase().includes(searchLower)) ||
-            (item.role && item.role.toLowerCase().includes(searchLower))
-          );
-          setTableData(filteredData);
-        } else {
-          const queryLower = query.trim().toLowerCase();
-          const filteredData = dataArray.filter((item) =>
-            item.cadastreId.toLowerCase().includes(queryLower)
-          );
-          setTableData(filteredData);
-        }
-      })
-      .catch((error) => {
-        console.error("Error searching cadastre/users:", error);
-        setTableData([]);
+  try {
+    while (page <= totalPages) {
+      const res = await fetch(`${BASE_URL}/api/cadastre?page=${page}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       });
+      const data = await res.json();
+
+      const pageData = Array.isArray(data.data) ? data.data : [];
+      allData = [...allData, ...pageData];
+
+      totalPages = data.meta?.totalPages || 1;
+      page++;
+    }
+  } catch (err) {
+    console.error("Ошибка при загрузке всех кадастров:", err);
+  }
+
+  return allData;
+};
+
+const fetchAllUsersData = async () => {
+  let allData = [];
+  let page = 1;
+  let totalPages = 1;
+
+  try {
+    while (page <= totalPages) {
+      const res = await fetch(`${BASE_URL}/api/users?page=${page}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      const data = await res.json();
+
+      const pageData = Array.isArray(data.users) ? data.users : [];
+      allData = [...allData, ...pageData];
+
+      totalPages = data.meta?.totalPages || 1;
+      page++;
+    }
+  } catch (err) {
+    console.error("Ошибка при загрузке всех пользователей:", err);
+  }
+
+  return allData;
+};
+
+  // Функция поиска для пользователей и кадастров
+  const handleSearch = async (query) => {
+    const searchLower = query.trim().toLowerCase();
+  
+    if (currentTable === "users") {
+      const allUsers = await fetchAllUsersData();
+      const filteredData = allUsers.filter((item) =>
+        (item.username && item.username.toLowerCase().includes(searchLower)) ||
+        (item.firstName && item.firstName.toLowerCase().includes(searchLower)) ||
+        (item.lastName && item.lastName.toLowerCase().includes(searchLower)) ||
+        (item.middleName && item.middleName.toLowerCase().includes(searchLower)) ||
+        (item.ID && item.ID.toString().toLowerCase().includes(searchLower)) ||
+        (item.role && item.role.toLowerCase().includes(searchLower))
+      );
+      setTableData(filteredData);
+    } else {
+      const allCadastre = await fetchAllCadastreData();
+      const filteredData = allCadastre.filter((item) =>
+        item.cadastreId && item.cadastreId.toLowerCase().includes(searchLower)
+      );
+      setTableData(filteredData);
+    }
   };
 
   // Обработчик фильтров (клиентская фильтрация)
-  const handleFilterApply = (filters) => {
-    // Проверяем, заданы ли какие-либо фильтры
-    const hasFilter = Object.values(filters).some((value) => value !== "" && value !== null);
-    
-    // Если фильтры заданы, запрашиваем все данные, иначе – используем пагинацию
-    const url = hasFilter 
-      ? `${BASE_URL}/api/cadastre`
-      : `${BASE_URL}/api/cadastre?page=1`;
-  
+  const handleFilterApply = async (filters) => {
     console.log("Применяем фильтры в HeaderAdmin:", filters);
-    console.log("Запрос на получение данных по URL:", url);
   
-    fetch(url, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    })
-      .then((res) => {
-        if (!res.ok) {
-          return res.text().then((text) => {
-            throw new Error(`HTTP error ${res.status}: ${text}`);
-          });
-        }
-        return res.json();
-      })
-      .then((allData) => {
-        const dataArray = Array.isArray(allData)
-          ? allData
-          : Array.isArray(allData.data)
-          ? allData.data
-          : [];
-        if (currentTable === "users") {
-          const searchLower = filters.query ? filters.query.trim().toLowerCase() : "";
-          const filteredData = dataArray.filter((item) => {
-            const usernameMatch =
-              !searchLower ||
-              (item.username && item.username.toLowerCase().includes(searchLower));
-            const firstNameMatch =
-              !searchLower ||
-              (item.firstName && item.firstName.toLowerCase().includes(searchLower));
-            return usernameMatch || firstNameMatch;
-          });
-          console.log("Отфильтрованные пользователи:", filteredData);
-          setTableData(filteredData);
-        } else {
-          const filteredData = dataArray.filter((item) => {
-            const matchModda =
-              !filters.modda ||
-              item.modda.toString() === filters.modda.replace("-modda", "");
-            const matchRegion =
-              !filters.region || item.region === filters.region;
-            const matchStatus =
-              !filters.status || item.status === filters.status;
-            const matchDeadline =
-              !filters.deadline ||
-              new Date(item.assignDate).getDate() === Number(filters.deadline);
-            const matchType =
-              !filters.type || item.type === filters.type;
-            const matchKadastr =
-              !filters.kadastr || item.kadastr === filters.kadastr;
-            const matchBuildingPresence =
-              !filters.buildingPresence || item.buildingPresence === filters.buildingPresence;
-            return (
-              matchModda &&
-              matchRegion &&
-              matchDeadline &&
-              matchType &&
-              matchStatus &&
-              matchKadastr &&
-              matchBuildingPresence
-            );
-          });
-          console.log("Отфильтрованные данные для кадастра:", filteredData);
-          setTableData(filteredData);
-        }
-      })
-      .catch((error) => console.error("Error fetching or filtering data:", error));
+    if (currentTable === "users") {
+      const allUsers = await fetchAllUsersData();
+      const searchLower = filters.query ? filters.query.trim().toLowerCase() : "";
+  
+      const filteredData = allUsers.filter((item) => {
+        const usernameMatch =
+          !searchLower || (item.username && item.username.toLowerCase().includes(searchLower));
+        const firstNameMatch =
+          !searchLower || (item.firstName && item.firstName.toLowerCase().includes(searchLower));
+        return usernameMatch || firstNameMatch;
+      });
+  
+      console.log("Отфильтрованные пользователи:", filteredData);
+      setTableData(filteredData);
+    } else {
+      const allCadastre = await fetchAllCadastreData();
+      const filteredData = allCadastre.filter((item) => {
+        const matchModda =
+          !filters.modda || item.modda?.toString() === filters.modda.replace("-modda", "");
+        const matchRegion = !filters.region || item.region === filters.region;
+        const matchStatus = !filters.status || item.status === filters.status;
+        const matchDeadline =
+          !filters.deadline ||
+          new Date(item.assignDate).getDate() === Number(filters.deadline);
+        const matchType = !filters.type || item.type === filters.type;
+        const matchKadastr = !filters.kadastr || item.kadastr === filters.kadastr;
+        const matchBuildingPresence =
+          !filters.buildingPresence || item.buildingPresence === filters.buildingPresence;
+  
+        return (
+          matchModda &&
+          matchRegion &&
+          matchDeadline &&
+          matchType &&
+          matchStatus &&
+          matchKadastr &&
+          matchBuildingPresence
+        );
+      });
+  
+      console.log("Отфильтрованные данные для кадастра:", filteredData);
+      setTableData(filteredData);
+    }
   };
   
   

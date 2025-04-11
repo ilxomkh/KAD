@@ -11,40 +11,54 @@ const HeaderUser = ({ setTableData, setTotalItems, currentPage, setCurrentPage }
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const { token } = useAuth();
 
-  // Функция поиска
-  const handleSearch = async (query) => {
-    // Сброс страницы на 1 при новом поиске
-    setCurrentPage(1);
-    const encodedQuery = encodeURIComponent(query.trim());
-    const url = `${BASE_URL}/api/cadastre?page=1&search=${encodedQuery}`;
-
-    console.log("===== [handleSearch] =====");
-    console.log("URL:", url);
+  // 🔁 Загрузка всех данных со всех страниц
+  const fetchAllCadastreData = async () => {
+    let allData = [];
+    let page = 1;
+    let totalPages = 1;
 
     try {
-      const res = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-      const rawText = await res.text();
-      let responseJson;
-      try {
-        responseJson = JSON.parse(rawText);
-      } catch (e) {
-        throw new Error("Ошибка парсинга JSON (handleSearch): " + e.message);
-      }
+      while (page <= totalPages) {
+        const res = await fetch(`${BASE_URL}/api/cadastre?page=${page}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
 
-      if (!res.ok) {
-        throw new Error(`HTTP error ${res.status}: ${JSON.stringify(responseJson)}`);
-      }
+        const rawText = await res.text();
+        let data;
+        try {
+          data = JSON.parse(rawText);
+        } catch (e) {
+          throw new Error("Ошибка парсинга JSON: " + e.message);
+        }
 
-      const dataArray = responseJson.data || [];
-      const meta = responseJson.meta || {};
-      const total = meta.total || dataArray.length;
-      setTableData(dataArray);
-      setTotalItems(total);
+        const pageData = Array.isArray(data.data) ? data.data : [];
+        allData = [...allData, ...pageData];
+        totalPages = data.meta?.totalPages || 1;
+        page++;
+      }
+    } catch (error) {
+      console.error("Ошибка загрузки всех кадастров:", error);
+    }
+
+    return allData;
+  };
+
+  // 🔍 Поиск по всем данным
+  const handleSearch = async (query) => {
+    setCurrentPage(1);
+    const searchLower = query.trim().toLowerCase();
+
+    try {
+      const allData = await fetchAllCadastreData();
+      const filteredData = allData.filter((item) =>
+        item.cadastreId?.toLowerCase().includes(searchLower)
+      );
+
+      setTableData(filteredData);
+      setTotalItems(filteredData.length);
     } catch (error) {
       console.error("[handleSearch] Ошибка:", error);
       setTableData([]);
@@ -52,42 +66,16 @@ const HeaderUser = ({ setTableData, setTotalItems, currentPage, setCurrentPage }
     }
   };
 
-  // Функция фильтрации
+  // 🎯 Фильтрация по всем данным
   const handleFilterApply = async (filters) => {
     setCurrentPage(1);
-    const url = `${BASE_URL}/api/cadastre?page=1`;
-
-    console.log("===== [handleFilterApply] =====");
-    console.log("URL:", url);
 
     try {
-      const res = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-      const rawText = await res.text();
-      let responseJson;
-      try {
-        responseJson = JSON.parse(rawText);
-      } catch (e) {
-        throw new Error("Ошибка парсинга JSON (handleFilterApply): " + e.message);
-      }
+      const allData = await fetchAllCadastreData();
 
-      if (!res.ok) {
-        throw new Error(`HTTP error ${res.status}: ${JSON.stringify(responseJson)}`);
-      }
-
-      const dataArray = responseJson.data || [];
-      const meta = responseJson.meta || {};
-      const total = meta.total || dataArray.length;
-
-      // Если нужна клиентская фильтрация:
-      const filteredData = dataArray.filter((item) => {
+      const filteredData = allData.filter((item) => {
         const matchModda =
-          !filters.modda ||
-          item.modda?.toString() === filters.modda.replace("-modda", "");
+          !filters.modda || item.modda?.toString() === filters.modda.replace("-modda", "");
         const matchRegion = !filters.region || item.region === filters.region;
         const matchDeadline =
           !filters.deadline ||
@@ -103,7 +91,7 @@ const HeaderUser = ({ setTableData, setTotalItems, currentPage, setCurrentPage }
     }
   };
 
-  // Загрузка данных с учётом пагинации
+  // 📦 Загрузка текущей страницы по умолчанию (пагинация)
   useEffect(() => {
     const loadData = async () => {
       const url = `${BASE_URL}/api/cadastre?page=${currentPage}`;
@@ -117,6 +105,7 @@ const HeaderUser = ({ setTableData, setTotalItems, currentPage, setCurrentPage }
             "Content-Type": "application/json",
           },
         });
+
         const rawText = await res.text();
         let responseJson;
         try {
@@ -124,9 +113,11 @@ const HeaderUser = ({ setTableData, setTotalItems, currentPage, setCurrentPage }
         } catch (e) {
           throw new Error("Ошибка парсинга JSON (useEffect): " + e.message);
         }
+
         if (!res.ok) {
           throw new Error(`HTTP error ${res.status}: ${JSON.stringify(responseJson)}`);
         }
+
         const dataArray = responseJson.data || [];
         const meta = responseJson.meta || {};
         const total = meta.total || dataArray.length;
