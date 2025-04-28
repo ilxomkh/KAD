@@ -16,6 +16,7 @@ const AddUsers = ({ onClose }) => {
     password: "",
     passwordVerify: "",
     position: "",
+    dailyNorm: "", // ➡️ добавили сюда
   });
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
@@ -54,9 +55,10 @@ const AddUsers = ({ onClose }) => {
       firstName: formData.firstName,
       middleName: formData.middleName,
       lastName: formData.lastName,
-      position: formData.position, // не проходит валидация
+      position: formData.position,
+      role: formData.role,
       active: true,
-      role: formData.role, // не проходит валидация
+      dailyNorm: formData.dailyNorm, // ➡️ добавили
       randomizerIndex: 0,
     };
 
@@ -67,7 +69,7 @@ const AddUsers = ({ onClose }) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(payload),
       });
@@ -118,7 +120,9 @@ const AddUsers = ({ onClose }) => {
             />
           </div>
           <div>
-            <label className="block text-gray-700 font-medium">Familiyasi</label>
+            <label className="block text-gray-700 font-medium">
+              Familiyasi
+            </label>
             <input
               type="text"
               name="lastName"
@@ -153,9 +157,7 @@ const AddUsers = ({ onClose }) => {
 
           <RoleDropdown
             value={formData.role}
-            onChange={(role) =>
-              setFormData({ ...formData, role })
-            }
+            onChange={(role) => setFormData({ ...formData, role })}
             bgColor="bg-white"
             borderColor="border-[#f3f9f6]"
           />
@@ -181,15 +183,15 @@ const AddUsers = ({ onClose }) => {
 
           <PositionDropdown
             value={formData.position}
-            onChange={(position) =>
-              setFormData({ ...formData, position })
-            }
+            onChange={(position) => setFormData({ ...formData, position })}
             bgColor="bg-white"
             borderColor="border-[#f3f9f6]"
           />
 
           <div className="relative">
-            <label className="block text-gray-700 font-medium">Parolni tasdiqlang</label>
+            <label className="block text-gray-700 font-medium">
+              Parolni tasdiqlang
+            </label>
             <input
               type={showPassword ? "text" : "password"}
               name="passwordVerify"
@@ -206,15 +208,37 @@ const AddUsers = ({ onClose }) => {
               {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
             </button>
           </div>
-        </div>
+          <div>
+            <label className="block text-gray-700 font-medium">
+              Kunlik norma
+            </label>
+            <input
+              type="text" // ⬅️ меняем на текст
+              name="dailyNorm"
+              value={formData.dailyNorm}
+              onChange={(e) => {
+                const value = e.target.value;
+                // Разрешаем только цифры, без начальных нулей
+                if (value === "" || /^[1-9]\d*$/.test(value)) {
+                  setFormData({
+                    ...formData,
+                    dailyNorm: value === "" ? "" : Number(value),
+                  });
+                }
+              }}
+              placeholder="Kunlik normani kiriting"
+              className="w-full border border-[#f3f9f6] focus:outline-none rounded-xl p-2 py-3 mt-1 text-gray-700"
+            />
+          </div>
 
-        <div className="relative mt-6">
-          <button
-            onClick={handleSubmit}
-            className="w-full bg-blue-500 focus:outline-none text-white py-3 rounded-xl text-lg font-semibold hover:bg-blue-600 transition"
-          >
-            Qo‘shish
-          </button>
+          <div className="relative mt-7">
+            <button
+              onClick={handleSubmit}
+              className="w-full bg-blue-500 focus:outline-none text-white py-3 rounded-xl text-lg font-semibold hover:bg-blue-600 transition"
+            >
+              Qo‘shish
+            </button>
+          </div>
         </div>
       </div>
     </div>

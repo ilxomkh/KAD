@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios"; // 👈 обязательно
 import { ChevronDown } from "lucide-react";
 import SearchBar from "./SearchBar";
 import FilterButton from "./FilterButton";
@@ -8,16 +9,18 @@ import FilterModal from "../FilterModal";
 import { BASE_URL } from "../../utils/api";
 import { useAuth } from "../../context/AuthContext";
 
-const HeaderAdmin = ({ 
-  currentTable, 
-  setCurrentTable, 
-  setTableData, 
-  currentPage, 
-  setCurrentPage 
+const HeaderAdmin = ({
+  currentTable,
+  setCurrentTable,
+  setTableData,
+  currentPage,
+  setCurrentPage,
 }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+  const { token, refreshTokenRequest, logout } = useAuth(); // 👈 достаём всё сразу
 
   const menuOptions = [
     { key: "default", label: "Nomzodlar ro‘yxati" },
@@ -32,133 +35,149 @@ const HeaderAdmin = ({
   ];
 
   const selectedOption =
-    menuOptions.find((option) => option.key === currentTable) ||
-    menuOptions[0];
+    menuOptions.find((option) => option.key === currentTable) || menuOptions[0];
 
   const handleSelectTable = (table) => {
     console.log("Выбрана таблица:", table);
     setCurrentTable(table);
     setDropdownOpen(false);
-    // При смене таблицы сбрасываем номер страницы
     setCurrentPage(1);
   };
 
-  const { token } = useAuth();
+  const fetchAllCadastreData = async () => {
+    let allData = [];
+    let page = 1;
+    let totalPages = 1;
 
-  // ДОБАВИТЬ В НАЧАЛО ПОД useAuth
-const fetchAllCadastreData = async () => {
-  let allData = [];
-  let page = 1;
-  let totalPages = 1;
-
-  try {
-    while (page <= totalPages) {
-      const res = await fetch(`${BASE_URL}/api/cadastre?page=${page}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-      const data = await res.json();
-
-      const pageData = Array.isArray(data.data) ? data.data : [];
-      allData = [...allData, ...pageData];
-
-      totalPages = data.meta?.totalPages || 1;
-      page++;
+    try {
+      while (page <= totalPages) {
+        try {
+          const res = await axios.get(`${BASE_URL}/api/cadastre?page=${page}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const data = res.data;
+          const pageData = Array.isArray(data.data) ? data.data : [];
+          allData = [...allData, ...pageData];
+          totalPages = data.meta?.totalPages || 1;
+          page++;
+        } catch (error) {
+          if (error.response && error.response.status === 401) {
+            console.warn("401 при загрузке кадастра — обновляем токен...");
+            await refreshTokenRequest();
+            return await fetchAllCadastreData(); // 🔁 повтор
+          } else {
+            throw error;
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Ошибка при загрузке кадастра:", err);
     }
-  } catch (err) {
-    console.error("Ошибка при загрузке всех кадастров:", err);
-  }
 
-  return allData;
-};
+    return allData;
+  };
 
-const fetchAllUsersData = async () => {
-  let allData = [];
-  let page = 1;
-  let totalPages = 1;
+  const fetchAllUsersData = async () => {
+    let allData = [];
+    let page = 1;
+    let totalPages = 1;
 
-  try {
-    while (page <= totalPages) {
-      const res = await fetch(`${BASE_URL}/api/users?page=${page}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-      const data = await res.json();
-
-      const pageData = Array.isArray(data.users) ? data.users : [];
-      allData = [...allData, ...pageData];
-
-      totalPages = data.meta?.totalPages || 1;
-      page++;
+    try {
+      while (page <= totalPages) {
+        try {
+          const res = await axios.get(`${BASE_URL}/api/users?page=${page}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const data = res.data;
+          const pageData = Array.isArray(data.users) ? data.users : [];
+          allData = [...allData, ...pageData];
+          totalPages = data.meta?.totalPages || 1;
+          page++;
+        } catch (error) {
+          if (error.response && error.response.status === 401) {
+            console.warn("401 при загрузке пользователей — обновляем токен...");
+            await refreshTokenRequest();
+            return await fetchAllUsersData(); // 🔁 повтор
+          } else {
+            throw error;
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Ошибка при загрузке пользователей:", err);
     }
-  } catch (err) {
-    console.error("Ошибка при загрузке всех пользователей:", err);
-  }
 
-  return allData;
-};
+    return allData;
+  };
 
-  // Функция поиска для пользователей и кадастров
   const handleSearch = async (query) => {
     const searchLower = query.trim().toLowerCase();
-  
     if (currentTable === "users") {
       const allUsers = await fetchAllUsersData();
-      const filteredData = allUsers.filter((item) =>
-        (item.username && item.username.toLowerCase().includes(searchLower)) ||
-        (item.firstName && item.firstName.toLowerCase().includes(searchLower)) ||
-        (item.lastName && item.lastName.toLowerCase().includes(searchLower)) ||
-        (item.middleName && item.middleName.toLowerCase().includes(searchLower)) ||
-        (item.ID && item.ID.toString().toLowerCase().includes(searchLower)) ||
-        (item.role && item.role.toLowerCase().includes(searchLower))
+      const filteredData = allUsers.filter(
+        (item) =>
+          (item.username &&
+            item.username.toLowerCase().includes(searchLower)) ||
+          (item.firstName &&
+            item.firstName.toLowerCase().includes(searchLower)) ||
+          (item.lastName &&
+            item.lastName.toLowerCase().includes(searchLower)) ||
+          (item.middleName &&
+            item.middleName.toLowerCase().includes(searchLower)) ||
+          (item.ID && item.ID.toString().toLowerCase().includes(searchLower)) ||
+          (item.role && item.role.toLowerCase().includes(searchLower))
       );
       setTableData(filteredData);
     } else {
       const allCadastre = await fetchAllCadastreData();
-      const filteredData = allCadastre.filter((item) =>
-        item.cadastreId && item.cadastreId.toLowerCase().includes(searchLower)
+      const filteredData = allCadastre.filter(
+        (item) =>
+          item.cadastreId && item.cadastreId.toLowerCase().includes(searchLower)
       );
       setTableData(filteredData);
     }
   };
 
-  // Обработчик фильтров (клиентская фильтрация)
   const handleFilterApply = async (filters) => {
-    console.log("Применяем фильтры в HeaderAdmin:", filters);
-  
+    console.log("Применяем фильтры:", filters);
+
     if (currentTable === "users") {
       const allUsers = await fetchAllUsersData();
-      const searchLower = filters.query ? filters.query.trim().toLowerCase() : "";
-  
+      const searchLower = filters.query
+        ? filters.query.trim().toLowerCase()
+        : "";
+
       const filteredData = allUsers.filter((item) => {
         const usernameMatch =
-          !searchLower || (item.username && item.username.toLowerCase().includes(searchLower));
+          !searchLower ||
+          (item.username && item.username.toLowerCase().includes(searchLower));
         const firstNameMatch =
-          !searchLower || (item.firstName && item.firstName.toLowerCase().includes(searchLower));
+          !searchLower ||
+          (item.firstName &&
+            item.firstName.toLowerCase().includes(searchLower));
         return usernameMatch || firstNameMatch;
       });
-  
+
       console.log("Отфильтрованные пользователи:", filteredData);
       setTableData(filteredData);
     } else {
       const allCadastre = await fetchAllCadastreData();
       const filteredData = allCadastre.filter((item) => {
         const matchModda =
-          !filters.modda || item.modda?.toString() === filters.modda.replace("-modda", "");
+          !filters.modda ||
+          item.modda?.toString() === filters.modda.replace("-modda", "");
         const matchRegion = !filters.region || item.region === filters.region;
         const matchStatus = !filters.status || item.status === filters.status;
         const matchDeadline =
           !filters.deadline ||
           new Date(item.assignDate).getDate() === Number(filters.deadline);
         const matchType = !filters.type || item.type === filters.type;
-        const matchKadastr = !filters.kadastr || item.kadastr === filters.kadastr;
+        const matchKadastr =
+          !filters.kadastr || item.kadastr === filters.kadastr;
         const matchBuildingPresence =
-          !filters.buildingPresence || item.buildingPresence === filters.buildingPresence;
-  
+          !filters.buildingPresence ||
+          item.buildingPresence === filters.buildingPresence;
+
         return (
           matchModda &&
           matchRegion &&
@@ -169,37 +188,48 @@ const fetchAllUsersData = async () => {
           matchBuildingPresence
         );
       });
-  
-      console.log("Отфильтрованные данные для кадастра:", filteredData);
+
+      console.log("Отфильтрованные кадастры:", filteredData);
       setTableData(filteredData);
     }
   };
-  
-  
 
-  // Первоначальная загрузка данных с учетом пагинации
   useEffect(() => {
-    let url = "";
-    if (currentTable === "users") {
-      url = `${BASE_URL}/api/users?page=${currentPage}`;
-    } else {
-      url = `${BASE_URL}/api/cadastre?page=${currentPage}`;
-    }
-    console.log("Начальная загрузка данных по URL:", url);
-    fetch(url, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        const dataArray = Array.isArray(data)
-          ? data
-          : data.data || [];
+    const fetchInitialData = async () => {
+      try {
+        let url = "";
+        if (currentTable === "users") {
+          url = `${BASE_URL}/api/users?page=${currentPage}`;
+        } else {
+          url = `${BASE_URL}/api/cadastre?page=${currentPage}`;
+        }
+
+        console.log("Загрузка данных:", url);
+
+        const res = await axios.get(url, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const data = res.data;
+        const dataArray = Array.isArray(data) ? data : data.data || [];
         setTableData(dataArray);
-      })
-      .catch((error) => console.error("Error loading data:", error));
+      } catch (error) {
+        if (error.response && error.response.status === 401) {
+          console.warn("401 при загрузке — обновляем токен...");
+          try {
+            await refreshTokenRequest();
+            fetchInitialData(); // 🔁 повтор
+          } catch (refreshError) {
+            console.error("Не удалось обновить токен:", refreshError);
+            logout();
+          }
+        } else {
+          console.error("Ошибка загрузки данных:", error);
+        }
+      }
+    };
+
+    fetchInitialData();
   }, [setTableData, token, currentPage, currentTable]);
 
   return (
@@ -210,51 +240,68 @@ const fetchAllUsersData = async () => {
           onClick={() => setDropdownOpen(false)}
         />
       )}
+
       <header className="flex justify-between items-center bg-[#F9F9F9] px-6 py-3 mx-6 rounded-3xl relative z-20">
-        <div className="flex items-center space-x-12">
+        {/* Левый блок */}
+        <div className="flex items-center space-x-6">
           <img src="/assets/Blue.svg" alt="ZBEKOSMOS" className="h-12 w-auto" />
+
           <div className="relative">
             <button
-              onClick={() => setDropdownOpen(!dropdownOpen)}
-              className={`flex cursor-pointer items-center text-lg font-semibold px-4 py-3 transition rounded-full ${
-                currentTable === "users"
-                  ? "text-gray-700 hover:text-blue-500 transition-colors duration-300"
-                  : "bg-blue-500 text-white"
+              onClick={() => setDropdownOpen((o) => !o)}
+              className={`flex items-center px-4 py-3 rounded-full transition ${
+                currentTable !== "users" && currentTable !== "statistics"
+                  ? "bg-blue-500 text-white"
+                  : "text-gray-700 hover:text-blue-500"
               }`}
             >
               {selectedOption.label}
-              <ChevronDown className="ml-2 mt-1 w-5 h-5" />
+              <ChevronDown className="ml-2 w-5 h-5" />
             </button>
             {dropdownOpen && (
-              <div className="absolute -left-6 mt-4 w-60 bg-white rounded-3xl p-2 z-10">
-                {menuOptions.map((option) => (
+              <div className="absolute mt-2 w-60 bg-white rounded-3xl p-2 shadow z-10">
+                {menuOptions.map((opt) => (
                   <button
-                    key={option.key}
-                    onClick={() => handleSelectTable(option.key)}
-                    className={`block dark:text-gray-900 cursor-pointer px-4 py-2 w-full text-left text-lg ${
-                      currentTable === option.key
-                        ? "bg-white"
-                        : "transition-colors duration-500 hover:text-blue-500"
+                    key={opt.key}
+                    onClick={() => handleSelectTable(opt.key)}
+                    className={`block w-full text-left px-4 py-2 text-lg transition ${
+                      currentTable === opt.key
+                        ? "bg-blue-100 text-blue-600"
+                        : "hover:bg-gray-50"
                     }`}
                   >
-                    {option.label}
+                    {opt.label}
                   </button>
                 ))}
               </div>
             )}
           </div>
+
           <button
             onClick={() => handleSelectTable("users")}
-            className={`text-gray-700 cursor-pointer text-lg font-semibold ${
+            className={`px-4 py-3 rounded-full font-semibold transition ${
               currentTable === "users"
-                ? "bg-blue-500 text-white px-4 py-3 rounded-full"
-                : "hover:text-blue-500 transition-colors duration-300"
+                ? "bg-blue-500 text-white"
+                : "text-gray-700 hover:text-blue-500"
             }`}
           >
             Foydalanuvchilar
           </button>
+
+          <button
+            onClick={() => handleSelectTable("statistics")}
+            className={`px-4 py-3 rounded-full font-semibold transition ml-4 ${
+              currentTable === "statistics"
+                ? "bg-blue-500 text-white"
+                : "text-gray-700 hover:text-blue-500"
+            }`}
+          >
+            Statistika
+          </button>
         </div>
-        <div className="flex items-center space-x-8 mr-4">
+
+        {/* Правый блок */}
+        <div className="flex items-center space-x-4">
           <SearchBar
             onSearch={handleSearch}
             placeholder={
@@ -266,16 +313,10 @@ const fetchAllUsersData = async () => {
           <FilterButton onClick={() => setIsFilterOpen(true)} />
           {currentTable === "users" && (
             <button
-              className="flex cursor-pointer items-center bg-blue-500 text-white px-4 py-3 rounded-xl hover:bg-blue-600 transition"
+              className="flex items-center bg-blue-500 text-white px-4 py-3 rounded-xl hover:bg-blue-600 transition"
               onClick={() => setIsModalOpen(true)}
             >
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                 <path
                   d="M12 22.6667V12M12 12V1.33337M12 12H22.6667M12 12H1.33337"
                   stroke="#FFFFFF"
@@ -284,12 +325,13 @@ const fetchAllUsersData = async () => {
                   strokeLinejoin="round"
                 />
               </svg>
-              <span className="text-lg font-semibold ml-2">Qo‘shish</span>
+              <span className="ml-2 font-semibold">Qo‘shish</span>
             </button>
           )}
           <LogoutButton />
         </div>
       </header>
+
       <FilterModal
         isOpen={isFilterOpen}
         onClose={() => setIsFilterOpen(false)}

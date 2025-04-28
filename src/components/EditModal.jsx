@@ -15,6 +15,7 @@ const EditModal = ({ item, onClose, onSave }) => {
     password: "",
     passwordVerify: "",
     position: "",
+    dailyNorm: "", // ➡️ добавили
   });
 
   const [showPassword, setShowPassword] = useState(false);
@@ -33,6 +34,7 @@ const EditModal = ({ item, onClose, onSave }) => {
         password: item.password || "",
         passwordVerify: item.password || "",
         position: item.position || "",
+        dailyNorm: item.dailyNorm || "", // ➡️ добавили
       });
     }
   }, [item]);
@@ -49,7 +51,9 @@ const EditModal = ({ item, onClose, onSave }) => {
 
     const userId = item?.id || item?._id || item?.ID;
     if (!userId) {
-      console.error("Нет корректного идентификатора пользователя для обновления");
+      console.error(
+        "Нет корректного идентификатора пользователя для обновления"
+      );
       return;
     }
 
@@ -63,6 +67,7 @@ const EditModal = ({ item, onClose, onSave }) => {
       active: item.active !== undefined ? item.active : true,
       role: formData.role || "geometry_fix",
       randomizerIndex: item.randomizerIndex || 0,
+      dailyNorm: formData.dailyNorm, // ➡️ добавили
     };
 
     console.log("Отправляемые данные для обновления:", payload);
@@ -70,9 +75,9 @@ const EditModal = ({ item, onClose, onSave }) => {
     try {
       const response = await fetch(`${BASE_URL}/api/users/${userId}`, {
         method: "PUT",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(payload),
       });
@@ -125,7 +130,9 @@ const EditModal = ({ item, onClose, onSave }) => {
           </div>
 
           <div>
-            <label className="block text-gray-700 font-medium">Familiyasi</label>
+            <label className="block text-gray-700 font-medium">
+              Familiyasi
+            </label>
             <input
               type="text"
               name="lastName"
@@ -213,15 +220,37 @@ const EditModal = ({ item, onClose, onSave }) => {
               {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
             </button>
           </div>
-        </div>
 
-        <div className="relative mt-6">
-          <button
-            onClick={handleSubmit}
-            className="w-full bg-blue-500 text-white py-3 rounded-xl mt-6 text-lg font-semibold hover:bg-blue-600 transition"
-          >
-            Tahrirlash
-          </button>
+          <div>
+            <label className="block text-gray-700 font-medium">
+              Kunlik norma
+            </label>
+            <input
+              type="text" // исправил здесь
+              name="dailyNorm"
+              value={formData.dailyNorm === 0 ? "" : formData.dailyNorm}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (value === "") {
+                  setFormData({ ...formData, dailyNorm: "" });
+                } else if (/^[1-9]\d*$/.test(value)) {
+                  setFormData({ ...formData, dailyNorm: Number(value) });
+                }
+              }}
+              placeholder="Kunlik normani kiriting"
+              className="no-spinner w-full border focus:outline-none border-[#94c6ff] rounded-xl p-2 py-3 mt-1 text-gray-700 bg-[#e8f3ff]/50"
+              inputMode="numeric" // ➡️ чтобы на телефонах открывалась цифровая клавиатура
+            />
+          </div>
+
+          <div className="relative mt-1">
+            <button
+              onClick={handleSubmit}
+              className="w-full bg-blue-500 text-white py-3 rounded-xl mt-6 text-lg font-semibold hover:bg-blue-600 transition"
+            >
+              Tahrirlash
+            </button>
+          </div>
         </div>
       </div>
     </div>

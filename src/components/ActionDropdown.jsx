@@ -1,8 +1,11 @@
 import { useState, useEffect } from "react";
-import { MoreHorizontal, Eye, Pencil, Trash } from "lucide-react";
+import { MoreHorizontal, Eye, Pencil, Trash, Dock, LogsIcon, DockIcon, Logs, ChartAreaIcon, ChartScatterIcon, ChartPieIcon } from "lucide-react";
 import ViewModal from "./ViewModal";
 import EditModal from "./EditModal";
 import DeleteModal from "./DeleteModal";
+import LogSVG from "../assets/Log.svg"; // Импортируем SVG логотипа
+import StatLogo from "../assets/StatLogo.svg"; // Импортируем SVG логотипа статистики
+import UserStat from "./UserStatistics/UserStat";
 
 const ActionDropdown = ({ item }) => {
   const [openDropdown, setOpenDropdown] = useState(null);
@@ -44,10 +47,16 @@ const ActionDropdown = ({ item }) => {
       {openDropdown === item.id && (
         <div className="absolute right-0 mt-1 z-50 w-52 bg-white rounded-lg border border-[#e9e9eb] p-2 dropdown-menu">
           <button
+            onClick={() => handleOpenModal("stat")}
+            className="flex items-center gap-2 px-4 py-2 text-gray-700 cursor-pointer hover:text-blue-500 w-full text-left"
+          >
+            <ChartPieIcon /> Statistika
+          </button>
+          <button
             onClick={() => handleOpenModal("view")}
             className="flex items-center gap-2 px-4 py-2 text-gray-700 cursor-pointer hover:text-blue-500 w-full text-left"
           >
-            <Eye className="w-5 h-5" /> Ko‘rish
+            <Logs/> Loglar
           </button>
           <button
             onClick={() => handleOpenModal("edit")}
@@ -65,9 +74,19 @@ const ActionDropdown = ({ item }) => {
       )}
 
       {/* Модалки */}
-      {modalType === "view" && <ViewModal item={item} onClose={handleCloseModal} />}
-      {modalType === "edit" && <EditModal item={item} onClose={handleCloseModal} />}
-      {modalType === "delete" && <DeleteModal item={item} onClose={handleCloseModal} />}
+      {modalType === "stat" && (
+        <UserStat item={item} onClose={handleCloseModal} />
+      )}
+
+      {modalType === "view" && (
+        <ViewModal item={item} onClose={handleCloseModal} />
+      )}
+      {modalType === "edit" && (
+        <EditModal item={item} onClose={handleCloseModal} />
+      )}
+      {modalType === "delete" && (
+        <DeleteModal item={item} onClose={handleCloseModal} />
+      )}
     </div>
   );
 };
