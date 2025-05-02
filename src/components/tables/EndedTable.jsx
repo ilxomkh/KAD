@@ -3,6 +3,7 @@ import { ChevronRight } from "lucide-react";
 import Pagination from "../Pagination";
 import PlanButton from "../PlanButton";
 import DecisionButton from "../DecisionButton";
+import GeneratedRep from "../GeneratedRep";
 
 const EndedTable = ({ data = [], totalItems, currentPage, onPageChange }) => {
   const itemsPerPage = 30; // Это значение нужно для корректного расчёта нумерации
@@ -60,6 +61,9 @@ const EndedTable = ({ data = [], totalItems, currentPage, onPageChange }) => {
               </th>
               <th className="py-2 px-2 text-center font-medium w-32 md:w-36">
                 Hokim qarori
+              </th>
+              <th className="py-2 px-2 text-center font-medium w-32 md:w-36">
+                Xulosa
               </th>
               <th className="py-2 px-2 text-center font-medium w-32 md:w-36">
                 Qurilma
@@ -120,6 +124,9 @@ const EndedTable = ({ data = [], totalItems, currentPage, onPageChange }) => {
                 </td>
                 <td className="py-4 pl-8 bg-white text-center">
                   {item.governorDecision && <DecisionButton item={item} />}
+                </td>
+                <td className="py-4 pl-8 bg-white text-center">
+                  {item.generatedReport && <GeneratedRep item={item} />}
                 </td>
                 <td
                   className={`py-4 px-2 bg-white font-medium ${

@@ -10,7 +10,7 @@ import {
 const COLORS = ["#16A34A", "#EF4444"];
 
 const PieChart = ({ total, completed, error }) => {
-  const data = [
+  const chartData = [
     { name: "To'g'ri bajarilgan", value: completed, color: "#16A34A" },
     { name: "Xatolik", value: error, color: "#EF4444" },
   ];
@@ -38,8 +38,7 @@ const PieChart = ({ total, completed, error }) => {
 
   return (
     <div className="bg-[#f9fafb] py-4 px-4 rounded-2xl flex space-x-28 w-full">
-      {/* Левая часть */}
-      <div className="">
+      <div>
         <div>
           <div className="text-sm text-gray-500">Bajarilgan obyektlar soni:</div>
           <div className="text-3xl font-extrabold text-gray-900">
@@ -48,7 +47,7 @@ const PieChart = ({ total, completed, error }) => {
         </div>
 
         <div className="space-x-6 text-sm mt-14 flex">
-          {data.map((entry, index) => (
+          {chartData.map((entry, index) => (
             <div key={index} className="flex items-start gap-2">
               <span
                 className="w-3 h-3 mt-1 rounded-full"
@@ -65,12 +64,11 @@ const PieChart = ({ total, completed, error }) => {
         </div>
       </div>
 
-      {/* Правая часть */}
       <div className="h-[200px] w-[200px]">
         <ResponsiveContainer width="100%" height="100%">
           <RePieChart>
             <Pie
-              data={data}
+              data={chartData}
               cx="50%"
               cy="50%"
               innerRadius={35}
@@ -82,7 +80,7 @@ const PieChart = ({ total, completed, error }) => {
               endAngle={-270}
               stroke="none"
             >
-              {data.map((entry, index) => (
+              {chartData.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={entry.color} cornerRadius={10} />
               ))}
             </Pie>

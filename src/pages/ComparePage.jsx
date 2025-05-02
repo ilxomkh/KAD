@@ -26,8 +26,8 @@ const ComparePage = () => {
   const [editedPolygonData, setEditedPolygonData] = useState(null);
   const [recordId, setRecordId] = useState(null);
   const [copied, setCopied] = useState(false);
-  const [showFileUpload, setShowFileUpload] = useState(true); // -
-  const [uploadedPhoto, setUploadedPhoto] = useState(null); // -
+  // const [showFileUpload, setShowFileUpload] = useState(true); // -
+  // const [uploadedPhoto, setUploadedPhoto] = useState(null); // -
 
   // Новый стейт для модального окна при нажатии "Davom etish"
   const [showProceedModal, setShowProceedModal] = useState(false);
@@ -340,15 +340,14 @@ const ComparePage = () => {
 
   return (
     <div className="relative min-h-screen w-screen">
-      {/* <ArcGISPolygonEditor
+      <ArcGISPolygonEditor
         backendPolygonCoords={polygonCoords}
         editable={true}
         onConfirmChanges={handleConfirmChanges}
-      /> вернуть в место*/}
+      /> 
 
       {/* убрать */}
-      <div className="flex max-h-screen w-screen">
-        {/* Левая колонка (фото) */}
+      {/* <div className="flex max-h-screen w-screen">
         {uploadedPhoto && (
           <div className="w-1/2 h-full">
             <img
@@ -359,14 +358,13 @@ const ComparePage = () => {
           </div>
         )}
 
-        {/* Правая колонка (карта) */}
         <ArcGISPolygonEditor
           backendPolygonCoords={polygonCoords}
           editable={true}
           onConfirmChanges={handleConfirmChanges}
           isHalfWidth={!!uploadedPhoto} // Если фото есть, карта будет иметь ширину 50vw
         />
-      </div>
+      </div> */}
 
       {/* Кнопка для копирования исходного geojson */}
       {polygonCoords && polygonCoords.length > 0 && (
@@ -483,14 +481,6 @@ const ComparePage = () => {
             </div>
           </div>
         </div>
-      )}
-      {showFileUpload && (
-        <FileUploadModal
-          isOpen={showFileUpload}
-          onClose={() => setShowFileUpload(false)}
-          onUpload={handlePhotoUpload}
-          cadasterId={recordId || id}
-        />
       )}
     </div>
   );

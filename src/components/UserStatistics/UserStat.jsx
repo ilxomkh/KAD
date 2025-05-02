@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronRight, XCircleIcon } from "lucide-react";
+import { ChevronDown, XCircleIcon } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import PieChart from "./PieChart";
 import TimeChart from "./TimeChart";
@@ -6,14 +6,13 @@ import DailyChart from "./DailyChart";
 import CustomDateSelector from "../Statistics/CustomDateSelector";
 import { DayPicker } from "react-day-picker";
 import dayjs from "dayjs";
+import axios from "axios";
 import "react-day-picker/dist/style.css";
 import Calendar from "../../assets/calendar-days.svg";
-import DownloadIcon from "../../assets/download.svg";
-import HorizontalStackedBar from "./HorizontalStackedBar"; // путь подкорректируй по структуре проекта
+import HorizontalStackedBar from "./HorizontalStackedBar";
+import { BASE_URL } from "../../utils/api";
 
 const filters = ["Barcha vaqt", "Yillik", "Oylik", "Haftalik", "Kunlik"];
-
-// ... все импорты оставляешь такими же
 
 const UserStat = ({ item, onClose }) => {
   const [filter, setFilter] = useState("Barcha vaqt");
@@ -22,46 +21,50 @@ const UserStat = ({ item, onClose }) => {
   const [showSinglePicker, setShowSinglePicker] = useState(false);
   const pickerRef = useRef(null);
 
-  const [pieData, setPieData] = useState(null);
-  const [chartsData, setChartsData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [generalData, setGeneralData] = useState(null);
+  const [hourlyData, setHourlyData] = useState([]);
+  const [dailyGoalData, setDailyGoalData] = useState(null);
+  const [buildingPresenceData, setBuildingPresenceData] = useState(null);
 
-  const [loadingPie, setLoadingPie] = useState(true);
-  const [loadingCharts, setLoadingCharts] = useState(true);
+  const fetchAllStats = async (userId, selectedDate) => {
+    try {
+      setLoading(true);
+      const fromDate = selectedDate
+        ? dayjs(selectedDate).format("YYYY-MM-DD")
+        : dayjs().format("YYYY-MM-DD");
+      const toDate = fromDate;
 
-  useEffect(() => {
-    if (!item) return;
-    setLoadingPie(true);
-    setTimeout(() => {
-      setPieData({
-        total: 219091,
-        completed: 149821,
-        error: 47689,
-      });
-      setLoadingPie(false);
-    }, 500);
-  }, [item, filter, dateRange]);
+      const [generalRes, hourlyRes, dailyGoalRes, buildingPresenceRes] =
+        await Promise.all([
+          axios.get(`${BASE_URL}/user-statistics/${userId}/general`),
+          axios.get(`${BASE_URL}/user-statistics/${userId}/hourly`),
+          axios.get(`${BASE_URL}/user-statistics/${userId}/daily-goal`, {
+            params: { fromDate, toDate },
+          }),
+          axios.get(`${BASE_URL}/user-statistics/${userId}/building-presence`),
+        ]);
 
-  const loadChartsData = (date) => {
-    setLoadingCharts(true);
-    setTimeout(() => {
-      setChartsData({
-        timeData: date
-          ? [{ time: "09:05" }, { time: "12:10" }, { time: "15:35" }]
-          : [
-              { time: "09:15" },
-              { time: "10:30" },
-              { time: "11:45" },
-              { time: "13:20" },
-            ],
-        dailyCount: date ? 123 : 172,
-      });
-      setLoadingCharts(false);
-    }, 500);
+      setGeneralData(generalRes.data || {});
+      setHourlyData(hourlyRes.data.data || []);
+      setDailyGoalData(dailyGoalRes.data || {});
+      setBuildingPresenceData(buildingPresenceRes.data || {});
+    } catch (error) {
+      console.error("Ошибка загрузки статистики:", error);
+      setGeneralData(null);
+      setHourlyData([]);
+      setDailyGoalData(null);
+      setBuildingPresenceData(null);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    loadChartsData(singleDate);
-  }, [singleDate, item]);
+    if (item?.ID || item?.id) {
+      fetchAllStats(item.ID || item.id, singleDate);
+    }
+  }, [item, singleDate]);
 
   const handleOutsideClick = (e) => {
     if (pickerRef.current && !pickerRef.current.contains(e.target)) {
@@ -80,14 +83,14 @@ const UserStat = ({ item, onClose }) => {
 
   const clearSingleDate = () => {
     setSingleDate(null);
-    loadChartsData(null);
+    fetchAllStats(item.ID || item.id, null);
     setShowSinglePicker(false);
   };
 
   return (
     <>
       <div className="fixed inset-0 bg-black/20 z-50" onClick={onClose} />
-      <div className="fixed right-0 top-0 h-screen bg-white rounded-l-2xl z-50 p-6 flex flex-col">
+      <div className="fixed right-0 top-0 h-screen bg-white rounded-l-2xl z-50 p-6 flex flex-col w-full max-w-[750px]">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold">Foydalanuvchi statistikasi</h2>
           <button
@@ -125,90 +128,94 @@ const UserStat = ({ item, onClose }) => {
               }}
             />
           </div>
-          <button className="group text-black px-4 py-2 flex items-center justify-center hover:text-blue-500 transition">
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              className="mr-2 w-6 h-6 transition-colors duration-200"
-            >
-              <path
-                d="M21 13V13.8C21 16.7998 21 18.2997 20.2361 19.3511C19.9893 19.6907 19.6907 19.9893 19.3511 20.2361C18.2997 21 16.7998 21 13.8 21H10.2C7.20021 21 5.70032 21 4.64886 20.2361C4.30928 19.9893 4.01065 19.6907 3.76393 19.3511C3 18.2997 3 16.7998 3 13.8V13M12 3L12 15M12 15L15 12M12 15L9 12"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            Yuklash
-          </button>
         </div>
 
         <div className="mt-2 overflow-y-auto flex-1 space-y-6">
-          {loadingPie ? (
+          {loading ? (
             <div className="text-center text-gray-500">Yuklanmoqda...</div>
-          ) : pieData ? (
+          ) : (
             <>
-              <PieChart
-                total={pieData.total}
-                completed={pieData.completed}
-                error={pieData.error}
-              />
-              <HorizontalStackedBar />
-            </>
-          ) : null}
-
-          <div className="relative flex items-center justify-between text-sm">
-            <p className="font-semibold text-xl">Kunlik statistika</p>
-            <div className="relative">
-              <button
-                onClick={() => setShowSinglePicker((prev) => !prev)}
-                className="px-4 py-2 rounded-full transition flex items-center bg-white border border-gray-100 text-gray-700 hover:bg-blue-50"
-              >
-                <img src={Calendar} className="mr-2" />
-                {singleDate
-                  ? dayjs(singleDate).format("YYYY-MM-DD")
-                  : "Sanani tanlang"}
-                <ChevronDown className="w-4 h-4" />
-              </button>
-
-              {showSinglePicker && (
-                <div
-                  ref={pickerRef}
-                  className="absolute right-0 top-10 z-50 bg-white rounded-lg px-4"
-                >
-                  <DayPicker
-                    mode="single"
-                    selected={singleDate}
-                    onSelect={(date) => {
-                      setSingleDate(date);
-                      setShowSinglePicker(false);
-                    }}
-                    captionLayout="dropdown-buttons"
-                    fromYear={2023}
-                    toYear={2030}
+              {generalData ? (
+                <>
+                  <PieChart
+                    total={generalData.total || 0}
+                    completed={generalData.correctCompleted || 0}
+                    error={generalData.receivedReports || 0}
                   />
-                  <button
-                    onClick={clearSingleDate}
-                    className="mt-2 w-full px-3 py-1 bg-red-50 text-red-600 rounded-lg text-sm hover:bg-red-100"
-                  >
-                    Oʻchirish
-                  </button>
+                  <HorizontalStackedBar
+                    buildingPresenceData={buildingPresenceData}
+                  />
+                </>
+              ) : (
+                <div className="text-center text-gray-400">
+                  Umumiy statistika yo‘q
                 </div>
               )}
-            </div>
-          </div>
+              <div className="flex items-center justify-between w-full px-1">
+                <span className="text-xl font-semibold">Kunlik statistika</span>
 
-          {loadingCharts ? (
-            <div className="text-center text-gray-500">Yuklanmoqda...</div>
-          ) : chartsData ? (
-            <>
-              <TimeChart timeData={chartsData.timeData} />
-              <DailyChart current={chartsData.dailyCount} norm={200} />
+                <div className="relative">
+                  <button
+                    onClick={() => setShowSinglePicker((prev) => !prev)}
+                    className="group text-black px-4 py-2 flex items-center justify-end hover:text-blue-500 transition"
+                  >
+                    <img
+                      src={Calendar}
+                      className="mr-2 w-6 h-6"
+                      alt="calendar"
+                    />
+                    {singleDate
+                      ? dayjs(singleDate).format("YYYY-MM-DD")
+                      : "Sanani tanlang"}
+                    <ChevronDown className="w-4 h-4" />
+                  </button>
+
+                  {showSinglePicker && (
+                    <div
+                      ref={pickerRef}
+                      className="absolute right-0 top-10 z-50 bg-white rounded-lg px-4 py-3 shadow-lg"
+                    >
+                      <DayPicker
+                        mode="single"
+                        selected={singleDate}
+                        onSelect={(date) => {
+                          setSingleDate(date);
+                          setShowSinglePicker(false);
+                        }}
+                        captionLayout="dropdown-buttons"
+                        fromYear={2023}
+                        toYear={2030}
+                      />
+                      <button
+                        onClick={clearSingleDate}
+                        className="mt-2 w-full px-3 py-1 bg-red-50 text-red-600 rounded-lg text-sm hover:bg-red-100"
+                      >
+                        Oʻchirish
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {hourlyData.length > 0 ? (
+                <TimeChart timeData={hourlyData} />
+              ) : (
+                <div className="text-center text-gray-400">
+                  Vaqt bo‘yicha ma'lumot yo‘q
+                </div>
+              )}
+              {dailyGoalData ? (
+                <DailyChart
+                  current={dailyGoalData.doneToday || 0}
+                  norm={dailyGoalData.goal || 0}
+                />
+              ) : (
+                <div className="text-center text-gray-400">
+                  Kunlik ma'lumot yo‘q
+                </div>
+              )}
             </>
-          ) : null}
+          )}
         </div>
       </div>
     </>
